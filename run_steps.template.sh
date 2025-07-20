@@ -22,7 +22,7 @@ mkdir "${INTERMEDIATE_RESULTS_FOLDER}/step2_1"
 python steps/2_1_url_content_crawling.py \
 --step1_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step1" \
 --step2_1_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_1" \
---max_urls_per_page 10
+--max_facts_per_page 10
 
 
 mkdir "${INTERMEDIATE_RESULTS_FOLDER}/step2_2"

@@ -25,9 +25,17 @@ from argparse import ArgumentParser
 from tqdm import tqdm
 from urllib.parse import urlparse
 from PyPDF2 import PdfReader
+from cleantext import clean
 from utils.generic import read_json_or_jsonl, write_to_json
 from utils.archive_downloader import getArchiveContent, clear_downloads_dir
 from utils.html_extraction import extract_text_from_html
+
+clean_text_func = lambda text: clean(text,
+    fix_unicode=True,               # fix various unicode errors
+    to_ascii=True,                  # transliterate to closest ASCII representation
+    lang="en",                       # set to 'de' for German special handling,
+    lower = False
+)
 
 request_counters = {}
 MAX_REQUESTS_PER_MINUTE = 10  # Maximum requests per minute per domain
@@ -122,7 +130,7 @@ def get_content_from_url(url):
     obj = {
         "url": url,
         "accessible": accessible,
-        "url_content": content if accessible else "",
+        "url_content": clean_text_func(content) if accessible else "",
         "error": "" if accessible else str(content),
         # "id": f"{title}_para-{paragraph['id']}_url-{url_count}"
     }
@@ -134,13 +142,13 @@ def main():
     parser = ArgumentParser()
     parser.add_argument("--step1_output_folder", type = str, required = True)
     parser.add_argument("--step2_1_output_folder", type = str, required = True)
-    parser.add_argument("--max_urls_per_page", type = int, default = 20)
+    parser.add_argument("--max_facts_per_page", type = int, default = 20)
 
     args = parser.parse_args()
 
     input_folder = args.step1_output_folder
     output_folder = args.step2_1_output_folder
-    max_urls_per_page = args.max_urls_per_page
+    max_facts_per_page = args.max_facts_per_page
 
     files = os.listdir(input_folder)
     files = [file for file in files if file.endswith('.json')]
@@ -156,7 +164,7 @@ def main():
         raw_facts = list(sorted(raw_facts, key = lambda x: x["fact"])) # sort based on position
 
 
-        for fact in raw_facts[:max_urls_per_page]:
+        for fact in raw_facts[:max_facts_per_page]:
             citation_urls = fact.get("citation_urls", [])
             for url in citation_urls:
                 content = get_content_from_url(url)
