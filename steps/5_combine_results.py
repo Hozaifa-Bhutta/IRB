@@ -8,12 +8,12 @@ from utils.generic import read_json_or_jsonl, write_to_jsonl, write_to_json
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--extracted_facts_folder", type = str, required = True)
-    parser.add_argument("--crawled_url_content_folder", type = str, required = True)
-    parser.add_argument("--decontextualized_facts_folder", type = str, required = True)
-    parser.add_argument("--fact_groundedness_folder", type = str, required = True)
-    parser.add_argument("--question_generation_folder", type = str, required = True)
-    parser.add_argument("--output_folder", type = str, required = True)
+    parser.add_argument("--step1_output_folder", type = str, required = True)
+    parser.add_argument("--step2_1_output_folder", type = str, required = True)
+    parser.add_argument("--step2_2_output_folder", type = str, required = True)
+    parser.add_argument("--step3_output_folder", type = str, required = True)
+    parser.add_argument("--step4_output_folder", type = str, required = True)
+    parser.add_argument("--step5_output_folder", type = str, required = True)
 
     args = parser.parse_args()
 

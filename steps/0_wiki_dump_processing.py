@@ -46,14 +46,14 @@ def main():
     parser = ArgumentParser()
 
     parser.add_argument("--input_file", type = str, required = True)
-    parser.add_argument("--output_folder", type = str, required = True)
+    parser.add_argument("--step0_output_folder", type = str, required = True)
     parser.add_argument("--offset", type = int, default = 0)
     parser.add_argument("--max_pages", type = int, default = 100)
 
     args = parser.parse_args()
 
     input_file = args.input_file
-    output_folder = args.output_folder
+    output_folder = args.step0_output_folder
     offset = args.offset
     max_pages = args.max_pages
 

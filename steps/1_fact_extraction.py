@@ -191,12 +191,12 @@ def put_back_ref(sentence, placeholder_mapper):
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--input_folder", type = str)
-    parser.add_argument("--output_folder", type = str)
+    parser.add_argument("--step0_output_folder", type = str)
+    parser.add_argument("--step1_output_folder", type = str)
 
     args = parser.parse_args()
-    input_folder = args.input_folder
-    output_folder = args.output_folder
+    input_folder = args.step0_output_folder
+    output_folder = args.step1_output_folder
 
     files = os.listdir(input_folder)
     files = [file for file in files if file.endswith('.json')]

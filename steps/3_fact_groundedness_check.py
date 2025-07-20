@@ -29,17 +29,17 @@ def init_minicheck(model_name='flan-t5-large', cache_dir='./ckpts'):
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--extracted_facts_folder", type = str, required = True)
-    parser.add_argument("--crawled_url_content_folder", type = str, required = True)
-    parser.add_argument("--decontextualized_facts_folder", type = str, required = True)
-    parser.add_argument("--output_folder", type = str, required = True)
+    parser.add_argument("--step1_output_folder", type = str, required = True)
+    parser.add_argument("--step2_1_output_folder", type = str, required = True)
+    parser.add_argument("--step2_2_output_folder", type = str, required = True)
+    parser.add_argument("--step3_output_folder", type = str, required = True)
 
     args = parser.parse_args()
 
-    extracted_facts_folder = args.extracted_facts_folder
-    crawled_url_content_folder = args.crawled_url_content_folder
-    decontextualized_facts_folder = args.decontextualized_facts_folder
-    output_folder = args.output_folder
+    extracted_facts_folder = args.step1_output_folder
+    crawled_url_content_folder = args.step2_1_output_folder
+    decontextualized_facts_folder = args.step2_2_output_folder
+    output_folder = args.step3_output_folder
 
     init_minicheck(cache_dir="/scratch/lamdo/minicheck_ckpts")
 

@@ -52,18 +52,18 @@ def create_molecular_fact(fact: int, extracted_sentences: list, context_window_s
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--extracted_facts_folder", type = str, required = True)
-    parser.add_argument("--crawled_url_content_folder", type = str, required = True)
-    parser.add_argument("--output_folder", type = str, required = True)
+    parser.add_argument("--step1_output_folder", type = str, required = True)
+    parser.add_argument("--step2_1_output_folder", type = str, required = True)
+    parser.add_argument("--step2_2_output_folder", type = str, required = True)
     parser.add_argument("--context_window_size", type = int, default = 5)
     parser.add_argument("--openai_api_key", type = str, required = True,
                         help = "OpenAI API key")
 
     args = parser.parse_args()
 
-    extracted_facts_folder = args.extracted_facts_folder
-    crawled_url_content_folder = args.crawled_url_content_folder
-    output_folder = args.output_folder
+    extracted_facts_folder = args.step1_output_folder
+    crawled_url_content_folder = args.step2_1_output_folder
+    output_folder = args.step2_2_output_folder
     context_window_size = args.context_window_size
     openai_api_key = args.openai_api_key
 

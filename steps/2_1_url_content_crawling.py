@@ -132,14 +132,14 @@ def get_content_from_url(url):
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--input_folder", type = str, required = True)
-    parser.add_argument("--output_folder", type = str, required = True)
+    parser.add_argument("--step1_output_folder", type = str, required = True)
+    parser.add_argument("--step2_1_output_folder", type = str, required = True)
     parser.add_argument("--max_urls_per_page", type = int, default = 20)
 
     args = parser.parse_args()
 
-    input_folder = args.input_folder
-    output_folder = args.output_folder
+    input_folder = args.step1_output_folder
+    output_folder = args.step2_1_output_folder
     max_urls_per_page = args.max_urls_per_page
 
     files = os.listdir(input_folder)

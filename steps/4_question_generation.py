@@ -44,16 +44,16 @@ def generate_question(modified_fact):
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--decontextualized_facts_folder", type = str, required = True)
-    parser.add_argument("--fact_groundedness_folder", type = str, required = True)
-    parser.add_argument("--output_folder", type = str, required = True)
+    parser.add_argument("--step2_2_output_folder", type = str, required = True)
+    parser.add_argument("--step3_output_folder", type = str, required = True)
+    parser.add_argument("--step4_output_folder", type = str, required = True)
     parser.add_argument("--openai_api_key", type = str, required = True,
                         help = "OpenAI API key")
 
     args = parser.parse_args()
-    decontextualized_facts_folder = args.decontextualized_facts_folder
-    fact_groundedness_folder = args.fact_groundedness_folder
-    output_folder = args.output_folder
+    decontextualized_facts_folder = args.step2_2_output_folder
+    fact_groundedness_folder = args.step3_output_folder
+    output_folder = args.step4_output_folder
     openai_api_key = args.openai_api_key
 
     init_client(openai_api_key)
