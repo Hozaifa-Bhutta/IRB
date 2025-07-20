@@ -50,9 +50,9 @@ python steps/4_question_generation.py \
 rm -r "${INTERMEDIATE_RESULTS_FOLDER}/step5"
 mkdir "${INTERMEDIATE_RESULTS_FOLDER}/step5"
 python steps/5_combine_results.py \
---extracted_facts_folder "${INTERMEDIATE_RESULTS_FOLDER}/step1" \
---crawled_url_content_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_1" \
---decontextualized_facts_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
---fact_groundedness_folder "${INTERMEDIATE_RESULTS_FOLDER}/step3" \
---question_generation_folder "${INTERMEDIATE_RESULTS_FOLDER}/step4" \
---output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step5"
+--step1_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step1" \
+--step2_1_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_1" \
+--step2_2_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
+--step3_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step3" \
+--step4_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step4" \
+--step5_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step5"
