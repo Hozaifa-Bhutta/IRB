@@ -1,0 +1,11 @@
+step0:
+  offset: 0
+  max_pages: 10000
+
+step2_1:
+  max_facts_per_page: 100
+  max_concurrents: 10
+
+
+step2_2:
+  context_window_size: 5

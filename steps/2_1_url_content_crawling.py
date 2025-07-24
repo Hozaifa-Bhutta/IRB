@@ -20,7 +20,8 @@
 #     }
 # }
 
-import os, requests, time, io
+import os, requests, time, io, asyncio, hydra
+from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
 from urllib.parse import urlparse
@@ -125,6 +126,19 @@ def is_url_accessible(url):
 
 
 
+async def is_url_accessible_async(url, semaphore):
+    loop = asyncio.get_event_loop()
+    async with semaphore:
+        return await loop.run_in_executor(None, is_url_accessible, url)
+
+async def check_urls_in_parallel(url_list, max_concurrent=5):
+    semaphore = asyncio.Semaphore(max_concurrent)
+    tasks = [is_url_accessible_async(url, semaphore) for url in url_list]
+    return await asyncio.gather(*tasks)
+
+
+
+
 def get_content_from_url(url):
     accessible, content = is_url_accessible(url)
     obj = {
@@ -138,11 +152,25 @@ def get_content_from_url(url):
     return obj
 
 
-def main():
+def get_content_from_resp(resp, url):
+    accessible, content = resp
+    obj = {
+        "url": url,
+        "accessible": accessible,
+        "url_content": clean_text_func(content) if accessible else "",
+        "error": "" if accessible else str(content),
+        # "id": f"{title}_para-{paragraph['id']}_url-{url_count}"
+    }
+
+    return obj
+
+@hydra.main(version_base=None, config_path="../conf", config_name=os.getenv("CONFIG_NAME"))
+def main(cfg: DictConfig):
     parser = ArgumentParser()
     parser.add_argument("--step1_output_folder", type = str, required = True)
     parser.add_argument("--step2_1_output_folder", type = str, required = True)
-    parser.add_argument("--max_facts_per_page", type = int, default = 20)
+    parser.add_argument("--max_facts_per_page", type = int, default = cfg.step2_1.max_facts_per_page)
+    parser.add_argument("--max_concurrents", type = int, default = cfg.step2_1.max_concurrents)
 
     args = parser.parse_args()
 
@@ -157,6 +185,7 @@ def main():
 
     for input_file_path, output_file_path in tqdm(zip(input_files_full_path, output_files_full_path), total = len(input_files_full_path)):
         url_content_mapper = {}
+        all_urls = set()
         # read input
         input_data = read_json_or_jsonl(input_file_path)
         raw_facts = input_data.get("raw_facts")
@@ -166,10 +195,20 @@ def main():
 
         for fact in raw_facts[:max_facts_per_page]:
             citation_urls = fact.get("citation_urls", [])
-            for url in citation_urls:
-                content = get_content_from_url(url)
-                if content:
-                    url_content_mapper[url] = content
+            all_urls.update(citation_urls)
+            # for url in citation_urls:
+            #     content = get_content_from_url(url)
+            #     if content:
+            #         url_content_mapper[url] = content
+
+        all_urls = list(all_urls)
+        responses = asyncio.run(check_urls_in_parallel(all_urls, max_concurrent=5))
+
+        assert len(all_urls) == len(responses)
+
+        for resp, url in zip(responses, all_urls):
+            content = get_content_from_resp(resp, url)
+            if content: url_content_mapper[url] = content
 
     
         to_save = {

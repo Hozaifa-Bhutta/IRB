@@ -10,7 +10,8 @@
 # }
 
 
-import os, json
+import os, json, hydra
+from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
 from utils.generic import read_json_or_jsonl, write_to_json
@@ -49,13 +50,13 @@ def create_molecular_fact(fact: int, extracted_sentences: list, context_window_s
     except IndexError: return None
 
 
-
-def main():
+@hydra.main(version_base=None, config_path="../conf", config_name=os.getenv("CONFIG_NAME"))
+def main(cfg: DictConfig):
     parser = ArgumentParser()
     parser.add_argument("--step1_output_folder", type = str, required = True)
     parser.add_argument("--step2_1_output_folder", type = str, required = True)
     parser.add_argument("--step2_2_output_folder", type = str, required = True)
-    parser.add_argument("--context_window_size", type = int, default = 5)
+    parser.add_argument("--context_window_size", type = int, default = cfg.step2_2.context_window_size)
     parser.add_argument("--openai_api_key", type = str, required = True,
                         help = "OpenAI API key")
 

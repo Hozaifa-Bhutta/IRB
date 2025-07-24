@@ -5,7 +5,8 @@
 #     "wiki_url": "...",
 #     "source": "wikitext...",
 # }
-import json, gzip, os
+import json, gzip, os, hydra
+from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
 from utils.generic import maybe_create_folder, write_to_json
@@ -32,7 +33,11 @@ def read_wiki_dump_and_write(input_file, output_folder, max_pages, offset = 0):
                         "wiki_url": url,
                         "source": source
                     }
-                    write_to_json(to_write, os.path.join(output_folder, f"{title}.json"))
+                    try:
+                        write_to_json(to_write, os.path.join(output_folder, f"{title}.json"))
+                    except FileNotFoundError:
+                        continue
+                    
                     length_data += 1
                     pbar.update(1)
                     print(title)
@@ -41,14 +46,14 @@ def read_wiki_dump_and_write(input_file, output_folder, max_pages, offset = 0):
 
             if length_data == max_pages: break
 
-
-def main():
+@hydra.main(version_base=None, config_path="../conf", config_name=os.getenv("CONFIG_NAME"))
+def main(cfg: DictConfig):
     parser = ArgumentParser()
 
     parser.add_argument("--input_file", type = str, required = True)
     parser.add_argument("--step0_output_folder", type = str, required = True)
-    parser.add_argument("--offset", type = int, default = 0)
-    parser.add_argument("--max_pages", type = int, default = 100)
+    parser.add_argument("--offset", type = int, default = cfg.step0.offset)
+    parser.add_argument("--max_pages", type = int, default = cfg.step0.max_pages)
 
     args = parser.parse_args()
 

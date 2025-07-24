@@ -94,7 +94,7 @@ def get_info_from_raw_text(raw_text):
     # external_urls = wikicode.filter_external_links()python
 
     ref_tags = extract_ref_tags(raw_text) #[tag for tag in wikicode.filter_tags(matches=lambda node: node.tag == 'ref')]
-    print(ref_tags)
+    # print(ref_tags)
     external_urls = [extract_urls(str(tag_text)) for tag_text in ref_tags] # basically, just get 
     external_urls = [url for url in external_urls if url]
 
@@ -188,7 +188,6 @@ def put_back_ref(sentence, placeholder_mapper):
     return sentence
 
 
-
 def main():
     parser = ArgumentParser()
     parser.add_argument("--step0_output_folder", type = str)
@@ -227,7 +226,9 @@ def main():
             if wiki_reference_at_start_sentences[i] is not True: continue
 
             reference_urls = wiki_info_sentences[i]["urls"][:wiki_reference_count_sentences[i]]
+            # print(reference_urls)
             # filtering of reference_urls
+            # print([[bad_domain for bad_domain in BAD_DOMAINS if bad_domain in item] for item in reference_urls])
             reference_urls = [item for item in reference_urls if not any([bad_domain in item for bad_domain in BAD_DOMAINS])]
             if not reference_urls: continue
 

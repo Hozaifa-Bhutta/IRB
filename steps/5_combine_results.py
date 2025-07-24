@@ -17,12 +17,12 @@ def main():
 
     args = parser.parse_args()
 
-    extracted_facts_folder = args.extracted_facts_folder
-    crawled_url_content_folder = args.crawled_url_content_folder
-    decontextualized_facts_folder = args.decontextualized_facts_folder
-    fact_groundedness_folder = args.fact_groundedness_folder
-    question_generation_folder = args.question_generation_folder
-    output_folder = args.output_folder
+    extracted_facts_folder = args.step1_output_folder
+    crawled_url_content_folder = args.step2_1_output_folder
+    decontextualized_facts_folder = args.step2_2_output_folder
+    fact_groundedness_folder = args.step3_output_folder
+    question_generation_folder = args.step4_output_folder
+    output_folder = args.step5_output_folder
 
     files = os.listdir(extracted_facts_folder)
     files = [file for file in files if file.endswith('.json')]
@@ -49,7 +49,6 @@ def main():
             qg_data = read_json_or_jsonl(qg_file_path)
         except FileNotFoundError: continue
 
-
         raw_facts = ef_data.get("raw_facts")
         url_content_mapper = cuc_data.get("url_content_mapper")
         modified_fact_mapper = dff_data.get("modified_fact_mapper")
@@ -58,7 +57,7 @@ def main():
 
         wiki_title = ef_data.get("title")
 
-        if not any([raw_facts, url_content_mapper, modified_fact_mapper, groundedness_check, fact_question_mapper]): continue
+        if any([item is None for item in [raw_facts, url_content_mapper, modified_fact_mapper, fact_question_mapper]]): continue
 
         good_facts = set([])
         for fact_id, query in fact_question_mapper.items():
