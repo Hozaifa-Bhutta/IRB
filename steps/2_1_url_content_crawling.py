@@ -30,6 +30,7 @@ from cleantext import clean
 from utils.generic import read_json_or_jsonl, write_to_json
 from utils.archive_downloader import getArchiveContent, clear_downloads_dir
 from utils.html_extraction import extract_text_from_html
+# from utils.html2md import extract_markdown_from_html
 
 clean_text_func = lambda text: clean(text,
     fix_unicode=True,               # fix various unicode errors
@@ -70,6 +71,7 @@ def rate_limited(func):
 
 @rate_limited
 def is_url_accessible(url):
+    time.sleep(0.2)
     print(f"Processing URL: {url}....")
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36',
@@ -164,19 +166,13 @@ def get_content_from_resp(resp, url):
 
     return obj
 
-@hydra.main(version_base=None, config_path="../conf", config_name=os.getenv("CONFIG_NAME"))
+@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig):
-    parser = ArgumentParser()
-    parser.add_argument("--step1_output_folder", type = str, required = True)
-    parser.add_argument("--step2_1_output_folder", type = str, required = True)
-    parser.add_argument("--max_facts_per_page", type = int, default = cfg.step2_1.max_facts_per_page)
-    parser.add_argument("--max_concurrents", type = int, default = cfg.step2_1.max_concurrents)
 
-    args = parser.parse_args()
-
-    input_folder = args.step1_output_folder
-    output_folder = args.step2_1_output_folder
-    max_facts_per_page = args.max_facts_per_page
+    input_folder = cfg.step1.output_folder
+    output_folder = cfg.step2_1.output_folder
+    max_facts_per_page = cfg.step2_1.max_facts_per_page
+    max_concurrents = cfg.step2_1.max_concurrents
 
     files = os.listdir(input_folder)
     files = [file for file in files if file.endswith('.json')]
@@ -202,7 +198,7 @@ def main(cfg: DictConfig):
             #         url_content_mapper[url] = content
 
         all_urls = list(all_urls)
-        responses = asyncio.run(check_urls_in_parallel(all_urls, max_concurrent=5))
+        responses = asyncio.run(check_urls_in_parallel(all_urls, max_concurrent=max_concurrents))
 
         assert len(all_urls) == len(responses)
 

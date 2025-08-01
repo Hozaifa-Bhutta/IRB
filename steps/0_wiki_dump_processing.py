@@ -46,21 +46,21 @@ def read_wiki_dump_and_write(input_file, output_folder, max_pages, offset = 0):
 
             if length_data == max_pages: break
 
-@hydra.main(version_base=None, config_path="../conf", config_name=os.getenv("CONFIG_NAME"))
+@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig):
-    parser = ArgumentParser()
+    # parser = ArgumentParser()
 
-    parser.add_argument("--input_file", type = str, required = True)
-    parser.add_argument("--step0_output_folder", type = str, required = True)
-    parser.add_argument("--offset", type = int, default = cfg.step0.offset)
-    parser.add_argument("--max_pages", type = int, default = cfg.step0.max_pages)
+    # parser.add_argument("--input_file", type = str, required = True)
+    # parser.add_argument("--step0_output_folder", type = str, required = True)
+    # parser.add_argument("--offset", type = int, default = cfg.step0.offset)
+    # parser.add_argument("--max_pages", type = int, default = cfg.step0.max_pages)
 
-    args = parser.parse_args()
+    # args = parser.parse_args()
 
-    input_file = args.input_file
-    output_folder = args.step0_output_folder
-    offset = args.offset
-    max_pages = args.max_pages
+    input_file = cfg.step0.input_file #args.input_file
+    output_folder = cfg.step0.output_folder #args.step0_output_folder
+    offset = cfg.step0.offset
+    max_pages = cfg.step0.max_pages
 
     assert os.path.exists(input_file)
 

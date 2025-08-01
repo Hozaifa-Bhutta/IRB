@@ -1,28 +1,21 @@
 # script to combine the results of the previous step into the final dataset
 # the input include: output of steps 1, 2_1, 2_2, 3, 4
 
-import os
+import os, hydra
+from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
 from utils.generic import read_json_or_jsonl, write_to_jsonl, write_to_json
 
-def main():
-    parser = ArgumentParser()
-    parser.add_argument("--step1_output_folder", type = str, required = True)
-    parser.add_argument("--step2_1_output_folder", type = str, required = True)
-    parser.add_argument("--step2_2_output_folder", type = str, required = True)
-    parser.add_argument("--step3_output_folder", type = str, required = True)
-    parser.add_argument("--step4_output_folder", type = str, required = True)
-    parser.add_argument("--step5_output_folder", type = str, required = True)
 
-    args = parser.parse_args()
-
-    extracted_facts_folder = args.step1_output_folder
-    crawled_url_content_folder = args.step2_1_output_folder
-    decontextualized_facts_folder = args.step2_2_output_folder
-    fact_groundedness_folder = args.step3_output_folder
-    question_generation_folder = args.step4_output_folder
-    output_folder = args.step5_output_folder
+@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
+def main(cfg: DictConfig):
+    extracted_facts_folder = cfg.step1.output_folder
+    crawled_url_content_folder = cfg.step2_1.output_folder
+    decontextualized_facts_folder = cfg.step2_2.output_folder
+    fact_groundedness_folder = cfg.step3.output_folder
+    question_generation_folder = cfg.step4.output_folder
+    output_folder = cfg.step5.output_folder
 
     files = os.listdir(extracted_facts_folder)
     files = [file for file in files if file.endswith('.json')]
@@ -79,7 +72,7 @@ def main():
 
                 corpus.append({"_id": url, "title": "", "text": content})
 
-                qrels[query_id][url] = 1
+                qrels[query_id][url] = groundedness_check.get(f"{fact_id}--__--{url}", 0)
 
         for fact_id, modified_fact in modified_fact_mapper.items():
             fact_id = int(fact_id)

@@ -4,7 +4,8 @@ import PyPDF2
 import os
 import shutil
 
-DOWNLOADS_DIR = "./downloads"
+# DOWNLOADS_DIR = "./downloads"
+DOWNLOADS_DIR = os.getenv("DOWNLOADS_DIR")
 
 def ensure_downloads_dir_exists():
     """Ensure the downloads directory exists."""

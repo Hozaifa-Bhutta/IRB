@@ -9,7 +9,8 @@
 #     }
 # }
 
-import os
+import os, hydra
+from omegaconf import DictConfig
 from argparse import ArgumentParser
 from utils.generic import read_json_or_jsonl, write_to_json
 from minicheck.minicheck import MiniCheck
@@ -27,21 +28,16 @@ def init_minicheck(model_name='flan-t5-large', cache_dir='./ckpts'):
 
 
 
-def main():
-    parser = ArgumentParser()
-    parser.add_argument("--step1_output_folder", type = str, required = True)
-    parser.add_argument("--step2_1_output_folder", type = str, required = True)
-    parser.add_argument("--step2_2_output_folder", type = str, required = True)
-    parser.add_argument("--step3_output_folder", type = str, required = True)
+@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
+def main(cfg: DictConfig):
 
-    args = parser.parse_args()
+    extracted_facts_folder = cfg.step1.output_folder
+    crawled_url_content_folder = cfg.step2_1.output_folder
+    decontextualized_facts_folder = cfg.step2_2.output_folder
+    output_folder = cfg.step3.output_folder
+    minicheck_ckpt_path = cfg.step3.minicheck_ckpt_path
 
-    extracted_facts_folder = args.step1_output_folder
-    crawled_url_content_folder = args.step2_1_output_folder
-    decontextualized_facts_folder = args.step2_2_output_folder
-    output_folder = args.step3_output_folder
-
-    init_minicheck(cache_dir="/scratch/lamdo/minicheck_ckpts")
+    init_minicheck(cache_dir = minicheck_ckpt_path)
 
     files = os.listdir(extracted_facts_folder)
     files = [file for file in files if file.endswith('.json')]

@@ -13,7 +13,8 @@
 #     ]
 # }
 
-import json, re, mwparserfromhell, os
+import json, re, mwparserfromhell, os, hydra
+from omegaconf import DictConfig
 from argparse import ArgumentParser
 from nltk.tokenize import sent_tokenize
 from tqdm import tqdm
@@ -32,10 +33,8 @@ clean_text_func = lambda text: clean(text,
 
 
 
-
-def slight_text_processing_before_tokenizing(wiki_raw_text: str):
-    res = wiki_raw_text.replace("<ref>", " <ref>")
-    res = res.replace("<ref/>", "</ref>")
+def slight_text_processing(wiki_raw_text: str):
+    res = wiki_raw_text.replace(",<ref", ".<ref")
     res = res.replace("et al.", "et al")
 
     return res
@@ -53,7 +52,7 @@ def ref_tag_count(raw_text: str):
     # count_end = raw_text.count("</ref>")
     # return min(count_beginning, count_end)
 
-    occurrences_ref_start = find_all_occurrences_re(raw_text, "<ref>")
+    occurrences_ref_start = find_all_occurrences_re(raw_text, "<ref")
     occurrences_ref_end = find_all_occurrences_re(raw_text, "</ref>")
 
     num_refs = min(len(occurrences_ref_end), len(occurrences_ref_start))
@@ -82,20 +81,30 @@ def remove_html_tags(text: str):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', text)
 
-def extract_ref_tags(text):
-    ref_pattern = r'<ref\b[^>]*>(.*?)</ref>'
-    refs = re.findall(ref_pattern, text, flags=re.DOTALL | re.IGNORECASE)
-    return refs if refs else []
 
-def get_info_from_raw_text(raw_text):
+def get_starting_refs(ref_tags, raw_text):
+    # print(ref_tags[:5])
+    current = 0
+    res = []
+    for tag in ref_tags:
+        pos = raw_text.index(str(tag))
+        # print(pos - current, pos, current)
+        if 5 > pos - current >= 0: 
+            res.append(tag)
+            current = pos + len(tag)
+        else: break
+
+    return res
+
+def get_info_from_raw_text(raw_text, tag_name_2_url = {}):
     wikicode = mwparserfromhell.parse(raw_text)
 
     processed_text = wikicode.strip_code()
     # external_urls = wikicode.filter_external_links()python
 
-    ref_tags = extract_ref_tags(raw_text) #[tag for tag in wikicode.filter_tags(matches=lambda node: node.tag == 'ref')]
-    # print(ref_tags)
-    external_urls = [extract_urls(str(tag_text)) for tag_text in ref_tags] # basically, just get 
+    # ref_tags = extract_ref_tags(raw_text) #[tag for tag in wikicode.filter_tags(matches=lambda node: node.tag == 'ref')]
+    ref_tags = get_starting_refs([tag for tag in wikicode.filter_tags(matches=lambda node: node.tag == 'ref')], raw_text)
+    external_urls = [extract_urls(tag, tag_name_2_url) for tag in ref_tags] # basically, just get 
     external_urls = [url for url in external_urls if url]
 
     # external_urls = [url for url in external_urls] # if "web.archive.org" not in url]
@@ -109,13 +118,22 @@ def process_wikilinks_and_replace_ref(raw_text: str):
     wikicode = mwparserfromhell.parse(raw_text)
 
     # STEP0: replace ref
+    tag_name_2_url = {}
     placeholder_mapper = {}
     for i, node in enumerate(wikicode.filter_tags(matches=lambda node: node.tag == 'ref')):
         ref_string = str(node)
         to_replace = f"[REF-{i}]"
         placeholder_mapper[to_replace] = ref_string
-
         wikicode.replace(node, to_replace)
+
+        try:
+            tag_name = node.get("name")
+            urls = _extract_urls_from_text(str(node.contents))
+            if urls:
+                tag_name_2_url[str(tag_name)] = urls
+        except ValueError:
+            pass
+
 
     # STEP1: processing the templates
     templates_to_replace = {}
@@ -165,9 +183,10 @@ def process_wikilinks_and_replace_ref(raw_text: str):
     for k, v in templates_to_replace.items():
         str_wikicode = str_wikicode.replace(k, v)
 
-    return str_wikicode, placeholder_mapper
+    return str_wikicode, placeholder_mapper, tag_name_2_url
 
-def extract_urls(text):
+
+def _extract_urls_from_text(text):
     if not text: return None
     url_pattern = r'https?://[\w\-.]+(?:\.[a-z]{2,})+(?:/[\w\-.~:/?#[\]@!$&\'()*+,;=%]*)?'
     urls = re.findall(url_pattern, text)
@@ -180,6 +199,21 @@ def extract_urls(text):
     return urls[0] if urls else None
 
 
+def extract_urls(tag, tag_name_2_url = {}):
+
+    text = str(tag.contents)
+    res = _extract_urls_from_text(text)
+
+    if res: return res
+
+    if tag_name_2_url:
+        try: 
+            tag_name = str(tag.get("name"))
+            return tag_name_2_url.get(tag_name)
+        except ValueError: return None
+    else: return None
+
+
 def put_back_ref(sentence, placeholder_mapper):
     for k in placeholder_mapper:
         if k in sentence:
@@ -187,15 +221,10 @@ def put_back_ref(sentence, placeholder_mapper):
 
     return sentence
 
-
-def main():
-    parser = ArgumentParser()
-    parser.add_argument("--step0_output_folder", type = str)
-    parser.add_argument("--step1_output_folder", type = str)
-
-    args = parser.parse_args()
-    input_folder = args.step0_output_folder
-    output_folder = args.step1_output_folder
+@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
+def main(cfg:DictConfig):
+    input_folder = cfg.step0.output_folder
+    output_folder = cfg.step1.output_folder
 
     files = os.listdir(input_folder)
     files = [file for file in files if file.endswith('.json')]
@@ -205,30 +234,21 @@ def main():
     for input_file_path, output_file_path in tqdm(zip(input_files_full_path, output_files_full_path), total = len(input_files_full_path)):
 
         wiki_page_data = read_json_or_jsonl(input_file_path)
-        wiki_raw_text = wiki_page_data.get("source")
-        wiki_raw_text, placeholder_mapper = process_wikilinks_and_replace_ref(wiki_raw_text)
+        wiki_raw_text = slight_text_processing(wiki_page_data.get("source"))
+        wiki_raw_text, placeholder_mapper, tag_name_2_url = process_wikilinks_and_replace_ref(wiki_raw_text)
 
 
         raw_facts = []
-        wiki_raw_text = slight_text_processing_before_tokenizing(wiki_raw_text)
         wiki_raw_text_sentences = [put_back_ref(sent, placeholder_mapper) for sent in sent_tokenize(wiki_raw_text)]
 
-        wiki_info_sentences = [get_info_from_raw_text(raw) for raw in wiki_raw_text_sentences]
-        wiki_reference_count_sentences = [ref_tag_count(raw) for raw in wiki_raw_text_sentences]
-        wiki_reference_at_start_sentences = [ref_at_sentence_start(raw) for raw in wiki_raw_text_sentences]
+        wiki_info_sentences = [get_info_from_raw_text(raw, tag_name_2_url) for raw in wiki_raw_text_sentences]
 
 
         extracted_sentences = [item["text"] for item in wiki_info_sentences]
 
         for i in range(1, len(wiki_raw_text_sentences)):
-            if wiki_reference_count_sentences[i] == 0: continue
 
-            if wiki_reference_at_start_sentences[i] is not True: continue
-
-            reference_urls = wiki_info_sentences[i]["urls"][:wiki_reference_count_sentences[i]]
-            # print(reference_urls)
-            # filtering of reference_urls
-            # print([[bad_domain for bad_domain in BAD_DOMAINS if bad_domain in item] for item in reference_urls])
+            reference_urls = wiki_info_sentences[i]["urls"]
             reference_urls = [item for item in reference_urls if not any([bad_domain in item for bad_domain in BAD_DOMAINS])]
             if not reference_urls: continue
 

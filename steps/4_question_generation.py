@@ -9,7 +9,8 @@
 #     }
 # }
 
-import os, json
+import os, json, hydra
+from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
 from utils.generic import read_json_or_jsonl, write_to_json
@@ -23,7 +24,7 @@ def generate_question(modified_fact):
     user_prompt = user_prompt.replace("[ADD_FACT_HERE]", modified_fact)
 
     resp = OPENAI_CLIENT["client"].chat.completions.create(
-        model="gpt-4o",
+        model=OPENAI_CLIENT["model"],
         messages=[
             {
                 "role": "system",
@@ -41,22 +42,29 @@ def generate_question(modified_fact):
     result = resp.choices[0].message.content.strip()
     return result
 
+@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
+def main(cfg: DictConfig):
+    # parser = ArgumentParser()
+    # parser.add_argument("--step2_2_output_folder", type = str, required = True)
+    # parser.add_argument("--step3_output_folder", type = str, required = True)
+    # parser.add_argument("--step4_output_folder", type = str, required = True)
+    # parser.add_argument("--openai_api_key", type = str, required = True,
+    #                     help = "OpenAI API key")
 
-def main():
-    parser = ArgumentParser()
-    parser.add_argument("--step2_2_output_folder", type = str, required = True)
-    parser.add_argument("--step3_output_folder", type = str, required = True)
-    parser.add_argument("--step4_output_folder", type = str, required = True)
-    parser.add_argument("--openai_api_key", type = str, required = True,
-                        help = "OpenAI API key")
+    # args = parser.parse_args()
+    decontextualized_facts_folder = cfg.step2_2.output_folder
+    fact_groundedness_folder = cfg.step3.output_folder
+    output_folder = cfg.step4.output_folder
 
-    args = parser.parse_args()
-    decontextualized_facts_folder = args.step2_2_output_folder
-    fact_groundedness_folder = args.step3_output_folder
-    output_folder = args.step4_output_folder
-    openai_api_key = args.openai_api_key
+    local_llm_port = cfg.general.local_llm_port
+    local_llm_model = cfg.general.local_llm_model
 
-    init_client(openai_api_key)
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+
+    init_client(openai_api_key, 
+                local = local_llm_port is not None, 
+                port = local_llm_port, 
+                model_name = local_llm_model)
 
     files = os.listdir(decontextualized_facts_folder)
     files = [file for file in files if file.endswith('.json')]
@@ -82,8 +90,8 @@ def main():
         groundedness_check = {tuple(k.split("--__--")): v for k,v in groundedness_check.items()}
         good_facts = set([])
         for k, v in groundedness_check.items():
-            if v == 1:
-                good_facts.add(int(k[0]))
+            # if v == 1:
+            good_facts.add(int(k[0]))
 
         print(good_facts)
         modified_fact_mapper = {int(k): v for k,v in modified_fact_mapper.items()}

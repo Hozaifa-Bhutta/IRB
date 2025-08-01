@@ -1,8 +1,10 @@
 import string
 from bs4 import BeautifulSoup
-from english_words import get_english_words_set
 
-WEB2LOWERSET = get_english_words_set(['web2'], lower=True)
+with open("data/words_alpha.txt") as f:
+    WEB2LOWERSET = set()
+    for line in f:
+        WEB2LOWERSET.add(line.strip().lower())
 
 FEATURE = "html.parser"
 
@@ -39,17 +41,20 @@ def convert_text_to_soup(source: str, feature: str = FEATURE):
     
 
 def check_chunk(chunk: str, min_chunk_length: int, max_chunk_length: int):
+    # return True
     # this is a heuristic function to check if a chunk is good or not
 
     # firstly, split the chunk into even smaller text segments using newline
-    segments = chunk.split("\n")
-    is_long_segments = all([max_chunk_length >= len(segment.split()) >= min_chunk_length for segment in segments])
-    if not is_long_segments: return False
+    # segments = chunk.split("\n")
+    # is_long_segments = all([max_chunk_length >= len(segment.split()) >= min_chunk_length for segment in segments])
+    # if not is_long_segments: return False
 
-    # then, check if they contain mostly english words, let's use a threshold of 60%
+    if not max_chunk_length >= len(chunk.split()) >= min_chunk_length: return False
+
+    # then, check if they contain mostly english words, let's use a threshold of 50%
     words = [word.strip().strip(string.punctuation) for word in chunk.lower().split()]
     count_english_words = len([word for word in words if word in WEB2LOWERSET])
-    is_english = (count_english_words / len(words)) >= 0.6
+    is_english = (count_english_words / len(words)) >= 0.5
 
     if not is_english: return False
 

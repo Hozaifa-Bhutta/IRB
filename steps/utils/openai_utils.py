@@ -11,11 +11,21 @@ OPENAI_EMBEDDING = {
 }
 
 
-def init_client(openai_api_key):
+def init_client(openai_api_key, local = False, port = None, model_name = None):
     if OPENAI_CLIENT["client"] is None:
         print("Initializing OpenAI client")
-        client = OpenAI(api_key=openai_api_key)
+        if not local:
+            assert openai_api_key is not None
+            client = OpenAI(api_key=openai_api_key)
+            model = "gpt-4o"
+        else:
+            client = OpenAI(api_key="test", base_url=f"http://localhost:{port}/v1")
+            model = model_name
+        
+        
         OPENAI_CLIENT["client"] = client
+        OPENAI_CLIENT["model"] = model
+
 
 
 def init_openai_embedding(openai_api_key, 

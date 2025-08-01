@@ -8,49 +8,47 @@ OPENAI_API_KEY=***
 
 mkdir "${INTERMEDIATE_RESULTS_FOLDER}/step0"
 python steps/0_wiki_dump_processing.py \
---input_file $WIKI_DUMP_FILE \
---step0_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step0" 
+step0.input_file="${WIKI_DUMP_FILE}" \
+step0.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step0" 
 
 
 
 mkdir "${INTERMEDIATE_RESULTS_FOLDER}/step1"
 python steps/1_fact_extraction.py \
---step0_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step0" \
---step1_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step1"
+step0.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step0"  \
+step1.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step1"
 
 mkdir "${INTERMEDIATE_RESULTS_FOLDER}/step2_1"
 python steps/2_1_url_content_crawling.py \
---step1_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step1" \
---step2_1_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_1"
+step1.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step1" \
+step2_1.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step2_1"
 
 
 mkdir "${INTERMEDIATE_RESULTS_FOLDER}/step2_2"
 python steps/2_2_fact_decontextualization.py \
---step1_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step1" \
---step2_1_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_1" \
---step2_2_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
---openai_api_key $OPENAI_API_KEY
+step1.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step1" \
+step2_1.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step2_1" \
+step2_2.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step2_2"
 
 mkdir "${INTERMEDIATE_RESULTS_FOLDER}/step3"
 python steps/3_fact_groundedness_check.py \
---step1_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step1" \
---step2_1_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_1" \
---step2_2_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
---step3_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step3"
+step1.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step1" \
+step2_1.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_1" \
+step2_2.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
+step3.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step3"
 
 mkdir "${INTERMEDIATE_RESULTS_FOLDER}/step4"
 python steps/4_question_generation.py \
---step2_2_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
---step3_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step3" \
---step4_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step4" \
---openai_api_key $OPENAI_API_KEY
+step2_2.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
+step3.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step3" \
+step4.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step4"
 
 rm -r "${INTERMEDIATE_RESULTS_FOLDER}/step5"
 mkdir "${INTERMEDIATE_RESULTS_FOLDER}/step5"
 python steps/5_combine_results.py \
---step1_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step1" \
---step2_1_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_1" \
---step2_2_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
---step3_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step3" \
---step4_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step4" \
---step5_output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step5"
+step1.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step1" \
+step2_1.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_1" \
+step2_2.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
+step3.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step3" \
+step4.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step4" \
+step5.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step5"
