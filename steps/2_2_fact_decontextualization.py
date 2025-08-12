@@ -59,15 +59,7 @@ def create_molecular_fact(fact: int,
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig):
-    # parser = ArgumentParser()
-    # parser.add_argument("--step1_output_folder", type = str, required = True)
-    # parser.add_argument("--step2_1_output_folder", type = str, required = True)
-    # parser.add_argument("--step2_2_output_folder", type = str, required = True)
-    # parser.add_argument("--context_window_size", type = int, default = cfg.step2_2.context_window_size)
-    # parser.add_argument("--openai_api_key", type = str, required = True,
-    #                     help = "OpenAI API key")
 
-    # args = parser.parse_args()
 
     extracted_facts_folder = cfg.step1.output_folder
     crawled_url_content_folder = cfg.step2_1.output_folder

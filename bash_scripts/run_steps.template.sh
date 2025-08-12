@@ -32,23 +32,23 @@ step2_2.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step2_2"
 
 mkdir "${INTERMEDIATE_RESULTS_FOLDER}/step3"
 python steps/3_fact_groundedness_check.py \
-step1.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step1" \
-step2_1.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_1" \
-step2_2.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
-step3.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step3"
+step1.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step1" \
+step2_1.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step2_1" \
+step2_2.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
+step3.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step3"
 
 mkdir "${INTERMEDIATE_RESULTS_FOLDER}/step4"
 python steps/4_question_generation.py \
-step2_2.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
-step3.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step3" \
-step4.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step4"
+step2_2.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
+step3.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step3" \
+step4.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step4"
 
 rm -r "${INTERMEDIATE_RESULTS_FOLDER}/step5"
 mkdir "${INTERMEDIATE_RESULTS_FOLDER}/step5"
 python steps/5_combine_results.py \
-step1.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step1" \
-step2_1.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_1" \
-step2_2.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
-step3.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step3" \
-step4.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step4" \
-step5.output_folder "${INTERMEDIATE_RESULTS_FOLDER}/step5"
+step1.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step1" \
+step2_1.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step2_1" \
+step2_2.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step2_2" \
+step3.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step3" \
+step4.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step4" \
+step5.output_folder="${INTERMEDIATE_RESULTS_FOLDER}/step5"

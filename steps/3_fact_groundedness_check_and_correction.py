@@ -12,8 +12,8 @@
     }
 }
 
-import os
-from argparse import ArgumentParser
+import os, hydra, re
+from omegaconf import DictConfig
 from utils.generic import read_json_or_jsonl, write_to_json
 from minicheck.minicheck import MiniCheck
 from tqdm import tqdm
@@ -62,6 +62,11 @@ def groundedness_check(raw_facts: list,
     return res
 
 
+def content_truncation(url_content):
+    words = re.split(r'\s+', url_content.strip())
+    return " ".join(words[:5000])
+
+
 def fact_correction_func(all_modified_facts, url_content):
     system_prompt = """The following claim is either not fully supported, or is contradicted by the context. Revise the claim so that all information 
     is fully supported by the context. If any information cannot be found in the context, remove it. Make only minimal changes to the original 
@@ -72,12 +77,12 @@ def fact_correction_func(all_modified_facts, url_content):
     {';'.join(all_modified_facts)}
     
     URL Content:
-    {url_content}
+    {content_truncation(url_content)}
 
 Now try to correct the fact."""
 
     resp = OPENAI_CLIENT["client"].chat.completions.create(
-        model="gpt-4o",
+        model=OPENAI_CLIENT["model"],
         messages=[
             {
                 "role": "system",
@@ -123,7 +128,7 @@ def groundedness_check_and_correct_facts(raw_facts: list,
             if not modified_fact_from_previous_attempts or not url_content: continue
 
             print(modified_fact_from_previous_attempts)
-            modified_fact_this_attempt = fact_correction_func(modified_fact_from_previous_attempts, url_content)
+            modified_fact_this_attempt = fact_correction_func(modified_fact_from_previous_attempts, url_content.get("url_content"))
 
             this_step_modified_fact_mapper[fact_id] = modified_fact_this_attempt
 
@@ -160,23 +165,24 @@ def groundedness_check_and_correct_facts(raw_facts: list,
 
 
 
+@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
+def main(cfg: DictConfig):
 
-def main():
-    parser = ArgumentParser()
-    parser.add_argument("--step1_output_folder", type = str, required = True)
-    parser.add_argument("--step2_1_output_folder", type = str, required = True)
-    parser.add_argument("--step2_2_output_folder", type = str, required = True)
-    parser.add_argument("--step3_output_folder", type = str, required = True)
-
-    args = parser.parse_args()
-
-    extracted_facts_folder = args.step1_output_folder
-    crawled_url_content_folder = args.step2_1_output_folder
-    decontextualized_facts_folder = args.step2_2_output_folder
-    output_folder = args.step3_output_folder
+    extracted_facts_folder = cfg.step1.output_folder
+    crawled_url_content_folder = cfg.step2_1.output_folder
+    decontextualized_facts_folder = cfg.step2_2.output_folder
+    output_folder = cfg.step3.output_folder
+    local_llm_port = cfg.general.local_llm_port
+    local_llm_model = cfg.general.local_llm_model
 
     init_minicheck(cache_dir="/scratch/lamdo/minicheck_ckpts")
-    init_client(os.getenv("OPENAI_API_KEY"))
+    
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+
+    init_client(openai_api_key, 
+                local = local_llm_port is not None, 
+                port = local_llm_port, 
+                model_name = local_llm_model)
 
     files = os.listdir(extracted_facts_folder)
     files = [file for file in files if file.endswith('.json')]

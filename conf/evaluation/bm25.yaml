@@ -1,0 +1,21 @@
+general:
+  work_dir: null
+  dataset: null
+  retrieval_metadata_path: null
+  retrieval_model: bm25
+
+retrieval:
+  index:
+    outfolder: null
+    chunk_size: 200
+    chunk_overlap: 20
+  eval:
+    index_folder: null
+    batch_size: 32
+    threads: 8
+
+
+qa:
+  outfolder: null
+  local_llm_port: null
+  local_llm_model: null

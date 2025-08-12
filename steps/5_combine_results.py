@@ -2,10 +2,47 @@
 # the input include: output of steps 1, 2_1, 2_2, 3, 4
 
 import os, hydra
+import pandas as pd
 from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
-from utils.generic import read_json_or_jsonl, write_to_jsonl, write_to_json
+from utils.generic import read_json_or_jsonl, write_to_jsonl, write_to_json, maybe_create_folder
+
+
+
+def process_qrels(qrels):
+    qrels_lines = []
+    for qid in qrels:
+        for pid in qrels[qid]:
+            to_append = {
+                "query-id": qid,
+                "corpus-id": pid,
+                "score": qrels[qid][pid]
+            }
+            qrels_lines.append(to_append)
+
+    return pd.DataFrame(qrels_lines)
+
+
+def filter_qrels_based_on_num_citations(qrels, ef_data):
+    groups = {
+        1: {}, 2: {}, 3: {}
+    }
+
+    raw_facts = ef_data.get("raw_facts")
+    title = ef_data.get("title")
+    for fact in raw_facts:
+        fact_id = fact.get("fact")
+        citation_urls = fact.get("citation_urls")
+        qid = f"{title}--{fact_id}"
+        if len(citation_urls) > 3: continue
+
+        groups[len(citation_urls)][qid] = qrels[qid]
+
+    return groups
+
+
+
 
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
@@ -29,6 +66,7 @@ def main(cfg: DictConfig):
     corpus = []
     answers = []
     qrels = {}
+    qrels_num_citations = {1:{}, 2:{}, 3:{}}
     for ef_file_path, cuc_file_path, dff_file_path, fgf_file_path, qg_file_path in tqdm(zip(extracted_facts_files_full_path, 
                                                                                                             crawled_url_content_files_full_path, 
                                                                                                             decontextualized_facts_files_full_path,
@@ -72,7 +110,10 @@ def main(cfg: DictConfig):
 
                 corpus.append({"_id": url, "title": "", "text": content})
 
-                qrels[query_id][url] = groundedness_check.get(f"{fact_id}--__--{url}", 0)
+                qrels[query_id][url] = groundedness_check.get(f"{fact_id}--__--{url}", 0) + 1
+            
+            if len(citation_urls) in [1,2,3]:
+                qrels_num_citations[len(citation_urls)][query_id] = qrels[query_id]
 
         for fact_id, modified_fact in modified_fact_mapper.items():
             fact_id = int(fact_id)
@@ -87,7 +128,24 @@ def main(cfg: DictConfig):
     write_to_jsonl(corpus, os.path.join(output_folder, "corpus.jsonl"))
     write_to_jsonl(queries, os.path.join(output_folder, "queries.jsonl"))
     write_to_jsonl(answers, os.path.join(output_folder, "answers.jsonl"))
-    write_to_json(qrels, os.path.join(output_folder, "qrels.json"))
+
+    df_qrels = process_qrels(qrels)
+    maybe_create_folder(os.path.join(output_folder, "qrels"))
+    df_qrels.to_csv(os.path.join(output_folder, "qrels", "test.tsv"), sep='\t', index=False)
+
+    # group queries and answers by specific number of documents
+
+    for length in [1,2,3]:
+        maybe_create_folder(os.path.join(output_folder, f"{length}_citations"))
+        maybe_create_folder(os.path.join(output_folder, f"{length}_citations", "qrels"))
+        df_qrels = process_qrels(qrels_num_citations[length])
+
+        df_qrels.to_csv(os.path.join(output_folder, f"{length}_citations", "qrels", f"test_{length}.tsv"), sep='\t', index=False)
+
+        answers_grouped = [line for line in answers if line["_id"] in qrels_num_citations[length]]
+        queries_grouped = [line for line in queries if line["_id"] in qrels_num_citations[length]]
+        write_to_jsonl(answers_grouped, os.path.join(output_folder, f"{length}_citations", f"answers.jsonl"))
+        write_to_jsonl(queries_grouped, os.path.join(output_folder, f"{length}_citations", f"queries.jsonl"))
 
 
 if __name__ == "__main__":
