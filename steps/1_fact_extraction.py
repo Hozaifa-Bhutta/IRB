@@ -9,9 +9,12 @@
 #         {
 #             "fact": "the sentence id",
 #             "citation_urls": ["url1", "url2"],
+#             "position": [0, 1] 
 #         }
 #     ]
 # }
+
+
 
 import json, re, mwparserfromhell, os, hydra
 from omegaconf import DictConfig
