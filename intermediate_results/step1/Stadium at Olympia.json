@@ -1,0 +1,54 @@
+{
+    "title": "Stadium at Olympia",
+    "wiki_url": "https://en.wikipedia.org/?curid=10000605",
+    "extracted_sentences": [
+        "The Stadium at Olympia (also called the Olympia Stadium or the Olympia Stadion) is an ancient stadium at the archaeological site of Olympia, Greece, located to the east of the sanctuary of Zeus.",
+        "It was the location of many of the sporting events at the Ancient Olympic Games.",
+        "During the 2004 Summer Olympics, it hosted the shot put events  .",
+        "The physical landmarks of the stadium are long and wide, and it served mainly for running races that determined the fastest person in the world.",
+        "The track was made of hard-packed clay to serve as traction for the contestants in the running events .",
+        " As in current day athletics, a white block was placed on one end of the track where the athletes would line up to place their feet and got ready to start of the race .",
+        " The white block was used to align all the athletes so they would all run the same distance .",
+        "Stadium of Delphi\nCategory:Ancient Greek buildings and structures\nCategory:Ancient Olympia\nCategory:Olympic athletics venues\nCategory:Sports venues in Greece\nCategory:Stadiums\nCategory:Venues of the 2004 Summer Olympics"
+    ],
+    "raw_facts": [
+        {
+            "fact": 2,
+            "citation_urls": [
+                "https://www.arabnews.com/sports/news/913701",
+                "https://www.theguardian.com/sport/2004/aug/19/athensolympics2004.athletics2"
+            ],
+            "pos": [
+                0,
+                0
+            ]
+        },
+        {
+            "fact": 4,
+            "citation_urls": [
+                "http://www.olympia-greece.org/stadium1.html"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 5,
+            "citation_urls": [
+                "https://www.worldhistory.org/image/428/"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 6,
+            "citation_urls": [
+                "http://www.olympia-greece.org/stadium1.html"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

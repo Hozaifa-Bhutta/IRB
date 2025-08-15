@@ -1,0 +1,25 @@
+{
+    "title": "NCAA Division I men's basketball conference tournaments",
+    "wiki_url": "https://en.wikipedia.org/?curid=10003984",
+    "extracted_sentences": [
+        "A conference tournament in college basketball is a tournament held at the end of the regular season to determine a conference tournament champion.",
+        "It is usually held in four rounds, but can vary, depending on the conference.",
+        "All Division I Conferences hold a conference tournament.",
+        "Winners of each tournament get an automatic bid to the NCAA Tournament .",
+        " Since 2006, the top seed in each conference tournament, regardless of how they perform, has been guaranteed an automatic bid to either the National Invitation Tournament, if they fail to win the conference tournament, or the conference's automatic bid if they are successful.",
+        "(Conferences are only permitted to stage postseason tournaments if the tournament winner receives the conference's sole automatic NCAA bid.)",
+        "The process is identical for women's basketball, with the exception that the Women's National Invitation Tournament (which does not operate as an official NCAA tournament, unlike its men's counterpart) guarantees an automatic bid to all 32 conferences as well, with the highest-ranking team in each conference that did not reach the NCAA tournament receiving the automatic bid to the NIT.",
+        "Championship week\nList of NCAA Division I men's basketball conference tournament champions"
+    ],
+    "raw_facts": [
+        {
+            "fact": 3,
+            "citation_urls": [
+                "https://www.ncaa.com/news/basketball-men/article/2022-03-13/2022-ncaa-conference-tournaments-schedules-brackets-scores-auto-bids"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

@@ -1,0 +1,34 @@
+{
+    "title": "Mycobacterium lentiflavum",
+    "wiki_url": "https://en.wikipedia.org/?curid=10002405",
+    "extracted_sentences": [
+        "{{Speciesbox\n| image = Bilateral fibrosis and pleural thickening in an infection with non-tuberculosis mycobacteria (2 projections).png\n| image_caption = Fibrothorax caused by infection with M lentiflavum.",
+        "| taxon = Mycobacterium lentiflavum\n| authority = Springer et al 1996, ATCC 51985\n}}\nMycobacterium lentiflavum\nEtymology: Lentus from Latin for slow, flavus, Latin for yellow.",
+        "Gram-positive, nonmotile and acid-fast coccobacilli.",
+        "Colony characteristics\nSmooth colonies, with bright yellow pigmentation 1-2mm in diameter.",
+        "Physiology\nSlow growth on Lowenstein-Jensen medium at temperatures between 22 degC and 37 degC within 3-4 weeks.",
+        "Generally resistant to isoniazid, rifampin, ethambutol and streptomycin.",
+        "Differential characteristics\nPhylogenetic analysis, based on an evaluation of 16S rDNA sequences, places M. lentiflavum in an intermediate position between rapidly and slowly growing mycobacteria, closely related to Mycobacterium simiae and Mycobacterium genavense.",
+        "In young children with cervical lymphadenitis and in immunocompromised patientsMolteni C, Gazzola L, Cesari M, Lombardi A, Salerno F, Tortoli E, et al Mycobacterium lentiflavum infection in immunocompetent patient. Emerg Infect Dis. 2005 Jan.\nOne case of vertebral osteomyelitis reported\nBiosafety level 2\nFirst isolated from a patient with spondylodiscitis (vertebral osteomyelitis).",
+        "Further isolates from clinical specimens were obtained due to the use of contaminated bronchoscopes.",
+        "Also recovered from gastric juice, sputum and urine samples.",
+        "Strain 2186/92 = ATCC 51985 = CCUG 42422 = CCUG 42559 = CIP 105465 = DSM 44418 = JCM 13390.",
+        "Springer et al 1996.",
+        "Isolation and characterization of a unique group of slowly growing mycobacteria: description of Mycobacterium lentiflavum sp.",
+        "nov. J. Clin.",
+        "Microbiol.",
+        "34, 1100-1107.",
+        "Type strain of Mycobacterium lentiflavum at BacDive - the Bacterial Diversity Metadatabase\nCategory:Acid-fast bacilli\nlentiflavum\nCategory:Bacteria described in 1996"
+    ],
+    "raw_facts": [
+        {
+            "fact": 7,
+            "citation_urls": [
+                "https://www.cdc.gov/ncidod/EID/vol11no01/04-0523.htm"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

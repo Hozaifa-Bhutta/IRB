@@ -1,0 +1,22 @@
+{
+    "title": "Diablo Valley",
+    "wiki_url": "https://en.wikipedia.org/?curid=10000244",
+    "extracted_sentences": [
+        "The Diablo Valley refers to a valley in the East Bay of the San Francisco Bay Area, to the west/northwest of Mount Diablo .",
+        " The valley contains the cities of Clayton, Concord, Martinez, Pleasant Hill (home to Diablo Valley College), most of Walnut Creek (The southern end is a part of the San Ramon Valley) and the CDP of Pacheco.",
+        "The Diablo Valley has a diverse population both ethnically, and socio-economically.",
+        "West of the Diablo Valley lies the Briones Regional Park and the Lamorinda area.",
+        "Category:Valleys of Contra Costa County, California\nCategory:Landforms of the San Francisco Bay Area\nCategory:Valleys of California"
+    ],
+    "raw_facts": [
+        {
+            "fact": 0,
+            "citation_urls": [
+                "https://web.archive.org/web/20130328195056/http://geology.about.com/od/geophoto_tours/ig/San-Francisco-Bay-Geo-Photos/diablofoothills.htm"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

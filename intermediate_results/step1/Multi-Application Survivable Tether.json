@@ -1,0 +1,122 @@
+{
+    "title": "Multi-Application Survivable Tether",
+    "wiki_url": "https://en.wikipedia.org/?curid=10001676",
+    "extracted_sentences": [
+        "The Multi-Application Survivable Tether (MAST) experiment was an in-space investigation designed to use CubeSat spacecraft connected by tethers to better understand the survivability of tethers in space Robert Hoyt, Jeffrey Slostad, and Robert Twiggs, \"The Multi-application Survivable Tether (MAST) Experiment ,\" paper AIAA-2003-5219 presented at the 39th AIAAA/SME/SAE/ASEE Joint Propulsion Conference and Exhibit, Huntsville AL, July 2003.",
+        " It was launched as a secondary payload on a Dnepr rocket on 17 April 2007 into a 98deg, 647 x 782 km orbit.",
+        "The MAST payload incorporated three picosatellites, named \"Ralph,\" \"Ted,\" and \"Gadget,\" which were intended to separate and deploy a tether.",
+        "The experiment hardware was designed under a NASA Small Business Technology Transfer (STTR) collaboration between Tethers Unlimited, Inc. (TUI) (which is now part of the Arka Corporation) and Stanford University, with TUI developing the tether, tether deployer, tether inspection subsystem, satellite avionics, and software, and Stanford students developing the satellite structures and assisting with the avionics design .",
+        "The experiment is currently on-orbit.",
+        "After launch, as of 25 April 2007, TUI had made contact with the \"Gadget\" picosatellite, but not with \"Ted\", the tether-deployer picosatellite, or \"Ralph,\" the end mass .",
+        "The MAST experiment consists of three CubeSats (3U) launched together as a stack .",
+        " The entire stack was about the size of a loaf of bread Kelly Young, \"No signal yet heard from tether-deploying satellite,\" New Scientist, 25 April 2007 (accessed 16 February 2012).",
+        "Gadget\nThe middle satellite in the stack, called \"Gadget\", is the tether inspector.",
+        "Gadget was designed to slowly crawl up and down the tether after deployment, acquiring images as it moves .",
+        " As of 9 May 2007, the MAST team has downloaded over 1 MB of data from Gadget.",
+        "Gadget's GPS receiver has acquired an almanac from the GPS satellites, but apparently has not yet achieved a trajectory solution.",
+        "Ted\n\"Ted\", the tether deployer satellite, is at one end of the stack.",
+        "Researchers were unable to establish contact with Ted, and remain uncertain of its status.",
+        "Ralph\n\"Ralph\" is at the other end of the stack, and is described as simply a \"tether endmass\".",
+        "Its design did include a radio, but the groundstation has not received any signals from Ralph.",
+        "They think Ralph's battery charge has dropped below the level needed to sustain radio operation .",
+        "The experimenter team made contact with the \"Gadget\" picosatellite, but not with \"Ted\", the tether-deployer picosatellite, because the Ted pico satellite was powered only by a primary battery, which had depleted by the time the team gained access to the ground station .",
+        " While the system was designed so that the satellites would separate even if communications were not established to the tether deployer, the system did not fully deploy.",
+        "Radar measurements show the tether initially deployed just 1 meter,Bryan Klofas, Jason Anderson, and Kyle Leveque, \"A Survey of Cubesat Communications Systems, November 2008 (accessed 16 February 2012).  Analysis of flight data indicated that over a period of a week, an additional 5-10 meters of tether deployed.  The short deployment was traced to a failure of the separation mechanism to eject the \"Ted\" pico satellite at full velocity. Presented at the CubeSat Developers Conference, Cal Poly San Luis Obispo, 10 April 2008R. Hoyt, N. Voronka, T. Newton, I. Barnes, J. Shepherd, S. Frank, and J. Slostad, \"Early Results of the Multi-Application Survivable Tether (MAST) Space Tether Experiment\", Proceedings of the 21st AIAA/USU Conference on Small Satellites, SCC07-VII-8, August 2007. The mission experienced communications challenges due to limited availability of the ground station, which resulted in the team establishing contact with only one of the three pico satellites.",
+        "The team operated the \"Gadget\" picosatellite for nearly two months before terminating the experiment.",
+        "Tether propulsion\nTether satellite\nList of CubeSats\nCategory:Satellites of the United States\nCategory:Spacecraft launched in 2007\nCategory:CubeSats\nCategory:Stanford University\nCategory:Spacecraft launched by Dnepr rockets\nCategory:Satellites orbiting Earth"
+    ],
+    "raw_facts": [
+        {
+            "fact": 0,
+            "citation_urls": [
+                "https://web.archive.org/web/20110517195150/http://www.tethers.com/papers/MASTJPC2003Paper.pdf"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 3,
+            "citation_urls": [
+                "https://arka.org/our-legacy/",
+                "https://web.archive.org/web/20061110091605/http://www.tethers.com/Missions.html"
+            ],
+            "pos": [
+                0,
+                1
+            ]
+        },
+        {
+            "fact": 5,
+            "citation_urls": [
+                "https://web.archive.org/web/20071008083138/http://www.tethers.com/MAST_Blog.html"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 6,
+            "citation_urls": [
+                "https://web.archive.org/web/20110517195150/http://www.tethers.com/papers/MASTJPC2003Paper.pdf"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 7,
+            "citation_urls": [
+                "https://www.newscientist.com/article/dn11716-no-signal-yet-heard-from-tetherdeploying-satellite.html"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 9,
+            "citation_urls": [
+                "https://web.archive.org/web/20110517195150/http://www.tethers.com/papers/MASTJPC2003Paper.pdf"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 13,
+            "citation_urls": [
+                "https://www.newscientist.com/article/dn11716-no-signal-yet-heard-from-tetherdeploying-satellite.html"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 16,
+            "citation_urls": [
+                "http://www.klofas.com/papers/CommSurvey-Bryan_Klofas.pdf"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 17,
+            "citation_urls": [
+                "https://www.newscientist.com/article/dn11716-no-signal-yet-heard-from-tetherdeploying-satellite.html"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 19,
+            "citation_urls": [
+                "http://www.klofas.com/papers/CommSurvey-Bryan_Klofas.pdf"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

@@ -1,0 +1,22 @@
+{
+    "title": "Palmerston County",
+    "wiki_url": "https://en.wikipedia.org/?curid=10005121",
+    "extracted_sentences": [
+        "Palmerston County is one of the five counties in the Northern Territory of Australia which are part of the Lands administrative divisions of Australia.",
+        "It contains the city of Darwin.",
+        "It was proclaimed on 14 September 1871 and divided into hundreds.",
+        "Being on the northern coast of the territory, it is bounded on the north and west by sea, the Adelaide River on the east and on the south by a line at longitude approximately 13deg15' south (from a point adjacent to the southernmost of the Peron Islands to the township of Adelaide River).",
+        "Category:Counties of the Northern Territory"
+    ],
+    "raw_facts": [
+        {
+            "fact": 2,
+            "citation_urls": [
+                "http://www8.austlii.edu.au/au/other/sa_gazette/1871/40.pdf"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

@@ -1,0 +1,107 @@
+{
+    "title": "PSR B1919+21",
+    "wiki_url": "https://en.wikipedia.org/?curid=1000060",
+    "extracted_sentences": [
+        "PSR B1919+21 is a pulsar with a period of 1.3373 seconds and a pulse width of 0.04 seconds.",
+        "Discovered by Jocelyn Bell Burnell on 28 November 1967, it is the first discovered radio pulsar .",
+        " The power and regularity of the signals were briefly thought to resemble an extraterrestrial beacon, leading the source to be nicknamed LGM, later LGM-1 (for \"little green men\") .",
+        "The original designation of this pulsar was CP 1919, which stands for Cambridge Pulsar at RA  .",
+        " It is also known as PSR J1921+2153 and is located in the constellation of Vulpecula.",
+        "In 1967, a radio signal was detected using the Interplanetary Scintillation Array of the Mullard Radio Astronomy Observatory in Cambridge, UK, by Jocelyn Bell Burnell.",
+        "The signal had a -second period (not in 1967, but in 1991) and 0.04-second pulsewidth .",
+        " It originated at celestial coordinates right ascension, +21deg declination.",
+        "It was detected by individual observation of miles of graphical data traces.",
+        "Due to its almost perfect regularity, it was at first assumed to be spurious noise, but this hypothesis was promptly discarded.",
+        "The discoverers jokingly named it little green men 1 (LGM-1), considering that it may have originated from an extraterrestrial civilization, but Bell Burnell soon ruled out extraterrestrial life as a source after discovering a similar signal from another part of the sky .",
+        "The original signal turned out to be radio emissions from the pulsar CP 1919, and was the first one recognized as such.",
+        "Bell Burnell noted that other scientists could have discovered pulsars before her, but their observations were either ignored or disregarded.",
+        "Researchers Thomas Gold and Fred Hoyle identified this astronomical object as a rapidly rotating neutron star immediately upon their announcement.",
+        "Before the nature of the signal was determined, the researchers, Bell Burnell and her PhD supervisor Antony Hewish, considered the possibility of extraterrestrial life: (after-dinner speech given at the Eighth Texas Symposium on Relativistic Astrophysics; first published in )\n<blockquote>\nWe did not really believe that we had picked up signals from another civilization, but obviously the idea had crossed our minds and we had no proof that it was an entirely natural radio emission.",
+        "It is an interesting problem - if one thinks one may have detected life elsewhere in the universe[,] how does one announce the results responsibly?",
+        "Who does one tell first?",
+        "</blockquote>\nWhen Antony Hewish and Martin Ryle received the Nobel Prize in physics in 1974 for their work in radio astronomy and pulsars, Fred Hoyle, Hewish's fellow astronomer, argued that Jocelyn Bell Burnell should have been a co-recipient of the prize .",
+        "In 2018, Bell won the $3-Million Breakthrough Prize in Fundamental Physics for her work .",
+        "The English post-punk band Joy Division used an image of CP 1919's radio pulses on the cover of their 1979 debut album, Unknown Pleasures   .",
+        "German-born British composer Max Richter wrote a piece inspired by the discovery of CP1919 titled Journey (CP1919) .",
+        "The English indie rock band Arctic Monkeys used a sound based on the pulses in their music video for \"Four Out of Five  from 0:16-0:45 and 2:57-3:13.  from 0:05-1:16.",
+        "\"\nVariable star\nCategory:Rotation-powered pulsars\nCategory:Vulpecula\nCategory:Astronomical objects discovered in 1967\nLGM-1"
+    ],
+    "raw_facts": [
+        {
+            "fact": 1,
+            "citation_urls": [
+                "http://www.edn.com/electronics-blogs/edn-moments/4402048/Pulsar-is-1st-observed--November-28--1967"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 2,
+            "citation_urls": [
+                "https://www.aps.org/publications/apsnews/200602/history.cfm"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 10,
+            "citation_urls": [
+                "https://www.aps.org/publications/apsnews/200602/history.cfm"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 14,
+            "citation_urls": [
+                "http://www.bigear.org/vol1no1/burnell.htm"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 17,
+            "citation_urls": [
+                "https://www.nytimes.com/2003/10/20/opinion/no-nobel-prize-for-whining.html"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 18,
+            "citation_urls": [
+                "https://www.scientificamerican.com/article/pulsar-discoverer-jocelyn-bell-burnell-wins-3-million-breakthrough-prize1/"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 19,
+            "citation_urls": [
+                "http://adamcap.com/2011/05/19/history-of-joy-division-unknown-pleasures-album-art/",
+                "http://www.joydiv.org/up.htm",
+                "http://blogs.scientificamerican.com/sa-visual/pop-culture-pulsar-origin-story-of-joy-division-8217-s-unknown-pleasures-album-cover-video/"
+            ],
+            "pos": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "fact": 20,
+            "citation_urls": [
+                "https://www.maxrichtermusic.com/2019/05/16/journey-cp1919-performed-by-aurora-orchestra/"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

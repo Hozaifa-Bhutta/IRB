@@ -9,7 +9,7 @@
 #         {
 #             "fact": "the sentence id",
 #             "citation_urls": ["url1", "url2"],
-#             "position": [0, 1] 
+#             "pos": [0, 1]
 #         }
 #     ]
 # }
@@ -26,7 +26,7 @@ from utils.generic import read_json_or_jsonl, write_to_json
 from utils.bad_domains import BAD_DOMAINS
 
 
-
+# this function cleans up text
 clean_text_func = lambda text: clean(text,
     fix_unicode=True,               # fix various unicode errors
     to_ascii=True,                  # transliterate to closest ASCII representation
@@ -37,61 +37,23 @@ clean_text_func = lambda text: clean(text,
 
 
 def slight_text_processing(wiki_raw_text: str):
-    res = wiki_raw_text.replace(",<ref", ".<ref")
-    res = res.replace("et al.", "et al")
+    """removes period after et al."""
+
+    # IMPORTANT CHANGE: Removed this piece of code to take into account middle citations
+    # res = wiki_raw_text.replace(",<ref", ".<ref")  
+
+    res = wiki_raw_text.replace("et al.", "et al") # et al. should not be the end of the sentence
 
     return res
-
-
-def find_all_occurrences_re(main_string, pattern):
-    positions = []
-    for match in re.finditer(pattern, main_string):
-        positions.append(match.start())
-    return positions
-
-
-def ref_tag_count(raw_text: str):
-    # count_beginning = raw_text.count("<ref>")
-    # count_end = raw_text.count("</ref>")
-    # return min(count_beginning, count_end)
-
-    occurrences_ref_start = find_all_occurrences_re(raw_text, "<ref")
-    occurrences_ref_end = find_all_occurrences_re(raw_text, "</ref>")
-
-    num_refs = min(len(occurrences_ref_end), len(occurrences_ref_start))
-
-    if num_refs <= 1: return num_refs
-
-    res = 1
-    for i in range(1, num_refs):
-        current_start= occurrences_ref_start[i]
-        previous_end = occurrences_ref_end[i - 1]
-
-        if current_start - previous_end > (5 + len("</ref>")): break
-        res += 1
-
-    return res
-
-def ref_at_sentence_start(raw_text: str):
-    # check if reference tag is at the start of the sentence
-    try:
-        return 0 <= raw_text.index("<ref>") < 5
-    except ValueError:
-        return -1
-
-
-def remove_html_tags(text: str):
-    clean = re.compile('<.*?>')
-    return re.sub(clean, '', text)
-
 
 def get_starting_refs(ref_tags, raw_text):
-    # print(ref_tags[:5])
+    """
+    Inputs: ref_tags (list of reference tags), raw_text (raw sentence from the wikipage)
+    Output: list of consecutive reference tags that appear at the start of raw_text."""
     current = 0
     res = []
     for tag in ref_tags:
         pos = raw_text.index(str(tag))
-        # print(pos - current, pos, current)
         if 5 > pos - current >= 0: 
             res.append(tag)
             current = pos + len(tag)
@@ -99,25 +61,44 @@ def get_starting_refs(ref_tags, raw_text):
 
     return res
 
-def get_info_from_raw_text(raw_text, tag_name_2_url = {}):
+def get_all_refs(text):
+    """Returns a list of all reference tags in the text."""
+    matches = re.findall(r"\[REF-\d+\]", text)
+    return matches
+
+def get_info_from_raw_text(raw_text):
+    """
+    Cleans up texts
+    """
     wikicode = mwparserfromhell.parse(raw_text)
 
     processed_text = wikicode.strip_code()
-    # external_urls = wikicode.filter_external_links()python
+    cleaned_text = clean_text_func(str(processed_text))
 
-    # ref_tags = extract_ref_tags(raw_text) #[tag for tag in wikicode.filter_tags(matches=lambda node: node.tag == 'ref')]
-    ref_tags = get_starting_refs([tag for tag in wikicode.filter_tags(matches=lambda node: node.tag == 'ref')], raw_text)
-    external_urls = [extract_urls(tag, tag_name_2_url) for tag in ref_tags] # basically, just get 
-    external_urls = [url for url in external_urls if url]
 
-    # external_urls = [url for url in external_urls] # if "web.archive.org" not in url]
+    return cleaned_text
 
-    return {
-        "text": clean_text_func(str(processed_text)),
-        "urls": list([str(item) for item in external_urls])
-    }
+
+def shift_tags(wiki_info_sentences):
+    """
+    For each reference that starts the sentence, shift it to the previous sentence
+    """
+    for i, sent in enumerate(wiki_info_sentences):
+        tags = get_all_refs(sent)
+        starting_tags = get_starting_refs(tags, sent)
+        if starting_tags:
+            wiki_info_sentences[i-1] = wiki_info_sentences[i-1][:-1] + " " + " ".join([str(tag) for tag in starting_tags]) + wiki_info_sentences[i-1][-1]
+            # now we need to remove the tags from the current one
+            for tag in starting_tags:
+                wiki_info_sentences[i] = wiki_info_sentences[i].replace(str(tag), "")
+
+    return wiki_info_sentences
+    
 
 def process_wikilinks_and_replace_ref(raw_text: str):
+    """
+    Processes the wikilinks and replaces reference tags with placeholders.
+    """
     wikicode = mwparserfromhell.parse(raw_text)
 
     # STEP0: replace ref
@@ -190,6 +171,9 @@ def process_wikilinks_and_replace_ref(raw_text: str):
 
 
 def _extract_urls_from_text(text):
+    """
+    Extracts URLs from a text string.
+    """
     if not text: return None
     url_pattern = r'https?://[\w\-.]+(?:\.[a-z]{2,})+(?:/[\w\-.~:/?#[\]@!$&\'()*+,;=%]*)?'
     urls = re.findall(url_pattern, text)
@@ -203,7 +187,9 @@ def _extract_urls_from_text(text):
 
 
 def extract_urls(tag, tag_name_2_url = {}):
-
+    """
+    Extracts URLs from a MediaWiki tag.
+    """
     text = str(tag.contents)
     res = _extract_urls_from_text(text)
 
@@ -217,15 +203,67 @@ def extract_urls(tag, tag_name_2_url = {}):
     else: return None
 
 
+def wikiinfo(cleaned_text, pos, tag_name_2_url):
+    """
+    Returns the full wiki info entry
+    """
+    # gets all urls from text and strips code
+    wikicode = mwparserfromhell.parse(cleaned_text)
+    processed_text = wikicode.strip_code()
+    ref_tags = [tag for tag in wikicode.filter_tags(matches=lambda node: node.tag == 'ref')]
+    external_urls = [extract_urls(tag, tag_name_2_url) for tag in ref_tags] 
+
+    # remove all of the non exisitent urls and adjusts positions accordingly
+    res_urls = []
+    res_pos = []
+    prev = None
+    count = 0
+    for i, url in enumerate(external_urls):
+        if url:
+            res_urls.append(url)
+            if (prev is not None and pos[i] != prev):
+                count += 1
+            res_pos.append(count)
+
+            prev = pos[i]
+
+
+    return {
+        "text": processed_text,
+        "urls": res_urls,
+        "pos": res_pos
+    }
+
+def find_pos(raw_text):
+    """
+    Returns a list of positions for each reference tag in the text. First tag starts off at index 0 and nearby tags are assigned the same index.
+    """
+    prev_pos = float('-inf')
+    cur_ind = -1
+    res = []
+    for tag in get_all_refs(raw_text):
+        pos = raw_text.index(str(tag))
+        if abs(pos - prev_pos) >= 5: # distance threshold is 5
+            cur_ind += 1
+        res.append(cur_ind)
+        prev_pos = pos + len(tag)
+
+    return res
+
 def put_back_ref(sentence, placeholder_mapper):
+    """
+    Puts back the references in the sentence using the placeholder mapper.
+    """
     for k in placeholder_mapper:
         if k in sentence:
             sentence = sentence.replace(k, placeholder_mapper[k])
 
     return sentence
 
-@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
-def main(cfg:DictConfig):
+
+
+def get_file_paths(cfg:DictConfig):
+    """Sets up input and output folders"""
     input_folder = cfg.step0.output_folder
     output_folder = cfg.step1.output_folder
 
@@ -234,30 +272,87 @@ def main(cfg:DictConfig):
     input_files_full_path = [os.path.join(input_folder, file) for file in files]
     output_files_full_path = [os.path.join(output_folder, file) for file in files]
 
-    for input_file_path, output_file_path in tqdm(zip(input_files_full_path, output_files_full_path), total = len(input_files_full_path)):
+    return input_files_full_path, output_files_full_path
 
+
+def remove_bad_urls(reference_urls, pos):
+    """
+    Removes URLs from bad domains and adjusts positions accordingly.
+    """
+    cleaned_urls = []
+    cleaned_pos = []
+    count = 0
+    prev = None
+    for j, item in enumerate(reference_urls):
+        if not any([bad_domain in item for bad_domain in BAD_DOMAINS]):
+            cleaned_urls.append(item)
+            if (prev is not None and pos[j] != prev):
+                count += 1
+            cleaned_pos.append(count)
+            prev = pos[j]
+
+    return cleaned_urls, cleaned_pos
+
+@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
+def main(cfg:DictConfig):
+    input_files_full_path, output_files_full_path = get_file_paths(cfg)
+
+
+    for input_file_path, output_file_path in tqdm(zip(input_files_full_path, output_files_full_path), total = len(input_files_full_path)):
+        # file = "Clarence Nash.json"
+        # if len(input_file_path) < len(file) or input_file_path[-len(file):] != file: continue
+        
+        # Read and process each wiki page
         wiki_page_data = read_json_or_jsonl(input_file_path)
         wiki_raw_text = slight_text_processing(wiki_page_data.get("source"))
         wiki_raw_text, placeholder_mapper, tag_name_2_url = process_wikilinks_and_replace_ref(wiki_raw_text)
+        # placeholder_mapper is of the format {"[REF_I]": url_i}
+
+        # Tokenizes the sentences
+        wiki_raw_text_sentences = [sent for sent in sent_tokenize(wiki_raw_text)]
+        # output is each sentence (with placeholder referenes)
+
+        
+        # Clean sentences, strips code (keeps placeholders)
+        cleaned_sentences = [get_info_from_raw_text(raw) for raw in wiki_raw_text_sentences]
+        # output is each sentence cleaned up with reference tags
+
+        # shift references back when needed
+        fixed_sentences = shift_tags(cleaned_sentences)
+
+        # gets relative positions of each reference
+        positions = [find_pos(sent) for sent in fixed_sentences]
+
+        # replaces the reg tags with original references
+        replaced_sentences =  [put_back_ref(sent, placeholder_mapper) for sent in fixed_sentences]
+
+        # put the cleaned text, url, and positions together
+        wiki_info_sentences = [wikiinfo(sent, positions[i],tag_name_2_url) for i,sent in enumerate(replaced_sentences)]
+
+
+        # Extracts the sentences into a list
+        extracted_sentences = [item["text"] for item in wiki_info_sentences]
 
 
         raw_facts = []
-        wiki_raw_text_sentences = [put_back_ref(sent, placeholder_mapper) for sent in sent_tokenize(wiki_raw_text)]
 
-        wiki_info_sentences = [get_info_from_raw_text(raw, tag_name_2_url) for raw in wiki_raw_text_sentences]
-
-
-        extracted_sentences = [item["text"] for item in wiki_info_sentences]
-
-        for i in range(1, len(wiki_raw_text_sentences)):
-
+        # For each sentence, clean up the reference urls and remove fact if no urls
+        # also adjust the positions accordingly
+        for i in range(0, len(wiki_raw_text_sentences)):
+            
             reference_urls = wiki_info_sentences[i]["urls"]
-            reference_urls = [item for item in reference_urls if not any([bad_domain in item for bad_domain in BAD_DOMAINS])]
-            if not reference_urls: continue
+            pos = wiki_info_sentences[i]["pos"]
+
+
+            # remove urls in bad domain, and adjust positons accordingly
+            cleaned_urls, cleaned_pos = remove_bad_urls(reference_urls, pos)
+
+            if not cleaned_urls: continue
 
             raw_facts.append({
-                "fact": i-1,
-                "citation_urls": reference_urls,
+                "fact": i,
+                "citation_urls": cleaned_urls,
+                "pos": cleaned_pos
             })
 
         if raw_facts:

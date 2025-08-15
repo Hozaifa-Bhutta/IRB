@@ -1,0 +1,44 @@
+{
+    "title": "Piangil",
+    "wiki_url": "https://en.wikipedia.org/?curid=10005083",
+    "extracted_sentences": [
+        "Piangil, once frequently spelled \"Pyangil\", is a town in the Mallee region of northern Victoria, Australia.",
+        "It is approximately north-west of the state capital, Melbourne and north-west of the regional centre of Swan Hill.",
+        "At the , Piangil and the surrounding rural area had a population of 259 .",
+        "The name of the town is derived from the Piangil pastoral run, taken up in 1846 by William Coghill.",
+        "It is thought that the name was derived from an Aboriginal word for the Murray cod .",
+        "Piangil post office opened on 17 June 1907, and was renamed Piangil North in 1918 when the Piangil post office was relocated adjacent to the railway station.",
+        "A new Piangil post office opened in 1921 and is still in operation .",
+        "Piangil Primary School closed in September 2015 .",
+        "Category:Towns in Victoria (state)\nCategory:Rural City of Swan Hill\nCategory:Populated places on the Murray River"
+    ],
+    "raw_facts": [
+        {
+            "fact": 4,
+            "citation_urls": [
+                "https://www.victorianplaces.com.au/piangil"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 6,
+            "citation_urls": [
+                "http://www.phoenixauctions.com.au/cgi-bin/wsPhoenix.sh/Viewpocdwrapper.p?SortBy=VIC&filter=*Piangil*"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 7,
+            "citation_urls": [
+                "https://www.weeklytimesnow.com.au/news/small-school-closures-continue-in-rural-victoria/news-story/35f1193bf26c4d9a040ecb7d45641964"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

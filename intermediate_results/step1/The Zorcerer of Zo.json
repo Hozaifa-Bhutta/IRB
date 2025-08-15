@@ -1,0 +1,57 @@
+{
+    "title": "The Zorcerer of Zo",
+    "wiki_url": "https://en.wikipedia.org/?curid=10000731",
+    "extracted_sentences": [
+        "The Zantabulous Zorcerer of Zo is a fairy tale-themed independently published role-playing game created by Chad Underkoffler and published by Atomic Sock Monkey Press.",
+        "The game allows players to take the role of fairy tale characters.",
+        "The game uses the Prose Descriptive Qualities (PDQ) system -- also used in Atomic Sock Monkey Press's Dead Inside, Truth & Justice, and Monkey, Ninja, Pirate, Robot, as well as the second edition of Ninja Burger -- simplified to increase the flexibility and simplicity required for telling whimsical tales of magic and fairies.",
+        "PDQ offers three different levels of task resolution for any situation, in order to let players resolve encounters in as much or as little detail as possible.",
+        "PDQ also has three system elements of general interest: an abstracted system for damage or failure in conflicts, a method for generating future game events (or \"Story Hooks\") by taking damage, and a player-driven Hero Point system.",
+        "The core mechanic is to add 2d6 plus a freeform stat or set of stats, and compare to a difficulty number either a fixed difficulty number or the opponent's roll.",
+        "In conflicts, the amount which you beat another character's roll by is the amount of damage or failure ranks (see below).",
+        "Stats are rated in five named ranks: Poor [-2], Average [+0], Good [+2], Expert [+4], and Master [+6].",
+        "Conflicts result in the accumulation of either \"failure ranks\" (which recover at the end of the contest) or \"damage ranks\" (which may take longer to heal).",
+        "Each point of either type means that the loser must choose a stat to downgrade by one rank.",
+        "So if you lose a conflict roll by 3, you must lower three stats each by one rank, or one stat by three ranks (with a minimum of Poor: -2).",
+        "You can choose any stat to take your damage in--i.e.",
+        "you can downgrade your \"Singing\" quality based on a hit in a fight.",
+        "When you can't lower your stats any lower (i.e.",
+        "a hit when all stats are at Poor [-2]), then you have lost the contest.",
+        "Compared to the standard PDQ system, ZoZ streamlines character creation, magic, and conflict resolution.",
+        "The whole of the first chapter of The Zorcerer of Zo consists of a discussion and analysis of the fairy tales genre and how aspects of it can be implemented in an RPG.",
+        "Topics addressed include Fairytale Elements, Fairytale Settings (The Kingdom Entire, Otherworldly Visitors), Talking Animals & Living Objects, Fairytale Magic, Happily Ever Afters, Fairytale Tone: Nice vs.",
+        "Neutral vs.",
+        "Nasty, Fairytale & Nursery Rhyme Adventures, and an extensive bibliography, filmography, and list of games.",
+        "Chapter 2 is an overview of the Land of Zo, a fantasy land reminiscent of Frank Baum's Land of Oz, C.S.",
+        "Lewis' Narnia, J.M.",
+        "Barrie's Neverland, and the lands of Florin and Guilder in William Goldman's The Princess Bride, as well as the more classic fairy tales of the Brothers Grimm, Charles Perrault, and Hans Christian Andersen.",
+        "Chapter 3 is an overview of the game system, where the rules have been simplified even from the basic PDQ system to support unfettered play, and Chapter 4 details character creation with numerous examples.",
+        "These sections contain valuable advice for including children of varying ages in the game.",
+        "Chapter 5 contains game master (GM) advice and techniques to foster a fairytale-like quality when creating and running stories.",
+        "The last two sections, as well as a substantial appendix, detail an example of campaign creation and play, from the initial pitch to the \"Happily Ever After\" conclusion.",
+        "These sections include GM and player comments that give insight on how a group can produce satisfying, in-genre stories.",
+        "The game was originally published in PDF and Print on Demand format in November 2006, and a print version became available through distributed retail in December 2006.",
+        "The Zorcerer of Zo won the Outie Award for Best New RPG of 2006 Outie Award for Best New RPG of 2006.",
+        "Pyramid\nASMP's Zorcerer of Zo product page\nZoZ Mailing List\nCapsule Review by Christopher W. Richeson on RPG.net\nCategory:Fantasy role-playing games\nCategory:Indie role-playing games\nCategory:Role-playing games introduced in 2006\nCategory:Fantasy campaign settings"
+    ],
+    "raw_facts": [
+        {
+            "fact": 29,
+            "citation_urls": [
+                "http://www.gamingreport.com/article.php?sid=23065"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 30,
+            "citation_urls": [
+                "http://www.sjgames.com/pyramid/sample.html?id=6258"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

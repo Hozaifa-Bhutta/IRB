@@ -1,0 +1,87 @@
+{
+    "title": "Yekaterinburg TV Tower",
+    "wiki_url": "https://en.wikipedia.org/?curid=10002421",
+    "extracted_sentences": [
+        "right|thumb|Yekaterinburg TV Tower\nthumb|300px|Demolition of the tower\nYekaterinburg TV Tower () was a tall incomplete structure in Yekaterinburg, Russia.",
+        "Construction work started 1983, but was put on hold in 1991, following the collapse of the Soviet Union, (includes video of the demolition) as its shaft reached the height of  .",
+        " According to plans, the tower was intended to reach a structural height of  .",
+        "The construction of the tower began at the end of 1983.",
+        "In December 1986 the construction of the tower began on the prepared foundation.",
+        "The barrel structures were completed at 220 metres on August 17, 1989.",
+        "After the collapse of the USSR in 1991, construction work did not resume.",
+        "In the early 1990s the facility was conserved.",
+        "In 1993 the financing of the construction was closed.",
+        "There were no investors to continue the construction .",
+        "Until the year 2000 it was illegally used for buildering and BASE jumping.",
+        "After several fatal accidents and suicides it was sealed.",
+        "On February 21, 2017, the regional Property Fund put up the TV tower and the adjacent land plot with an area of 46.8 thousand square meters for an electronic auction with an initial price of 652 million 772 thousand rubles.",
+        "But the tower's privatization was canceled .",
+        "The tower was demolished on 24 March 2018, as part of a city beautification programme in preparation for the 2018 World Cup   .",
+        "The UMMC Arena was built on the site of the TV tower  .",
+        "List of towers\nBehold the tallest abandoned building in the world\nhttps://web.archive.org/web/20071001090316/http://usa.ural.ru/v2/pics/panorama/yekat2003/o_tv.htm\nCategory:Towers in Russia\nCategory:Unfinished buildings and structures\nCategory:Buildings and structures in Yekaterinburg\nCategory:Former radio masts and towers\nCategory:2018 disestablishments in Russia\nCategory:Buildings and structures demolished in 2018\nCategory:Buildings and structures demolished by controlled implosion\nCategory:Demolished buildings and structures in Russia"
+    ],
+    "raw_facts": [
+        {
+            "fact": 1,
+            "citation_urls": [
+                "https://www.bbc.co.uk/news/av/world-europe-43527063/massive-incomplete-tv-tower-in-russia-demolished",
+                "http://en.structurae.de/structures/data/index.cfm?ID=s0016097"
+            ],
+            "pos": [
+                0,
+                1
+            ]
+        },
+        {
+            "fact": 2,
+            "citation_urls": [
+                "http://en.structurae.de/structures/data/index.cfm?ID=s0016097"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 9,
+            "citation_urls": [
+                "https://tass.ru/info/5060929"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 13,
+            "citation_urls": [
+                "https://tass.ru/info/5060929"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 14,
+            "citation_urls": [
+                "https://www.bbc.co.uk/news/av/world-europe-43527063/massive-incomplete-tv-tower-in-russia-demolished",
+                "https://ura.news/news/1052328328",
+                "https://www.aljazeera.com/news/2018/03/russia-blows-soviet-era-landmark-world-cup-city-180324171705494.html"
+            ],
+            "pos": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "fact": 15,
+            "citation_urls": [
+                "https://tass.ru/info/5060929",
+                "https://www.ural.kp.ru/daily/27255/4386637/"
+            ],
+            "pos": [
+                0,
+                0
+            ]
+        }
+    ]
+}

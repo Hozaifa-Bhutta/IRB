@@ -1,0 +1,79 @@
+{
+    "title": "Regina High School (Iowa)",
+    "wiki_url": "https://en.wikipedia.org/?curid=10000169",
+    "extracted_sentences": [
+        "Regina Catholic Education Center is a PK-12 private, Roman Catholic co-educational school in Iowa City, Iowa, United States.",
+        "It is located in the Roman Catholic Diocese of Davenport.",
+        "Regina's sports teams are known as the Regals, with a school mascot named \"Crownie,\" an anthropomorphic blue and gold crown.",
+        "The Regals won a state football championship in 2005, and more recently have won a state record six titles in a row from 2010 to 2015,K. J. Pilcher, \"Regals claim sixth straight state crown\", The Gazette, November 23, 2015. a string that included a record 56 game winning streak from 2010 to 2013 Ryan Murken, \"Coaching staff a boost for Regina\", Iowa City Press-Citizen, November 22, 2015..",
+        " From 2007 to 2020, the team was coached by former NFL tight end Marv Cook, who attended high school at Regina's conference rival West Branch High School Rob Poggenklass, \"Marv Cook named head coach at Regina\", West Branch Times, March 7, 2007. .",
+        "The Regals have won eight state titles in boys' cross-country since 1993 2013 IHSAA Cross Country State Meet History and Stat Book, p. 13..",
+        " The girls' softball team took the state title in 2011 Jeff Lindor, \"A Crown for the Regals in 2A Softball\", KCRG-TV, July 22, 2011..",
+        "Boys' Cross Country - 8-time State Champions (1993, 1997, 1998, 2003, 2004, 2006, 2007, 2010, 2022)\nBoys' Soccer - 8-time Class 1A State Champions (2009, 2010, 2011, 2013, 2014, 2017, 2018, 2019)\nFootball - 8-time State Champions (2005, 2010, 2011, 2012, 2013, 2014, 2015, 2020)\nBoys' Basketball -3 time Class 1A State Champions (1976, 1978, 1979)\nSoftball - 4-time Class 2A State Champions (2011, 2015, 2017, 2023)\nGirls' Golf - 2009 Class 2A State Champions\nGirls' Track and Field - 1995 Class 1A State Champions\nJim Miller, offensive guard for the Atlanta Falcons\nSteven Sueppel, local banker and murderer\nList of high schools in Iowa\nCategory:Catholic secondary schools in Iowa\nCategory:Private high schools in Iowa\nCategory:Schools in Johnson County, Iowa\nCategory:Buildings and structures in Iowa City, Iowa\nCategory:Roman Catholic Diocese of Davenport"
+    ],
+    "raw_facts": [
+        {
+            "fact": 3,
+            "citation_urls": [
+                "http://www.thegazette.com/subject/sports/regals-claim-sixth-straight-state-crown-20151123",
+                "http://www.press-citizen.com/story/sports/high-school/football/2015/11/22/coaching-staff-boost-regina/76229532/"
+            ],
+            "pos": [
+                0,
+                1
+            ]
+        },
+        {
+            "fact": 4,
+            "citation_urls": [
+                "http://www.westbranchtimes.com/article.php?id=1557",
+                "https://www.thegazette.com/iowa-prep-sports/marv-cook-steps-down-as-regina-football-coach/"
+            ],
+            "pos": [
+                0,
+                0
+            ]
+        },
+        {
+            "fact": 5,
+            "citation_urls": [
+                "http://www.iahsaa.org/wp-content/uploads/2013/10/2013_CrossCountry_StatBook2.pdf"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 6,
+            "citation_urls": [
+                "http://www.kcrg.com/sports/local/A-Crown-for-the-Regals-in-2A-Softball-126048743.html"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 7,
+            "citation_urls": [
+                "https://www.iahsaa.org/wp-content/uploads/2019/12/2020-XC-Stat-Book-12.16.19.pdf",
+                "https://www.iahsaa.org/wp-content/uploads/2019/09/SoccerStatbook.pdf",
+                "https://www.iahsaa.org/wp-content/uploads/2024/07/2024-Football-RB-7.3.24.pdf",
+                "https://www.iahsaa.org/wp-content/uploads/2020/01/2020-Basketball-Stat-Book-1.29.20.pdf",
+                "https://ighsau.org/upl/downloads/library/state-softball-record-book-7-9-18.pdf",
+                "https://sites.google.com/site/iahsaasports/iowa-high-schools/current-high-schools/regina",
+                "https://www.ighsau.org/upl/downloads/library/track-2019-recordbook6-18-19.pdf",
+                "https://web.archive.org/web/20150707092916/http://www.profootballarchives.com/mill08200.html"
+            ],
+            "pos": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7
+            ]
+        }
+    ]
+}

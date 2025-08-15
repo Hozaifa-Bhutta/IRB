@@ -1,0 +1,96 @@
+{
+    "title": "Subby Anzaldo",
+    "wiki_url": "https://en.wikipedia.org/?curid=10005477",
+    "extracted_sentences": [
+        "'''Sebastian A.",
+        "\"Subby\" Anzaldo''' (August 3, 1933 - August 7, 2019) was a booking agent, long-time City Council member, and Mayor of Omaha, Nebraska   .",
+        "Anzaldo worked as a saxophone player in the Omaha area before expanding into construction contracting and then later as a theatrical booking agent  .",
+        " He had been active in Omaha politics having served on the Zoning Board of Appeals, the Charter Review Committee, the Parks and Recreation Advisory Board, the City Planning Board, and the Police Advisory Committee .",
+        " On May 26, 1988, he was named to the Omaha City Council for district 3 after Walter Calinger vacated his seat to serve as mayor after the death of mayor Bernie Smith .",
+        " Anzaldo was sworn in on June 6, 1988 .",
+        "Anzaldo served as acting mayor, following the resignation of his predecessor P.J.",
+        "Morgan, from September 20, 1994 to January 9, 1995  .",
+        "In 2019, he was inducted into the Nebraska Music Hall of Fame .",
+        "{{succession box | before = P.J.",
+        "Morgan | title = (Acting) Mayor of Omaha | years = September 20, 1994 - January 9, 1995 | after = Hal Daub}}\nCategory:20th-century mayors of places in Nebraska\nCategory:Mayors of Omaha, Nebraska\nCategory:Nebraska Democrats\nCategory:2019 deaths\nCategory:Omaha City Council members\nCategory:1933 births\nCategory:Place of birth missing"
+    ],
+    "raw_facts": [
+        {
+            "fact": 1,
+            "citation_urls": [
+                "https://www.omaha.com/obits/anzaldo-sebastian-a-subby-sr/article_7f34afe4-e863-50ed-8c1f-1f1e2f410048.html",
+                "https://web.archive.org/web/20110604105831/http://pqasb.pqarchiver.com/USAToday/access/55840003.html?dids=55840003:55840003&FMT=ABS&FMTS=ABS:FT&type=current&date=Jun+06,+1988&author=&pub=USA+TODAY+(pre-1997+Fulltext)&desc=NEBRASKA&pqatl=google",
+                "https://news.google.com/newspapers?id=DtkgAAAAIBAJ&sjid=IWsFAAAAIBAJ&pg=2514,4137874&dq=subby-anzaldo&hl=en",
+                "https://web.archive.org/web/20110604105756/http://pqasb.pqarchiver.com/orlandosentinel/access/77971325.html?dids=77971325:77971325&FMT=ABS&FMTS=ABS:FT&type=current&date=Apr+28,+1994&author=&pub=Orlando+Sentinel&desc=OMAHA+MAYOR+SURPRISES+WITH+RESIGNATION+NEWS&pqatl=google"
+            ],
+            "pos": [
+                0,
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "fact": 2,
+            "citation_urls": [
+                "https://pqasb.pqarchiver.com/USAToday/access/55840003.html?dids=55840003:55840003&FMT=ABS&FMTS=ABS:FT&type=current&date=Jun+06%2C+1988&author=&pub=USA+TODAY+%28pre-1997+Fulltext%29&desc=NEBRASKA&pqatl=google",
+                "https://www.newspapers.com/article/omaha-world-herald/145758570/"
+            ],
+            "pos": [
+                0,
+                0
+            ]
+        },
+        {
+            "fact": 3,
+            "citation_urls": [
+                "https://www.newspapers.com/article/omaha-world-herald/145758570/"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 4,
+            "citation_urls": [
+                "https://www.newspapers.com/article/omaha-world-herald/145758570/",
+                "https://www.newspapers.com/article/lincoln-journal-star/145760187/"
+            ],
+            "pos": [
+                0,
+                1
+            ]
+        },
+        {
+            "fact": 5,
+            "citation_urls": [
+                "https://www.newspapers.com/article/omaha-world-herald/145758570/"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 7,
+            "citation_urls": [
+                "https://web.archive.org/web/20110604105816/http://pqasb.pqarchiver.com/chicagotribune/access/24156902.html?dids=24156902:24156902&FMT=CITE&FMTS=CITE:FT&type=current&date=Apr+27,+1994&author=&pub=Chicago+Tribune+(pre-1997+Fulltext)&desc=SURPRISE!+OMAHA+MAYOR+RESIGNS&pqatl=google",
+                "https://news.google.com/newspapers?id=ttsgAAAAIBAJ&sjid=D2sFAAAAIBAJ&pg=4044,5590258&dq=hal-daub+omaha&hl=en",
+                "https://web.archive.org/web/20090512054719/http://www.omahapubliclibrary.org/subjects/society/history/mayors.html"
+            ],
+            "pos": [
+                0,
+                1,
+                1
+            ]
+        },
+        {
+            "fact": 8,
+            "citation_urls": [
+                "https://www.omahaitaly.com/wp-content/uploads/2019/11/September-2019-Newsletter.pdf"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

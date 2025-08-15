@@ -1,0 +1,52 @@
+{
+    "title": "The Lima News",
+    "wiki_url": "https://en.wikipedia.org/?curid=10001369",
+    "extracted_sentences": [
+        "The Lima News is a local daily newspaper aimed at residents in Allen, Auglaize, Hancock, Hardin, Logan, Mercer, Putnam, Shelby and Van Wert counties in Ohio, USA.",
+        "Its headquarters is located in Lima, Ohio.",
+        "The newspaper was first printed on July 21, 1926 .",
+        " The paper was owned by Freedom Communications, a privately held California-based company whose flagship paper is the Orange County Register, until 2012, when it was sold to Ohio Community Media, an affiliate of the private equity firm Versa Capital Management - .",
+        " Under Freedom Communications' ownership, The Lima News took a libertarian editorial position on issues.",
+        "In 2012, Versa merged Ohio Community Media, the Freedom papers it had acquired, Impressions Media and Heartland Publications into a new company, Civitas Media .",
+        " Civitas Media sold its Ohio papers to AIM Media Midwest in 2017 .",
+        "Category:Newspapers published in Ohio\nCategory:Lima, Ohio\nCategory:1926 establishments in Ohio\nCategory:Newspapers established in 1926"
+    ],
+    "raw_facts": [
+        {
+            "fact": 2,
+            "citation_urls": [
+                "https://www.limaohio.com/news/398791/the-lima-news-stands-on-century-old-yet-strong-foundation"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 3,
+            "citation_urls": [
+                "https://web.archive.org/web/20120604234806/http://newsdemocrat.com/main.asp?SectionID=1"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 5,
+            "citation_urls": [
+                "http://www.businesswire.com/news/home/20120911006840/en/Versa-Capital-Announces-Formation-Civitas-Media-LLC"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 6,
+            "citation_urls": [
+                "http://dirksvanessen.com/articles/view/225/2nd-quarter-2017/"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

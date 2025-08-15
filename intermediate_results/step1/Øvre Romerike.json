@@ -1,0 +1,25 @@
+{
+    "title": "\u00d8vre Romerike",
+    "wiki_url": "https://en.wikipedia.org/?curid=10004911",
+    "extracted_sentences": [
+        "thumb|\nOvre Romerike is the upper (northern) half of the traditional Norwegian district Romerike.",
+        "It consists of the Akershus municipalities Gjerdrum, Nannestad, Eidsvoll, Hurdal, Ullensaker and Nes.",
+        "The lower (southern) portion is known as Nedre Romerike   .",
+        "Category:Districts of Akershus"
+    ],
+    "raw_facts": [
+        {
+            "fact": 2,
+            "citation_urls": [
+                "https://snl.no/%C3%98vre_Romerike",
+                "https://snl.no/Romerike",
+                "https://snl.no/Nedre_Romerike"
+            ],
+            "pos": [
+                0,
+                0,
+                0
+            ]
+        }
+    ]
+}

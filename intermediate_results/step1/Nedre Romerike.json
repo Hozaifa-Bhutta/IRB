@@ -1,0 +1,26 @@
+{
+    "title": "Nedre Romerike",
+    "wiki_url": "https://en.wikipedia.org/?curid=10004926",
+    "extracted_sentences": [
+        "Nedre Romerike is the lower (southern) part of the Romerike traditional district in Akershus, Norway.",
+        "It consists of the municipalities Lillestrom, Lorenskog, Nittedal, Raelingen and Aurskog-Holand.",
+        "It make up the area served by Nedre Romerike District Court, based in Lillestrom.",
+        "The upper (northern) half of Romerike is known as Ovre Romerike   .",
+        "thumb|\nCategory:Districts of Akershus"
+    ],
+    "raw_facts": [
+        {
+            "fact": 3,
+            "citation_urls": [
+                "https://snl.no/Nedre_Romerike",
+                "https://snl.no/Romerike",
+                "https://snl.no/%C3%98vre_Romerike"
+            ],
+            "pos": [
+                0,
+                0,
+                0
+            ]
+        }
+    ]
+}

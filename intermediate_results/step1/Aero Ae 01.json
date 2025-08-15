@@ -1,0 +1,43 @@
+{
+    "title": "Aero Ae 01",
+    "wiki_url": "https://en.wikipedia.org/?curid=1000354",
+    "extracted_sentences": [
+        "The Aero Ae 01 was a Czechoslovak military trainer biplane built in 1919 and was Aero's first attempt to modify one of the aircraft designs they had been manufacturing under licence during World War I, the Hansa-Brandenburg B.I .",
+        " It was designed by Antonin Vlasak under the direction of Jan Kouril .",
+        " The project was originally designated as Ae 10, but later re-designated to Ae 01.",
+        "The army operated the aircraft under designation A-1.",
+        "{{Aircraft specs\n|ref=\n|prime units?=met\n|crew=2\n|length m=8.5\n|span m=12.9\n|height m=3.2\n|wing area sqm=35.6\n|empty weight kg=715\n|gross weight kg=970\n|ceiling m=3500\n|range km=250\n|eng1 number=1\n|eng1 name=Breitfeld-Danek Blesk\n|eng1 type=6-cyl.",
+        "water-cooled in-line piston engine\n|eng1 kw=74\n|max speed kmh=110\n|climb rate ms=1.75\n}}\n- Czechoslovak Air Force\nCategory:1910s Czechoslovak military trainer aircraft\nAe01\nCategory:Biplanes\nCategory:Single-engined tractor aircraft\nCategory:Aircraft first flown in 1919"
+    ],
+    "raw_facts": [
+        {
+            "fact": 0,
+            "citation_urls": [
+                "https://aero-space.eu/2019/03/11/aero-100-years-of-conquering-the-sky/"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 1,
+            "citation_urls": [
+                "https://www.aviationclassics.co.uk/issue-28-aero-l-39-albatros/"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 5,
+            "citation_urls": [
+                "https://web.archive.org/web/20061215022443/http://www.libri.cz/data/pdf/241.pdf",
+                "https://www.armedconflicts.com/Aero-Ae-01-t8284"
+            ],
+            "pos": [
+                0,
+                0
+            ]
+        }
+    ]
+}

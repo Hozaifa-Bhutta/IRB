@@ -1,0 +1,51 @@
+{
+    "title": "Walla Walla Council",
+    "wiki_url": "https://en.wikipedia.org/?curid=10000237",
+    "extracted_sentences": [
+        "thumb|The Walla Walla Council.",
+        "The Walla Walla Council (1855) was a meeting in the Pacific Northwest between the United States and sovereign tribal nations of the Cayuse, Nez Perce, Umatilla, Walla Walla, and Yakama .",
+        " The council occurred on May 29 - June 11; the treaties signed at this council on June 9 were ratified by the U.S. Senate four years later in 1859 .",
+        "These treaties codified the constitutional relationship between the people living on the Nez Perce, Umatilla, and Yakama reservations; it was one of the earliest treaties obtained in the Pacific Northwest.",
+        "Washington Territory's first governor Isaac I. Stevens secured this treaty, allowing larger portions of the land to be given to the two largest and most powerful tribes: Yakama and Nez Perce; these reservations encompassed most of their traditional hunting grounds.",
+        "The smaller tribes moved to the smaller of the three reservations.",
+        "Stevens was able to acquire of land .",
+        "The United States government later violated these treaties, first by failing to pay the agreed sum for the ceded land, and later by reducing the Nez Perce reservation by 90% and forcibly removing the Nez Perce from their lands affirmed by the 1855 treaty .",
+        "Cayuse War (1847-55)\nYakima War (1855-58)\nPalouse War (1858)\nNez Perce War (1877)\nStevens Treaty Council of 1855 centennial records at the Whitman College and Northwest Archives, Whitman College.",
+        "Category:United States and Native American treaties\nCategory:History of Washington (state)\nCategory:1855 treaties\nCategory:1859 treaties\nCategory:1855 conferences"
+    ],
+    "raw_facts": [
+        {
+            "fact": 1,
+            "citation_urls": [
+                "http://www.historycooperative.org/journals/ohq/106.3/trafzer.html"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 2,
+            "citation_urls": [
+                "http://ww2020.net/historic-sites/walla-walla-treaty-council-of-1855/",
+                "http://www.trailtribes.org/umatilla/making-treaties.htm",
+                "http://memory.loc.gov/ll/llej/011/0000/00840082.tif"
+            ],
+            "pos": [
+                0,
+                1,
+                2
+            ]
+        },
+        {
+            "fact": 7,
+            "citation_urls": [
+                "https://www.nps.gov/nepe/learn/historyculture/aftermath-of-1855-treaty.htm",
+                "https://critfc.org/member-tribes-overview/nez-perce-tribe/treaty-with-the-nez-perces-1855/"
+            ],
+            "pos": [
+                0,
+                1
+            ]
+        }
+    ]
+}
