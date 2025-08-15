@@ -1,0 +1,65 @@
+{
+    "title": "Simplexity",
+    "wiki_url": "https://en.wikipedia.org/?curid=10002631",
+    "extracted_sentences": [
+        "Simplexity is a neologism which proposes a possible complementary relationship between complexity and simplicity.",
+        "One of the first formally published instances of the word was in the journal 'Childhood Education' (1924), in the article it appears to be used to discuss education and psychology related issues (Unknown).  Childhood Education Published 1924. Association for Childhood Education International..",
+        "Simplexity was defined by computer scientists Broder and Stolfi as: \"The simplexity of a problem is the maximum inefficiency among the reluctant algorithms that solve P. An algorithm is said to be pessimal for a problem P if the best-case inefficiency of A is asymptotically equal to the simplexity of P.\"Broder, Andrei and Jorge Stolfi. \"Pessimal Algorithms and Simplexity Analysis.\"\nIn 1974 Rustum Roy and Olaf Muller noted simplexity in the structure of ternary compounds: \"By dealing with approximately ten ternary structural groupings we can cover the most important structures of science and technology specific to the non-metallics world.",
+        "It is a remarkable instance of nature's 'simplexity'\" Rustum Roy & Olaf M\u00fcller (1974) The Major Ternary Structural Families, pages 3 & 4, Springer-Verlag .",
+        "In 2003 Philippe Compain in an article on the future of synthetic chemistry stated: \"Simplexity may be defined as the combination of simplicity and complexity within the context of a dynamic relationship between means and ends Philippe Compain \"The challenge of simplexity. The simple and the complex in organic synthesis\" Act. Chim., 2003, 263-264, pages 129-134. Philippe Compain et al \"Looking forward: a glance into the future of organic chemistry\" New J. Chem., 2006, 30, pages 823-831..",
+        "\";\nSimplexity: Why Simple Things Become Complex (and How Complex Things Can Be Made Simple) by Jeffrey Kluger details ways in which simplexity theory can be applied to multiple disciplines.",
+        "Kluger offers a look at simplexity at work in economics, sports, linguistics, technology, medicine and human behavior.",
+        "Simplexity has been used by Jens Nordvig to describe the particular aim of his analytics firm Exante Data.",
+        "\"A research product that draws on a very complex analytical foundation, but is presented in a very simple and easy to digest manner\"\nBooks\nGoldsmith, Julian R. (1953) \"A 'Simplexity Principle' and its Relation to Ease of Crystalization\".",
+        "The Journal of Geology.",
+        "University of Chicago Dept.",
+        "of geology and paleontology.",
+        "University of Chicago Press.",
+        "Journal of Personality Assessment.",
+        "Kluger, Jeffrey (2008) Simplexity Simplexity\nBerthoz, Alain (2012).",
+        "Simplexity: Simplifying Principles for a Complex World\nDan Geesin first used the term 'Simplexity' in his essay 'The melancholy of the set square', 2002, when describing how technology creates more distance through complex interfaces whilst performing a simple task.",
+        "For example, getting money from a bank machine.",
+        "He describes how in between the chain of interfaces there is more room for error.",
+        "More interfaces, more potential problems.",
+        "Articles\nPlaisant, Catherine (2004) \"Information Visualization and the Challenge of Universal Usability\"\nConference Proceedings\nde Groen, P. C., Dettinger, Richard, and Johnson, Pete.",
+        "Mayo Clinic/IBM computational biology collaboration: A simple user interface for complex queries.",
+        "In: Universal Access in HCI, Volume 4 of the Proceedings of Human-Computer Interaction (HCI) International, 2003, pages 1083-1087.",
+        "Blogs\nHumane Systems Design blog.",
+        "\"Simplexity: Simple and Complex\"\nA Conversation with Anders Hejlsberg (July 2003).",
+        "\"Components, and Simplexity\".",
+        "Complexity versus Simplicity: It's Time for Simplexity (Blogeintrag, 2.",
+        "March 2006)\nFlying Sparks: Simplexity (Blogeintrag 11.",
+        "March 2006) (German)\nSimplexity.co.uk Simplexity UK management consultancy\nCategory:Industrial design\nCategory:Complex systems theory"
+    ],
+    "raw_facts": [
+        {
+            "fact": 2,
+            "citation_urls": [
+                "http://portal.acm.org/citation.cfm?coll=GUIDE&dl=GUIDE&id=990536"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 4,
+            "citation_urls": [
+                "http://www.lactualitechimique.org/spip.php?numero_article437",
+                "http://pubs.rsc.org/en/content/articlelanding/2006/nj/b601837h#!divAbstract"
+            ],
+            "pos": [
+                0,
+                0
+            ]
+        },
+        {
+            "fact": 8,
+            "citation_urls": [
+                "https://exantedata.com/news/letter-simplexity-in-research"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

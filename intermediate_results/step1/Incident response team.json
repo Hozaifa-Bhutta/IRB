@@ -1,0 +1,227 @@
+{
+    "title": "Incident response team",
+    "wiki_url": "https://en.wikipedia.org/?curid=10000895",
+    "extracted_sentences": [
+        "An incident response team (IRT) or emergency response team (ERT) is a group of people who prepare for and respond to an emergency, such as a natural disaster or an interruption of business operations.",
+        "Incident response teams are common in public service organizations as well as in other organizations, either military or specialty.",
+        "This team is generally composed of specific members designated before an incident occurs, although under certain circumstances the team may be an ad hoc group of willing volunteers.",
+        "Incident response team members ideally are trained and prepared to fulfill the roles required by the specific situation (for example, to serve as incident commander in the event of a large-scale public emergency).",
+        "As the size of an incident grows, and as more resources are drawn into the event, the command of the situation may shift through several phases.",
+        "In a small-scale event, usually only a volunteer or ad hoc team may respond.",
+        "In events, both large and small, both specific member and ad hoc teams may work jointly in a unified command system.",
+        "Individual team members can be trained in various aspects of the response, either be it medical assistance/first aid, hazardous material spills, hostage situations, information systems attacks or disaster relief.",
+        "Ideally the team has already defined a protocol or set of actions to perform to mitigate the negative effects of the incident.",
+        "Incident response teams address two different types of incidents.",
+        "The first of these types is public.",
+        "This covers larger incidents that affect a community as a whole, such as, natural disasters (hurricane, tornado, earthquake, etc.",
+        "), terrorism, large-scale chemical spills, and epidemics.",
+        "The other type is organizational: this would be an incident that happens on a smaller scale and affects mostly just single company or organization.",
+        "Examples of organizational incidents can include: bomb threats, computer incidents such as theft or accidental exposure of sensitive data, exposure of intellectual property or trade secrets, and product contamination.",
+        "Predefined roles are typically filled with individuals who are formally trained and on standby at all times, during scheduled hours.",
+        "These teams are organized by ranks with a clearly defined chain of command.",
+        "Examples include:\nSpecial Weapons and Tactics (SWAT): Originating in the 1960s in the city of Los Angeles, California, USA.",
+        "SWAT is a small, well-armed, and well trained, tactical unit that is designed to deal with overly dangerous situations as quickly as possible.",
+        "Officer John G. Nelson was the LA police officer who proposed the idea of this specialized unit as a way to counter the recent wide spread sniper attacks that had been occurring around the nation .",
+        "Royal Canadian Mounted Police (RCMP): The Royal Canadian Mounted Police, also known as RCMP, is the federal Canadian police.",
+        "Their job consists of investigating and preventing federal crimes, such as: drug trafficking, economic crimes, national security/integrity, terrorism, and organized crime.",
+        "However, RCMP was not always the sole federal law enforcement of Canada.",
+        "This specific force wasn't created until February 1920, when Canadian parliamentary legislation came into effect, merging two previous Canadian police forces, North-West Mounted Police (NWMP)North-West Mounted Police (NWMP) and Dominion Police,Dominion Police to create one centralized police force .",
+        "Federal Bureau of Investigation (FBI): The FBI is the United States' highest ranking form of law enforcement.",
+        "It deals with terrorist activity, federal offenses, national security, and investigating organized criminal activity.",
+        "The FBI was created in 1908 through the efforts of President Theodore Roosevelt and Attorney General Charles Bonaparte .",
+        " Starting off as an undermanned team of 34 agents specializing in tracking down criminals who had evaded state law enforcement, the bureau eventually grew and took on more responsibility.",
+        "This significant role change came to the forefront during World War I where they began working in the likes of counterespionage, selective service, and sabotage .",
+        " In more recent years, with the threat of terrorism looming in the United States, the FBI has become the leading investigator of terrorist activity, and has even created internal special task forces to investigate such matters, known as JTTFs.",
+        "Joint Terrorism Task Force (JTTF): JTTFs are smaller task forces that were created by the FBI to be used as a front-line defense against terrorist activity in the United States.",
+        "The JTTF's are located across the nation and work with many different organizations and entities to collect information about possible terrorist activities, and help to react to terrorism when it occurs .",
+        " There are currently 104 JTTF locations through the nation with 56% of those being created post 9/11 .",
+        "Hazardous Materials Management (HAZMAT): Working for the United States Department of Defense, HAZMAT was created to respond and clean up hazardous materials.",
+        "The materials that this organization can deal with include: gases, vapors, liquids, or any other material that can be categorized as a health or physical hazard by the OSHA standard 29 CFR 1910.1200 .",
+        " This response team is often associated with OSHA (Occupational Safety and Health Administration) and NFPA (National Fire Protection Association), due to their reliance on the standards that have been put into place by these two organizations.",
+        "Emergency medical technician (EMT): Emergency medical technicians are the people who drive and work inside of ambulances or, in more serious cases, helicopters (e.g.",
+        "medflight).",
+        "They are expected to be trained in basic medical care, such as resuscitating and stabilizing patients, and are also expected to be able to safely transport patients from the scene of the incident to a hospital so that victims can receive proper care .",
+        "Firefighters: Firefighters are emergency response teams that can deal with any number of emergencies, most of which involve fighting and protecting citizens from fires, but can also be utilized in search and rescue, providing assistance in car accidents, and chemical spills .",
+        " Firefighting, while normally is made up of formally trained members, can also consist of volunteers.",
+        "Many smaller towns, in which large fire stations cannot be established, will form volunteer departments that are made up of citizens who work other jobs and come together in the event of a fire to protect the town.",
+        "On top the common firefighting departments, which are known as urban or suburban firefighters, firefighters can be categorized as wild-land, industrial, airport, and contract firefighters .",
+        "Police: Police officers, also known as law enforcement officers, are the most basic form of emergency respondents.",
+        "They respond to incidents that can range from domestic disputes to natural disasters to terrorist attacks.",
+        "Law enforcement departments were created to establish peace and order in society by investigating crimes, enforcing the laws in place, and punishing those who break these laws.",
+        "There are many different fields of police, these include: uniformed officers (i.e.",
+        "the common local police officer), special jurisdiction police (e.g.",
+        "campus police), sheriffs and deputy sheriffs, state police officers, specialized assignments (e.g.",
+        "SWAT), detectives, and game wardens .",
+        "Other teams that can be formed for response are ad hoc or volunteer groups.",
+        "Many of these groups are created under the notion that the true first respondents are the civilians at the incident.",
+        "Due to this these teams are generally made up of individuals that have jobs unrelated to the situation, but respond due to their proximity, or personal attachment, to the sight of the incident.",
+        "Examples include:\nCampus Response: Campus response teams are groups of individuals that get together to form a team to help ensure the safety and protection of their fellow students on a university, or other school campus.",
+        "Many universities around the world encourage their students to be active in this type of organization to keep students aware of the dangers on campus and help respond to incidents that happen.",
+        "Members of campus response teams normally train in CPR and other types of basic first aid, as well as what to do until proper respondents can arrive on the scene.",
+        "'''St.",
+        "John Ambulance''': The St. John Ambulance Association, created to teach volunteers how to perform basic first aid, was founded in 1877 in the United Kingdom.",
+        "Since then, the organization has spread around the world.",
+        "Now having multiple volunteer groups in numerous countries such as: United States, New Zealand, and Canada.",
+        "Neighborhood watch: Neighborhood watches are groups of individuals that live in the same area and have joined together in hopes to stop crime within their neighborhood.",
+        "It is something that has been used in numerous neighborhoods around the world to discourage would be criminals from targeting their houses, cars, or citizens.",
+        "Normally these teams meet up on certain nights to discuss strategies of patrol, establish persons for patrol, discuss what to do if an incident happens, and likely try to work with the police to ensure that the watch can be successful when standing up to crime.",
+        "In some cities local law enforcement will get together with different communities and give presentations on the idea of a neighborhood watch to help civilians to prevent crime .",
+        "Community emergency response team (CERT): CERT, or Community Emergency Response Team, is a governmental program in the United States that is designed to allow citizens to sign up to learn the skills they need to be able to assist themselves and their peers in the event of a disaster.",
+        "The program gives lessons in things such as fire safety, search and rescue, basic medical/first aid skills, etc.",
+        "Volunteers are also encouraged to actively be a part of the community emergency preparedness planning so that they can be more involved, but also so that they can establish a relationship with the professional emergency respondents that they will work beside during a disaster .",
+        " CERT offers a few different types of programs- Teen, Campus, and Workplace.",
+        "There is CERT Basic Training available for community members who wish to be educated and help in emergency situations.",
+        "This training educates volunteers in the hazards that could affect their specific area.",
+        "The basic training is backed up by research and will guide members to be leaders in their community and prepare them for what to do before, during, and after an emergency situation .",
+        "List of Special Response Units\nCivil defense\nParamilitary\nGendarmerie\nEmergency management\nComputer Emergency Response Team--Carnegie Mellon University\nDepartment of National Defence Disaster Assistance Response Team - DART (Canada)\nOil and hazardous materials spills --US National Response Team (NRT)\nRoyal Canadian Mounted Police ERT\nEmergency First Response Team--Lakehead University\nO.V.E.R.T--Ontario Volunteer Emergency Response Team\nThe Emergency First Response Team at McMaster University\nThe Emergency Response Team Czech Republic, ADZCR ERT\nCategory:Civil defense\nCategory:Civil-military relations\nCategory:Non-military counterterrorist organizations\nCategory:Gendarmerie\nCategory:Paramilitary organizations\nCategory:Incident management\nCategory:IT risk management"
+    ],
+    "raw_facts": [
+        {
+            "fact": 11,
+            "citation_urls": [
+                "http://oceanservice.noaa.gov/facts/hurricane.html",
+                "https://stormaware.mo.gov/tornado-facts-history/",
+                "https://earthquake.usgs.gov/learn/kids/eqscience.php"
+            ],
+            "pos": [
+                0,
+                1,
+                2
+            ]
+        },
+        {
+            "fact": 19,
+            "citation_urls": [
+                "http://www.lapdonline.org/metropolitan_division/content_basic_view/849"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 23,
+            "citation_urls": [
+                "http://www.thecanadianencyclopedia.ca/en/article/north-west-mounted-police/",
+                "http://www.thecanadianencyclopedia.ca/en/article/dominion-police/",
+                "http://www.rcmp-grc.gc.ca/en/history-rcmp"
+            ],
+            "pos": [
+                0,
+                1,
+                2
+            ]
+        },
+        {
+            "fact": 26,
+            "citation_urls": [
+                "http://www.allgov.com/departments/department-of-justice/federal-bureau-of-investigation-fbi?agencyid=7201"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 28,
+            "citation_urls": [
+                "http://www.allgov.com/departments/department-of-justice/federal-bureau-of-investigation-fbi?agencyid=7201"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 31,
+            "citation_urls": [
+                "https://www.fbi.gov/investigate/terrorism"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 32,
+            "citation_urls": [
+                "https://www.fbi.gov/investigate/terrorism/joint-terrorism-task-forces"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 34,
+            "citation_urls": [
+                "https://www.gsa.gov/portal/content/101201"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 38,
+            "citation_urls": [
+                "https://www.nremt.org/rwd/public/document/emt"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 39,
+            "citation_urls": [
+                "https://targetjobs.co.uk/careers-advice/job-descriptions/279533-firefighter-job-description"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 42,
+            "citation_urls": [
+                "http://www.fireengineering.com/articles/2012/10/suburban-fire-department-urban-mentality-part-1-the-fast-attack-engine-company.html",
+                "http://www.fireengineering.com/articles/print/volume-158/issue-11/departments/fire-commentary/industrial-firefighters-are-firefighters-too.html",
+                "https://www.becomefulltime.com/types-of-firefighter-careers/"
+            ],
+            "pos": [
+                0,
+                1,
+                2
+            ]
+        },
+        {
+            "fact": 49,
+            "citation_urls": [
+                "http://discoverpolicing.org/whats_like/?fa=types_careers"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 63,
+            "citation_urls": [
+                "http://www.sjpd.org/BFO/Community/Crimeprev/neighborhoodwatch.html"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 66,
+            "citation_urls": [
+                "https://www.fema.gov/community-emergency-response-teams"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 70,
+            "citation_urls": [
+                "https://www.ready.gov/cert"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

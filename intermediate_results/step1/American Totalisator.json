@@ -1,0 +1,53 @@
+{
+    "title": "American Totalisator",
+    "wiki_url": "https://en.wikipedia.org/?curid=10002888",
+    "extracted_sentences": [
+        "The American Totalisator Company, now known as AmTote International and commonly referred to as AmTote, specializes in totalisator equipment used to manage and control parimutuel betting at horse racing, greyhound racing, and jai-alai facilities.",
+        "The company was founded by Harry L. Straus, a computer engineer from Baltimore, who became interested in developing a fairer system of calculating and displaying odds and payouts on parimutuel betting after an incident at a Maryland racetrack in 1927.",
+        "When a horse listed at 12:1 odds won, but paid off at 4:1, Straus recognized the need for a more accurate and transparent system.",
+        "He began developing his innovative machine, the totalisator, also known as the \"tote board\" using telephone relays in 1928 .",
+        "Straus' new company installed its first equipment at Pimlico Race Course in Baltimore, Maryland, which displayed odds and payouts on illuminated boards, now commonly known as \"tote boards\".",
+        "In 1933, American Totalisator installed its first complete electro-mechanical tote system at Arlington Park in Arlington Heights, Illinois .",
+        " The Straus patents, 2,179,698 (issued November 14, 1939) and 2,182,875 (issued December 12, 1939), provided a platform for AmTote's growth as the once dominant provider of totalizator solutions in North America.",
+        "AmTote has installed more than 800 tote systems throughout the world.",
+        "The original electro-mechanical devices have given way to fully computerized systems where bettors place and collect wagers at the same window, self-service betting terminals, Internet- and telephone-based wagering, and \"hub\" systems to facilitate simulcast wagering.",
+        "The \"classic style\" AmTote display consists of 24 bulbs, 6 high by 4 wide.",
+        "AmTote's numeric displays were often seen on television game shows in the 1950s and 1960s, most notably the original version of The Price is Right.",
+        "The company was also an investor in the manufacturer of the original UNIVAC computer system .",
+        "The company is based in Hunt Valley, Maryland.",
+        "It was once owned by General Instrument and later sold to a division of Motorola.",
+        "Today, AmTote International is a wholly-owned subsidiary of The Stronach Group, the corporate parent of several race tracks, including Pimlico.",
+        "Tote board\nAmTote International web site\nCategory:Sports betting\nCategory:Companies based in Hunt Valley, Maryland\nCategory:Stronach Group\nCategory:General Instrument"
+    ],
+    "raw_facts": [
+        {
+            "fact": 3,
+            "citation_urls": [
+                "https://computerhistory.org/blog/racetrack-betting-mechanized/",
+                "https://hagley-aspace-pdf.s3.amazonaws.com/2186.pdf"
+            ],
+            "pos": [
+                0,
+                1
+            ]
+        },
+        {
+            "fact": 5,
+            "citation_urls": [
+                "https://hagley-aspace-pdf.s3.amazonaws.com/2186.pdf"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 11,
+            "citation_urls": [
+                "https://arstechnica.com/tech-policy/2011/09/univac-the-troubled-life-of-americas-first-computer/"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

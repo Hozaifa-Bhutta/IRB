@@ -1,0 +1,33 @@
+{
+    "title": "Carmovirus",
+    "wiki_url": "https://en.wikipedia.org/?curid=10000288",
+    "extracted_sentences": [
+        "Carmovirus was a genus of viruses.",
+        "The genus was split in 2015 into three genera, each retaining -carmovirus as part of their name:\nAlphacarmovirus\nBetacarmovirus\nGammacarmovirus\nThese genera are in the same family, Tombusviridae, as the original genus and are more specifically in the subfamily Procedovirinae.",
+        "The following species were assigned to Carmovirus and are, as of 2020, placed within Procedovirinae but not assigned to a genus:\nAhlum waterborne virus\nBean mild mosaic virus\nCucumber soil-borne virus\nWeddel waterborne virus\nCategory:Obsolete virus taxa"
+    ],
+    "raw_facts": [
+        {
+            "fact": 1,
+            "citation_urls": [
+                "https://ictv.global/ictv/proposals/2015.007a-rP.A.v1.split_Carmovirus.pdf",
+                "https://ictv.global/taxonomy"
+            ],
+            "pos": [
+                0,
+                0
+            ]
+        },
+        {
+            "fact": 2,
+            "citation_urls": [
+                "https://ictv.global/ictv/proposals/2015.007a-rP.A.v1.split_Carmovirus.pdf",
+                "https://ictv.global/taxonomy"
+            ],
+            "pos": [
+                0,
+                0
+            ]
+        }
+    ]
+}

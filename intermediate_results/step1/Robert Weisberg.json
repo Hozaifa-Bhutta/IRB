@@ -1,0 +1,125 @@
+{
+    "title": "Robert Weisberg",
+    "wiki_url": "https://en.wikipedia.org/?curid=10002497",
+    "extracted_sentences": [
+        "Robert I. Weisberg is an American lawyer.",
+        "He is the Edwin E. Huddleson Jr.",
+        "Professor of Law at Stanford Law School .",
+        " Weisberg is an authority on criminal law and criminal procedure, as well as a scholar in the law and literature movement   .",
+        "Weisberg was educated at the Bronx High School of Science, and received his B.A.",
+        "from the City College of New York in 1966 .",
+        " He obtained his M.A.",
+        "and Ph.D. degrees in English from Harvard University in 1967 and 1971 .",
+        " After graduation, he taught English at Skidmore College from 1970 to 1976  .",
+        " Weisberg left to attend Stanford Law School, where he received a J.D.",
+        "in 1979 and was the Editor-in-Chief of the Stanford Law Review .",
+        " He then served as a law clerk for Judge J. Skelly Wright of the U.S. Court of Appeals for the District of Columbia Circuit, followed by Justice Potter Stewart of the U.S. Supreme Court during the 1980 Term .",
+        "In 1981, he joined the faculty at Stanford Law School, where he has won numerous teaching awards, served as special assistant to the provost for faculty recruitment and retention, and co-directs the Stanford Criminal Justice Center   .",
+        " Weisberg's book, Literary Criticisms of Law, was published in 2000, Generally critical, but \"contains many shrewd and even pungent passages.\" and he is widely quoted in the press on criminal law and criminal procedure   .",
+        " He also co-authors a criminal law casebook .",
+        "List of law clerks of the Supreme Court of the United States (Seat 8)\nCategory:1946 births\nCategory:Living people\nCategory:Lawyers from New York City\nCategory:The Bronx High School of Science alumni\nCategory:Harvard Graduate School of Arts and Sciences alumni\nCategory:City College of New York alumni\nCategory:Stanford Law School alumni\nCategory:Law clerks of the Supreme Court of the United States\nCategory:Skidmore College faculty\nCategory:Stanford Law School faculty\nCategory:Legal writers\nCategory:American scholars of constitutional law\nCategory:American legal scholars"
+    ],
+    "raw_facts": [
+        {
+            "fact": 2,
+            "citation_urls": [
+                "https://law.stanford.edu/directory/robert-weisberg/"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 3,
+            "citation_urls": [
+                "http://www.mercurynews.com/2017/06/09/tony-serra-ghost-ship-leader-derick-almena-has-been-demonized/",
+                "http://yaledailynews.com/blog/2015/10/16/law-school-to-offer-rape-law-course//",
+                "http://www.sfchronicle.com/bayarea/article/Contra-Costa-DA-faces-rare-jury-trial-that-could-11217875.php"
+            ],
+            "pos": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "fact": 5,
+            "citation_urls": [
+                "http://members.calbar.ca.gov/fal/Member/Detail/91260"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 7,
+            "citation_urls": [
+                "http://news.stanford.edu/news/1999/may19/weisberg-519.html"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 8,
+            "citation_urls": [
+                "http://news.stanford.edu/news/1999/may19/weisberg-519.html",
+                "https://law.stanford.edu/index.php?webauth-document=child-page/156353/doc/slspublic/1992_Photo_Directory_0.pdf"
+            ],
+            "pos": [
+                0,
+                0
+            ]
+        },
+        {
+            "fact": 10,
+            "citation_urls": [
+                "https://law.stanford.edu/stanford-lawyer/articles/faculty-news-weisberg-appointed-to-california-judicial-council-advisory-committee/"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 11,
+            "citation_urls": [
+                "https://law.stanford.edu/index.php?webauth-document=child-page/156353/doc/slspublic/1992_Photo_Directory_0.pdf"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 12,
+            "citation_urls": [
+                "http://news.stanford.edu/news/2008/august20/dualhire-082008.html",
+                "http://news.stanford.edu/news/2014/december/grand-jury-qanda-120914.html",
+                "https://www.nytimes.com/1983/05/22/magazine/the-trouble-with-america-s-law-schools.html?pagewanted=all",
+                "http://felonvoting.procon.org/view.source.php?sourceID=002604&print=true"
+            ],
+            "pos": [
+                0,
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "fact": 13,
+            "citation_urls": [
+                "https://archive.org/details/literarycriticis0000bind",
+                "http://chicagounbound.uchicago.edu/cgi/viewcontent.cgi?article=5100&context=journal_articles",
+                "http://www.sfchronicle.com/opinion/article/Quotes-of-the-Week-6364152.php",
+                "http://archive.boston.com/news/nation/articles/2007/11/18/studies_spark_new_execution_debate/",
+                "http://archive.boston.com/news/nation/washington/articles/2004/09/14/figure_accused_in_gop_eavesdropping_sues_over_probe/"
+            ],
+            "pos": [
+                0,
+                1,
+                2,
+                2,
+                2
+            ]
+        }
+    ]
+}

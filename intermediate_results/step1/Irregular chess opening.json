@@ -1,0 +1,77 @@
+{
+    "title": "Irregular chess opening",
+    "wiki_url": "https://en.wikipedia.org/?curid=100015",
+    "extracted_sentences": [
+        "In chess, an irregular opening is an opening considered unusual or unorthodox.",
+        "In the early 19th century the term was used for any opening not beginning with 1.e4 e5 (the Open Game) or 1.d4 d5 (the Closed Game).",
+        "As opening theory has developed and openings formerly considered \"irregular\" have become standard, the term has been used less frequently Hooper & Whyld, The Oxford Companion to Chess, Oxford University Press, 1996, p 182, \"Irregular opening, in the early 19th century any opening that did not begin with 1.e4 e5 or 1.d4 d5. However, Jaenisch said, 'As this distinction is purely arbitrary, and unfounded on principle, we cannot ourselves adopt it. We distinguish all the openings as \"correct\", or else as \"incorrect\" or \"hazardous\".' Since then many so-called irregular openings have become standard play. These and many other openings have acquired names and the term irregular opening has gradually fallen into disuse.\".",
+        "Because these openings are not popular with chess players, the standard opening references such as Modern Chess Openings (MCO) and Encyclopaedia of Chess Openings (ECO) do not cover them in detail.",
+        "While the term has frequently been used in chess literature, its meaning has never been precise and has varied between writers.",
+        "One of the earliest references to \"irregular openings\" in chess literature was made by William Lewis in his 1832 work Second Series of Lessons on the Game of Chess.",
+        "Lewis classified openings under the headings \"King's Bishop's Game\" (1.e4 e5 2.Bc4), \"King's Knight's Game\" (1.e4 e5 2.Nf3), \"Queen's Bishop's Pawn Game\" (1.e4 e5 2.c3), \"King's Gambit\" (1.e4 e5 2.f4), \"Queen's Gambit\" (1.d4 d5 2.c4) and \"Irregular Openings\" (all other openings).",
+        "Lewis comments that the irregular openings are \"seldom played, because they are generally dull and uninteresting\".",
+        "Among the openings he analyzes under this heading are the French Defence and English Opening (both now considered standard), Bird's Opening and a few 1.d4 d5 lines without the Queen's Gambit.",
+        "Lewis assigns no names to these openings William Lewis, Second Series of Lessons on the Game of Chess, Simpkin & Marshall, London 1832.",
+        "Carl Jaenisch, who was an early advocate of the French and Sicilian defences, rejected this use of the term \"irregular\", saying that openings should rather be classified as \"correct\", \"incorrect\" or \"hazardous\" Carl Jaenisch, Jaenisch's Chess Preceptor: A New Analysis of the Openings of Game, Longman, Brown, Green & Longman, London, 1847 (original in French, St. Petersburg 1843).",
+        " In The Chess-Player's Handbook (1847), for many years the standard English-language reference book on the game of chess, Howard Staunton accepted Lewis's overall classification system while tacitly acknowledging Jaenisch's objections.",
+        "He wrote \"Those methods of commencing the game, in which the first or second player moves other than (1.e4 e5 or 1.d4 d5) are usually designated \"Irregular\".",
+        "Without assenting to the propriety of this distinction, I have thought it advisable, for the sake of perspicuity, to adopt a general and well known classification in preference to arranging these peculiar debuts under separate and less familiar heads.\"",
+        "Under this heading, Staunton considers the French Defence, Sicilian Defence, Scandinavian Defence, Owen's Defence, Dutch Defence, Benoni Defence, Bird's Opening and English Opening Howard Staunton, The Chess-Player's Handbook, Henry G. Bohn, London 1847.",
+        "Irregular openings are usually considered somewhat weaker than standard openings if both players play \"perfectly\".",
+        "An element that many irregular openings share in common to their favor, however, is that many players have not studied the resulting positions in depth.",
+        "As such, they can be a useful tool when played intentionally, similar to chess traps, to throw the other player off their preferred openings they've prepared for and played many times, and force the game onto a path that only the irregular opening player has studied.",
+        "This advantage can offset the theoretical weakness; even if the other player avoids any direct blunders, they may be forced to spend time deriving the correct move through personal analysis, rather than instantly knowing the \"correct\" reply from a memorized opening book.",
+        "In the same way, such strategies could be effective against older and weaker computer chess programs from the 1980s and 1990s: a chess program that heavily relied on memorized opening books from games of top players could be set adrift quickly by an irregular opening, and forced to calculate moves for itself.",
+        "Such tactics no longer work on modern chess programs, however, which are significantly stronger.",
+        "The vast majority of high-level chess games begin with either 1.e4, 1.d4, 1.Nf3, or 1.c4 Randy Olson, Popularity of chess openings over time, ChessBase, 24 June 2014.",
+        " Also seen occasionally are 1.g3, 1.b3, and 1.f4.",
+        "Other opening moves by White, along with a few non-transposing lines beginning 1.g3, are classified under the code \"A00\" by the Encyclopaedia of Chess Openings and described as \"uncommon\" or \"irregular\"  .",
+        " Although they are classified under a single code, these openings are unrelated to each other.",
+        "The openings classified as A00 are:\n1.a3 - Anderssen's Opening\n1.a4 - Ware Opening\n1.b4 - Sokolsky Opening, also known as the Polish Opening or Orangutan Opening\n1.c3 - Saragossa Opening\n1.d3 - Mieses Opening\n1.e3 - Van 't Kruijs Opening\n1.f3 - Barnes Opening, also known as Gedult's Opening\n1.g3 - King's Fianchetto Opening or Benko's Opening\n1.g4 - Grob's Attack\n1.h3 - Clemenz Opening, or Basman's Attack\n1.h4 - Desprez Opening, or Kadas Opening\n1.Na3 - Durkin Opening, also known as Durkin's Attack or the Sodium Attack\n1.Nc3 - Dunst Opening\n1.Nh3 - Amar Opening, also known as the Paris Opening, Ammonia Opening, or Drunken Knight Opening\nThe Nimzowitsch-Larsen Attack (1.b3, ECO code A01) and Bird's Opening (1.f4, ECO codes A02-A03) have also been described as \"irregular\", particularly in older books Savielly Tartakower & Jules du Mont, 500 Master Games of Chess, Dover, 1952, p651 .",
+        "Openings in which Black makes an unconventional response to 1.e4 are classified as B00 (King's Pawn Game) .",
+        " Included in this code are:\n1.e4 a6 - St. George Defence\n1.e4 b6 - Owen's Defence\n1.e4 f6 - Barnes Defence\n1.e4 h6 - Carr Defence\n1.e4 Na6 - Lemming Defence\n1.e4 Nc6 - Nimzowitsch Defence\n1.e4 Nh6 - Adams Defence\n1.e4 a5 - Cornstalk Defence\n1.e4 b5 - O'Neill Gambit (loses pawn to 2.",
+        "Bxb5)\n1.e4 f5 - Fred Defence\n1.e4 g5 - Borg Defence\n1.e4 h5 - Goldsmith Defence\nOf these, 1...Nc6, 1...b6, 1...a6, and 1...g5 have received the most theoretical attention Nick de Firmian, Batsford's Modern Chess Openings, 2014.",
+        " Tony Miles famously used 1...a6 to defeat Anatoly Karpov Les Bunning, Miles known for unorthodox style of play, Ottawa Citizen, 28 June 1980.",
+        "List of chess openings\nBongcloud Attack\nIrregular openings (chess)"
+    ],
+    "raw_facts": [
+        {
+            "fact": 21,
+            "citation_urls": [
+                "https://en.chessbase.com/post/popularity-of-chess-openings-over-time"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 23,
+            "citation_urls": [
+                "https://web.archive.org/web/20170829000056/http://www.chessinformant.org/content/eco-codes.pdf",
+                "http://www.chessarch.com/library/0000_eco/a00_a99.shtml"
+            ],
+            "pos": [
+                0,
+                0
+            ]
+        },
+        {
+            "fact": 26,
+            "citation_urls": [
+                "https://web.archive.org/web/20170829000056/http://www.chessinformant.org/content/eco-codes.pdf"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 29,
+            "citation_urls": [
+                "https://news.google.com/newspapers?nid=2194&dat=19800628&id=MaMyAAAAIBAJ&sjid=g-4FAAAAIBAJ&pg=5891,3880942&hl=en"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

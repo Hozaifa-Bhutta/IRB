@@ -1,0 +1,67 @@
+{
+    "title": "Gottschalk v. Benson",
+    "wiki_url": "https://en.wikipedia.org/?curid=10003934",
+    "extracted_sentences": [
+        "Gottschalk v. Benson, 409 U.S. 63 (1972), was a United States Supreme Court case in which the Court ruled that a process claim directed to a numerical algorithm, as such, was not patentable because \"the patent would wholly pre-empt the mathematical formula and in practical effect would be a patent on the algorithm itself ..",
+        "\" That would be tantamount to allowing a patent on an abstract idea, contrary to precedent dating back to the middle of the 19th century.",
+        "The ruling stated \"Direct attempts to patent programs have been rejected [and] indirect attempts to obtain patents and avoid the rejection ... have confused the issue further and should not be permitted Gottschalk, 409 U.S. at 72 (citing \"To Promote the Progress of . . . Useful Arts,\" Report of the President's Commission on the Patent System (1966))..",
+        "\" The case was argued on October 16, 1972, and was decided November 20, 1972.",
+        "The case revolves around a patent application filed by inventors Gary Benson and Arthur Tabbot, for a method for converting binary-coded decimal (BCD) numerals into pure binary numerals on a general-purpose digital computer .",
+        " The patent examiner at the United States Patent Office, now called the U.S. Patent and Trademark Office or PTO, rejected the patent application as being directed to a mathematical expression.",
+        "Pure mathematical expressions had been held to be unpatentable under earlier patent laws in Mackay Co. v. Radio Corp.. The applicant appealed to the Board of Patent Appeals and Interferences, which affirmed the examiner's rejection.",
+        "The applicant further appealed to the Court of Customs and Patent Appeals.",
+        "The Court reversed the Board.",
+        "Finally, Commissioner of Patents Robert Gottschalk filed a petition for a writ of certiorari to the Supreme Court.",
+        "The law which is applicable to this case is section 101 of the Patent Act of 1952.",
+        "The question was whether or not the claimed invention was a \"process\" under the law.",
+        "An older precedent held, that \"a process was patentable if it brought about a useful, concrete, and tangible result.\"",
+        "The Court held that because the claim was not limited to any particular type of programmable digital computer and neither involved special purpose implementing machinery nor a transformation of substances, as in all prior cases holding processes patentable, the claim would effectively preclude use of the method for any currently known or future invention in any field.",
+        "Thus the claim was directed to an algorithm alone and therefore was not patentable.",
+        "In its brief to the Supreme Court, the government asked the Court to hold that no process could be patented, unless it claimed either a transformation of substances or was implemented with a newly devised machine.",
+        "This approach is known as machine-or-transformation test.",
+        "The Court held that those criteria were \"clues\" to patent eligibility but declined to hold that they were necessary conditions for patent-eligibility in all cases, even though every case in which the Supreme Court had approved a process patent thus far had involved such a process.",
+        "This decision was widely seen as confirming that software by itself was not directly patentable.",
+        "What patent attorneys agents had been doing in the meantime, however, was to get patent protection on software inventions by claiming the algorithm in combination with the general purpose digital computer programmed to carry out the algorithm.",
+        "Thus they technically purported to be claiming a new machine and this, the lower patent court held, was patentable .",
+        "The boundary between when a computer implemented process is purely an abstract idea (and thus not patentable) and when it is a process implementing the idea in a practical way (and thus is patentable) is still a matter of debate within the U.S. patent office.",
+        "(\"The Supreme Court has not been clear...as to whether such subject matter is excluded from the scope of 101 because it represents laws of nature, natural phenomena, or abstract ideas 2106.02 Mathematical Algorithms - 2100 Patentability Manual of Patent Examining Procedure 8th ed..",
+        "\") It also remains a contested issue whether process patent claims must be directed to a transformation of substances or else embody a nontrivial, novel implementing machine or device.",
+        "The PTO has taken this position in its arguments to the United States Court of Appeals for the Federal Circuit.",
+        "See USPTO brief in In re Bilski Supplemental Brief of Appellee Director of the USPTO in In re Bilski, Fed. Cir. App. No. 2007-1130 , at pp. 6-14..",
+        " The Government also so argued in briefing the Benson case See Petitioner\u2019s Reply Brief on writ of certiorari in Benson, at 9 (\"we submit that the cases follow such a rule\u2014implicitly or explicitly\u2014and that they cannot be rationalized otherwise\")..",
+        " The majority opinion in the Federal Circuit's opinion in In re Bilski adopts this position.",
+        "says, \"Whoever invents or discovers any new and useful process, machine, manufacture, or composition of matter, or any new and useful improvement thereof may obtain a patent therefor, subject to the conditions and requirements of this title.\"",
+        "gives the definition for process, \"The term 'process' means process, art or method, and includes a new use of a known process, machine, manufacture, composition of matter, or material.\"",
+        "List of United States Supreme Court cases, volume 409\nSoftware patent\nCyberSource Corp. v. Retail Decisions, Inc.\nBilski v. Kappos\nAlice Corp. v. CLS Bank International\n<!--This article uses the Cite.php citation mechanism.",
+        "If you would like more information on how to add references to this article, please see http://meta.wikimedia.org/wiki/Cite/Cite.php -->\nCategory:Software patent case law\nCategory:United States patent case law\nCategory:United States Supreme Court cases\nCategory:1972 in United States case law\nCategory:United States Supreme Court cases of the Burger Court"
+    ],
+    "raw_facts": [
+        {
+            "fact": 4,
+            "citation_urls": [
+                "https://www.oyez.org/cases/1972/71-485"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 22,
+            "citation_urls": [
+                "http://www.uspto.gov/web/offices/pac/mpep/documents/2100_2106_02.htm"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 25,
+            "citation_urls": [
+                "https://web.archive.org/web/20081120115048/http://www.neweconomypatents.org/pdfs/Briefs/United_States_Patent_and_Trademark_Office.pdf"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

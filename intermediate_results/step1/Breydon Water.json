@@ -1,0 +1,65 @@
+{
+    "title": "Breydon Water",
+    "wiki_url": "https://en.wikipedia.org/?curid=100001",
+    "extracted_sentences": [
+        "Breydon Water is a biological Site of Special Scientific Interest at Great Yarmouth, Norfolk, England  .",
+        " It is a Local Nature Reserve, a Ramsar site and a Special Protection Area .",
+        " It is part of the Berney Marshes and Breydon Water nature reserve, which is managed by the Royal Society for the Protection of Birds (RSPB) .",
+        "It is a large stretch of sheltered estuary.",
+        "It is at the gateway to The Broads river system on the eastern edge of Halvergate Marshes.",
+        "It is the UK's largest protected wetland.",
+        "It is long and more than wide in places.",
+        "Breydon Water is overlooked at the southern end by the remains of the Roman Saxon Shore fort at Burgh Castle.",
+        "Centuries ago, Breydon Water would have been one large estuary facing the sea.",
+        "At the western end the water may be considered to start at the confluence of the River Yare and River Waveney; smaller sources including The Fleet flow in from the surrounding marshland.",
+        "Safe passage for boats is indicated by red and green marker posts.",
+        "Unlike most of the navigable waterways in the Norfolk Broads, Breydon Water is not subject to a speed limit.",
+        "At the east end of Breydon Water the river returns to a narrow channel, passing under Breydon Bridge after which it is joined by the River Bure then under Haven Bridge and Herring Bridge from where it is through the harbour into the North Sea.",
+        "At low tide there are vast areas of mudflats and saltings, all teeming with birds.",
+        "Since the mid-80s, Breydon Water has been a nature reserve in the care of the RSPB.",
+        "It has been a popular shooting area for centuries, and the shooting continues, but on a very much reduced scale.",
+        "In the winter, large numbers of wading birds and wildfowl use it to overwinter, including 12,000 golden plovers, 12,000 wigeons, 32,000 lapwings and tens of thousands of Bewick's swans.",
+        "Other species that have been noted there include dunlin, sanderling, Eurasian whimbrel, several (escaped) flamingos, pied avocets and on one occasion a glossy ibis.",
+        "There is a bird observation hide at the east end of Breydon Water, on the north shore, looking out towards a breeding platform used mainly by common terns.",
+        "Other breeding species include common shelducks, northern shovelers, Eurasian oystercatchers and yellow wagtails.",
+        "Naturalist Arthur Henry Patterson (1857-1935), who published under the pseudonym \"John Knowlittle\", extensively documented the wildlife of Breydon and the disappearing lifestyles of the boatmen, wildfowlers and fishermen who made a living from the estuary Extracts from his numerous works are available in 'Scribblings of a Yarmouth Naturalist' by Beryl Tooley, his great-granddaughter (  published 2004)..",
+        "Short sections of the Wherryman's Way and Weavers' Way long-distance paths follow the northern bank of the estuary from Yarmouth to Berney Arms, a distance of about 5 miles.",
+        "Breydon Water is the site of events in Arthur Ransome's popular Swallows and Amazons series book, Coot Club.",
+        "Norfolk Broads\nBreydon Water Literary Links\nRSPB Berney Marshes and Breydon Water\nWherryman's Way long distance walk\nCategory:Estuaries of England\nCategory:Ramsar sites in England\nCategory:Royal Society for the Protection of Birds reserves in England\nCategory:Norfolk Broads\nCategory:Sites of Special Scientific Interest in Norfolk\nCategory:Areas of Great Yarmouth\nCategory:Local Nature Reserves in Norfolk"
+    ],
+    "raw_facts": [
+        {
+            "fact": 0,
+            "citation_urls": [
+                "https://designatedsites.naturalengland.org.uk/SiteDetail.aspx?SiteCode=S1000454&SiteName=&countyCode=29&responsiblePerson=&SeaArea=&IFCAArea=",
+                "http://magic.defra.gov.uk/MagicMap.aspx?startTopic=Designations&activelayer=sssiIndex&query=HYPERLINK%3D%271000454%27"
+            ],
+            "pos": [
+                0,
+                0
+            ]
+        },
+        {
+            "fact": 1,
+            "citation_urls": [
+                "https://designatedsites.naturalengland.org.uk/SiteLNRDetail.aspx?SiteCode=L1008804&SiteName=&countyCode=29&responsiblePerson=&SeaArea=&IFCAArea=",
+                "https://designatedsites.naturalengland.org.uk/SiteGeneralDetail.aspx?SiteCode=UK11008&SiteName=&countyCode=29&responsiblePerson=&unitId=&SeaArea=&IFCAArea=",
+                "https://designatedsites.naturalengland.org.uk/SiteGeneralDetail.aspx?SiteCode=UK9009181&SiteName=&countyCode=29&responsiblePerson=&unitId=&SeaArea=&IFCAArea="
+            ],
+            "pos": [
+                0,
+                1,
+                2
+            ]
+        },
+        {
+            "fact": 2,
+            "citation_urls": [
+                "https://www.rspb.org.uk/reserves-and-events/reserves-a-z/berney-marshes-breydon-water"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

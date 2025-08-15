@@ -1,0 +1,69 @@
+{
+    "title": "Tsiolkovskiy (crater)",
+    "wiki_url": "https://en.wikipedia.org/?curid=1000165",
+    "extracted_sentences": [
+        "Tsiolkovskiy is a large lunar impact crater that is located on the far side of the Moon.",
+        "Named for Russian scientist Konstantin Tsiolkovsky, it lies in the southern hemisphere, to the west of the large crater Gagarin, and northwest of Milne.",
+        "Just to the south is Waterman, with Neujmin to the south-southwest.",
+        "The crater protrudes into the neighbouring Fermi, an older crater of comparable size that does not have a lava-flooded floor.",
+        "Tsiolkovskiy has been considered one of the largest craters of the Upper (Late) Imbrian age,The geologic history of the Moon.  USGS Professional Paper 1348. By Don E. Wilhelms, John F. McCauley, and Newell J. Trask.  U.S. Government Printing Office, Washington: 1987.  Table 11.2. although that dating was revised to the Imbrian/Eratosthenian boundary in 2013 .",
+        " A number of sites on its walls and central peak have slopes over 45deg, leading some to propose a Late Eratosthenian dating .",
+        "Tsiolkovskiy is one of the most prominent features on the far side of the Moon.",
+        "It possesses high, terraced inner walls and a well-formed central peak, which rises over 3200 m above the floor of the crater.",
+        "The floor is unusual for a crater on the far side, as it is covered by the dark-hued mare that is characteristic of the maria found on the near side.",
+        "The distribution of the mare material is not symmetrical across the floor, but is instead more heavily concentrated to the east and south.",
+        "There is also a protruding bay of darker material that reaches the wall to the west-northwest.",
+        "The remainder of the floor has the same albedo as the terrain surrounding the crater.",
+        "The crater has an unusually high rockfall density for its diameter, although this does not apply to its northwest rim .",
+        "A row of small craters in Mendeleev crater far to the northeast is called Catena Mendeleev, and the row points directly at Tsiolkovsky.",
+        "For this reason the craters are believed to be secondaries from the Tsiolkovsky impact The geologic history of the Moon, 1987, Wilhelms, Don E.; with sections by McCauley, John F.; Trask, Newell J. USGS Professional Paper: 1348.  Figure 9.26 B (online).",
+        "This feature was discovered on photographs sent back by the Russian spacecraft Luna 3, and was subsequently imaged by several of the American Lunar Orbiters and then by Apollo astronauts.",
+        "Apollo 17 Astronaut Harrison \"Jack\" Schmitt and other scientists (Schmitt was the only trained scientist, a geologist, to walk on the Moon) strongly advocated Tsiolkovskiy as the landing site of Apollo 17, using small communications satellites deployed from the Command/Service Module for communication from the far side of the Moon.",
+        "NASA vetoed the idea as too risky, and Apollo 17 instead landed in the Taurus-Littrow valley on December 11, 1972.",
+        "200px|thumb|right|Map\nBy convention these features are identified on lunar maps by placing the letter on the side of the crater midpoint that is closest to Tsiolkovskiy.",
+        "{| class=\"wikitable\" style=\"text-align:center\"\n|-\n!",
+        "Tsiolkovskiy\n!",
+        "class=\"unsortable\" | Coordinates\n!",
+        "Diameter, km\n|-\n|W\n|\n|12.1\n|-\n|X\n|\n|12.1\n|}\n1590 Tsiolkovskaja, asteroid\nThe following L&PI topographic maps show portions of the Tsiolkovskiy crater:\n Northern half -- LTO-101B2 Tsiolkovskij Borealis Southern half -- LTO-101B3 Tsiolkovskij Australis Northeast -- LTO-102A1 Patsaev Southeast -- LTO-102A4 Fesnekov\nHigh resolution lunar overflight video by Sean Doran, based on LRO data, that passes near Tsiolkovskiy about two thirds of the way through (see album for more); a longer version is on YouTube\nThe crater is also seen shortly after the 1:00 minute mark in this NASA video commemorating Apollo 13\nCategory:Impact craters on the Moon\nCrater"
+    ],
+    "raw_facts": [
+        {
+            "fact": 1,
+            "citation_urls": [
+                "http://www.nasa.gov/mission_pages/LRO/multimedia/lroimages/201000430_tsiol.html"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 4,
+            "citation_urls": [
+                "https://pubs.er.usgs.gov/publication/pp1348",
+                "https://www.researchgate.net/publication/236621067"
+            ],
+            "pos": [
+                0,
+                1
+            ]
+        },
+        {
+            "fact": 12,
+            "citation_urls": [
+                "https://www.researchgate.net/publication/342008792"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 14,
+            "citation_urls": [
+                "https://pubs.er.usgs.gov/publication/pp1348"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

@@ -1,0 +1,93 @@
+{
+    "title": "Lightweight programming language",
+    "wiki_url": "https://en.wikipedia.org/?curid=10001714",
+    "extracted_sentences": [
+        "Lightweight programming languages are programming languages designed to have small memory footprint, are easy to implement (important when porting a language to different computer systems), and/or have minimalist syntax and features Minimalist Language on WikiWikiWeb.",
+        "These programming languages have simple syntax and semantics, so one can learn them quickly and easily.",
+        "Some lightweight languages (for example Lisp, Forth, and Tcl) are so simple to implement that they have many implementations (dialects) .",
+        "BASIC implementations like Tiny BASIC were designed to be lightweight so that they could run on the microcomputers of the 1980s, because of memory constraints.",
+        "Forth is a stack-based concatenative imperative programming language using reverse Polish notation.",
+        "FALSE is a minimalist esoteric programming language, with a complete implementation done in 1024 bytes.",
+        "Brainfuck is an extremely minimalist esoteric programming language.",
+        "FlipJump is a minimalistic one-instruction set computer .",
+        "Io is a prototype-based object-oriented scripting language.",
+        "Lisp-like languages are very simple to implement, so there are many lightweight implementations of it.",
+        "There are some notable implementations:\nnewLISP\nPicoLisp\nDerivatives of Lisp:\nPico\nRebol\nRed\nScheme\nTcl-like languages can be easily implemented because of its simple syntax.",
+        "While Tcl itself is not lightweight, there are some lightweight implementations of languages with similar syntax   .",
+        "Ring is a lightweight multi-paradigm scripting language .",
+        "There are many embeddable implementation of ECMAScript like:\nEspruino\nJerryScript\nQuickJS\nBoa (JavaScript engine)\nDerivatives of ECMAScript:\nSquirrel\nLua is a small (C source is approx.",
+        "300 kB tarball, as of version 5.3.5), portable and embeddable scripting language (with LuaJIT as a JIT compiler improving speed).",
+        "It can be embedded in applications such as computer games to provide runtime scripting capabilities About Lua.",
+        "Wren is a small, fast, object-oriented scripting language .",
+        "Lightweight markup language\nLightweight software\nCategory:Computer programming\nCategory:Programming languages"
+    ],
+    "raw_facts": [
+        {
+            "fact": 0,
+            "citation_urls": [
+                "https://wiki.c2.com/?MinimalistLanguage"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 2,
+            "citation_urls": [
+                "https://stackoverflow.com/questions/3417831/if-lisp-is-the-perfect-language-why-are-there-so-many"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 7,
+            "citation_urls": [
+                "https://esolangs.org/wiki/FlipJump"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 11,
+            "citation_urls": [
+                "http://oldblog.antirez.com/post/picol.html",
+                "https://zserge.com/posts/tcl-interpreter/",
+                "http://runtimeterror.com/tech/lil/"
+            ],
+            "pos": [
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "fact": 12,
+            "citation_urls": [
+                "https://www.apress.com/gp/book/9781484258323"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 15,
+            "citation_urls": [
+                "http://lua.org/about.html"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 16,
+            "citation_urls": [
+                "http://wren.io/"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

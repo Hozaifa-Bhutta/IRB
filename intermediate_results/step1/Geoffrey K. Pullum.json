@@ -1,0 +1,331 @@
+{
+    "title": "Geoffrey K. Pullum",
+    "wiki_url": "https://en.wikipedia.org/?curid=1000228",
+    "extracted_sentences": [
+        "Geoffrey Keith Pullum (; born 8 March 1945) is a British and American linguist specialising in the study of English.",
+        "Pullum has published over 300 articles and books on various topics in linguistics, including phonology, morphology, semantics, pragmatics, computational linguistics, and philosophy of language.",
+        "He is Professor Emeritus of General Linguistics at the University of Edinburgh .",
+        "Pullum is a co-author of The Cambridge Grammar of the English Language (2002), a comprehensive descriptive grammar of English.",
+        "He was co-founder of Language Log and a contributor to Lingua Franca at The Chronicle of Higher Education, often criticizing prescriptive rules and linguistic myths.",
+        "Geoffrey K. Pullum was born in Irvine, North Ayrshire, Scotland, on 8 March 1945, and moved to West Wickham, England, while very young.",
+        "He left secondary school at age 16 and toured Germany as a pianist in the rock and roll band Sonny Stewart and the Dynamos.",
+        "A year and a half later, he returned to England and co-founded a soul band with Pete Gage, which became Geno Washington & the Ram Jam Band when Geno Washington joined .",
+        " Pullum went by the name of Jeff Wright .",
+        " The group had two of the biggest selling UK albums of the 1960s, both of which were live albums .",
+        " Their most commercially successful album, ''Hand Clappin, Foot Stompin, Funky-Butt ...",
+        "Live!",
+        "'', was in the UK Albums Chart for 38 weeks in 1966 and 1967, peaking at number 5.",
+        "The other album was Hipster Flipsters Finger Poppin' Daddies, which reached number 8 on the same chart Martin Roach (ed.), Virgin Book of British Hit Albums, 2009, p.292.",
+        " The singles included \"Water\", \"Hi Hi Hazel\", \"Que Sera Sera\" and \"Michael (the Lover)\" .",
+        "After the band broke up, Pullum enrolled in the University of York in 1968, graduating in 1972 with a Bachelor of Arts with first class honours.",
+        "In 1976 he completed a PhD in Linguistics at University College London, where his thesis supervisor was Neil Smith .",
+        "Pullum's work in the 1970s with Desmond Derbyshire, for whom he was the primary doctoral supervisor, established the existence of object-initial languages .",
+        "Pullum left Britain in 1980, taking visiting positions at the University of Washington and Stanford University.",
+        "He contributed significantly to the development of Generalized Phrase Structure Grammar .",
+        " In 1983, he and Arnold Zwicky showed that n't is a negative inflectional morpheme, and not simply a contraction of not .",
+        "In 1987, he became a United States citizen.",
+        "He worked at the University of California, Santa Cruz, from 1981 to 2007 .",
+        " He was Dean of Graduate Studies and Research from 1987 to 1993 .",
+        " From 1983 to 1989, he wrote the regular \"Topic Comment\" pieces in Natural Language and Linguistic Theory.",
+        "In 1995, Pullum started to collaborate with Rodney Huddleston and other linguists on The Cambridge Grammar of the English Language, which was published in 2002 and won the Leonard Bloomfield Book Award of the Linguistic Society of America in 2004 .",
+        "From 1998 until 2002, he produced 10 \"Lingua Franca\" talks for the Australian Broadcasting Corporation .",
+        " In 2000, he published, in the style of Dr. Seuss, a proof of Turing's theorem that the halting problem is recursively unsolvable Pullum, Geoffrey K. (2000) \"Scooping the loop snooper: An elementary proof of the undecidability of the halting problem\". Mathematics Magazine 73.4 (October 2000), 319\u2013320. A corrected version appears on the author's website as \"Scooping the loop snooper: A proof that the Halting Problem is undecidable\"..",
+        " In 2003, he was elected a Fellow of the American Academy of Arts and Sciences .",
+        " In 2004, Barbara Scholz, Pullum, and James Rogers initiated a group project on the applications of model theory in syntax, which was supported by the Radcliffe Institute for Advanced Study at Harvard University in 2005-2006 .",
+        "In 2007, he moved to the School of Philosophy, Psychology and Language Sciences, University of Edinburgh, where he was Professor of General Linguistics and at one time Head of Linguistics and English Language .",
+        " In 2009 he was elected a Fellow of the British Academy, and, in 2019, a Member of Academia Europaea .",
+        " He became emeritus professor in 2020 .",
+        "Pullum argues against the view that the \"languages\"--in the sense of entities like Romanian or English--are scientifically and concretely definable objects .",
+        " It's this notion of language that is commonly referred to in generative linguistics as E-language .",
+        "<blockquote>It seems to me that the notion of 'a language' should not be regarded as scientifically reconstructable at all.",
+        "We can say in very broad terms that a human language is a characteristic way of structuring expressions shared by a speech community; but that is extremely vague, and has to remain so.",
+        "The vagueness is ineliminable, and unproblematic.",
+        "Human languages are no more scientifically definable than human cultures, ethnic groups, or cities.",
+        "The most we can say about what it means to say of a person that they speak Japanese is that the person knows, at least to some approximation, how to structure linguistic expressions in the Japanese way (with object before verb, and postpositions, and so on).",
+        "But in scientific terms there is no such object as 'Japanese' .",
+        "</blockquote>Nevertheless, it does not follow for Pullum that an externalist notion of 'language' cannot in principle be an object of scientific study (cf.",
+        "Chomsky's perspective that the only scientifically interesting conception of language is an internalist one).",
+        "Instead, Pullum justifies a conception of the grammar that makes claims directly about linguistic expressions, as opposed to sets of such expressions .",
+        "Pullum advocates for a model-theoretic conception of grammar under which sentences or expressions are taken to be well-formed if and only if they satisfy necessary conditions on the syntactic structures of individual expressions .",
+        " This approach stands in contrast to a generative-enumerative (or proof-theoretic) conception under which a grammar is a recursive procedure that defines a set of well-formed expressions--that is, the full set of expressions that are well-formed in the 'language', and no-more.",
+        "The upshot of this is that model-theoretic grammars, unlike generative-enumerative grammars, remain silent on the cardinality of the set of well-formed sentences according to the grammar .",
+        " Pullum takes the answers to such questions in the context of natural language to be unknowable.",
+        "Hence, a grammar that makes no ontological commitment regarding the (in)finitude of natural language is preferable to one that does .",
+        "<blockquote>Grammars of this sort [MTS] are entirely independent of the numerosity of expressions...",
+        "The constraints are satisfied by expressions with the relevant structure whether there are infinitely many of them, or a huge finite number, or only a few.\"</blockquote>Pullum's grammatical frameworks, such as that in The Cambridge Grammar of the English Language, have been monotonic phrase-structure grammars, similar to X-bar theory but with explicit notation for syntactic functions such as subject, modifier, and complement .",
+        " Monotonic phrase-structure grammars are based on the idea that the structure of sentences can be represented as a hierarchy of constituents, with each level of the hierarchy corresponding to a different level of grammatical organization.",
+        "X-bar theory is a specific type of phrase-structure grammar that posits a uniform structure for all phrasal categories, with each phrase containing a \"head\" and optional specifier and/or complement.",
+        "The key difference between monotonic phrase-structure grammars and generative grammars like transformational-generative grammar (TGG) is the absence of transformations or movement operations in the former.",
+        "Monotonic grammars maintain that the structure of a sentence remains fixed from its initial formation, whereas generative grammars propose that sentences can undergo various transformations during the derivation process.",
+        "Pullum argues that the traditional notion of a noun phrase is correct, and that the so-called DP hypothesis is mistaken .",
+        " He believes that some kind of fusion of functions accounts for some of the data leading to the disagreement .",
+        "Pullum has been a long-time critic of Noam Chomsky, whom he accuses of mendacity, plagiarism, and general academic dishonesty .",
+        " He has attacked the argument from the poverty of the stimulus in multiple publications   .",
+        " He has called Chomsky's Minimalist Program \"really just a repertoire of hints, suggestions, and buzzwords\", has said that concepts such as Deep Structure and Recursion have \"come to nothing\", called Chomsky's idea that language arose as a result of a genetic mutation \"utterly eccentric\", and regretted that Chomsky \"turned the discipline of syntactic theory into a personality cult\" .",
+        "Pullum has coined or prompted the coining of a number of terms that have come to be popularly used including eggcorn, snowclone, and linguification .",
+        "Pullum, Geoffrey K. (1977).",
+        "Cole, P.; Sadock, J. M.",
+        "(eds.).",
+        "\"Word order universals and grammatical relations\".",
+        "Syntax and Semantics.",
+        "8: 249-277.",
+        ".",
+        "Derbyshire, Desmond C.; Pullum, Geoffrey K. (1979).",
+        "\"Object initial languages\".",
+        "Work Papers of the Summer Institute of Linguistics, University of North Dakota Session.",
+        "23 (2).",
+        ".",
+        "Pullum, Geoffrey K. (1979).",
+        "Rule interaction and the organization of a grammar.",
+        "Outstanding Dissertations in Linguistics.",
+        "New York: Garland.",
+        ".",
+        "Gazdar, Gerald; Klein, Ewan; Pullum, Geoffrey K.; and Sag, Ivan A.",
+        "(1985).",
+        "Generalized Phrase Structure Grammar.",
+        "Oxford: Basil Blackwell.",
+        "Pullum, Geoffrey K., and Ladusaw, William A.",
+        "(1986).",
+        "Phonetic Symbol Guide, University of Chicago Press.",
+        "2nd ed (1986).",
+        ".",
+        "(Sekai onsei kigo jiten).",
+        "Tokyo: Sanseido (2003).",
+        ".",
+        "Pullum, Geoffrey K. (1991).",
+        "The Great Eskimo Vocabulary Hoax and Other Irreverent Essays on the Study of Language, University of Chicago Press.",
+        ".",
+        "(See also Eskimo words for snow)\nHuddleston, Rodney D., and Pullum, Geoffrey K. (2002).",
+        "The Cambridge Grammar of the English Language.",
+        "Cambridge: Cambridge University Press.",
+        "Huddleston, Rodney D.; Pullum, Geoffrey K. (2005).",
+        "A Student's Introduction to English Grammar.",
+        "Cambridge: Cambridge University Press.",
+        "312 pp.",
+        ".",
+        "Huddleston, Rodney D., and Pullum, Geoffrey K.; trans.",
+        "(Kunitoshi Takahashi) (2007).",
+        "(Kenburijji gendai eigo bunpo nyumon).",
+        "Tokyo: Cambridge University Press (2007).",
+        ".",
+        "Huddleston, Rodney D.; Pullum, Geoffrey K.; Reynolds, Brett (2022).",
+        "A Student's Introduction to English Grammar (2nd ed.).",
+        "Cambridge: Cambridge University Press.",
+        "400 pp.",
+        ".",
+        "Liberman, Mark, and Pullum, Geoffrey K. (2006).",
+        "Far from the Madding Gerund and Other Dispatches from the Language Log, William, James & Company.",
+        "Pullum, Geoffrey K. (2018).",
+        "Linguistics: Why It Matters.",
+        "Cambridge: Polity.",
+        "Language Log\nCategory:1945 births\nCategory:Living people\nCategory:Linguists from the United States\nCategory:Linguists from the United Kingdom\nCategory:Syntacticians\nCategory:Scottish emigrants to the United States\nCategory:University of California, Santa Cruz faculty\nCategory:Alumni of University College London\nCategory:Academics of the University of Edinburgh\nCategory:People from Irvine, North Ayrshire\nCategory:Fellows of the American Academy of Arts and Sciences\nCategory:Fellows of the British Academy\nCategory:Alumni of the University of York\nCategory:People educated at Eltham College\nCategory:British rhythm and blues boom musicians\nCategory:British soul musicians\nCategory:Philosophers of linguistics\nCategory:Fellows of the Linguistic Society of America\nCategory:Members of Academia Europaea\nCategory:American LGBTQ academics\nCategory:Linguists of English\nCategory:20th-century American musicians\nCategory:20th-century American academics\nCategory:21st-century American academics\nCategory:Geno Washington & the Ram Jam Band members"
+    ],
+    "raw_facts": [
+        {
+            "fact": 2,
+            "citation_urls": [
+                "https://www.ed.ac.uk/profile/geoffrey-k-pullum"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 8,
+            "citation_urls": [
+                "https://thestrangebrew.co.uk/interviews/geno-washington-the-ram-jam-band/"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 14,
+            "citation_urls": [
+                "https://www.officialcharts.com/artist/12522/geno-washington-and-his-ram-jam-band/"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 16,
+            "citation_urls": [
+                "http://archive.org/details/ruleinteractiono0000pull"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 22,
+            "citation_urls": [
+                "https://people.ucsc.edu/~pullum/"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 23,
+            "citation_urls": [
+                "https://www.ae-info.org/ae/Member/Pullum_Geoffrey"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 25,
+            "citation_urls": [
+                "http://muse.jhu.edu/content/crossref/journals/language/v080/80.1culicover.pdf",
+                "http://www.linguisticsociety.org/content/leonard-bloomfield-book-award-previous-holders"
+            ],
+            "pos": [
+                0,
+                1
+            ]
+        },
+        {
+            "fact": 26,
+            "citation_urls": [
+                "https://discover.abc.net.au/index.html#/?query=Lingua%20Franca%20geoff%20pullum&page=1"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 27,
+            "citation_urls": [
+                "http://www.lel.ed.ac.uk/~gpullum/loopsnoop.html"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 28,
+            "citation_urls": [
+                "https://www.amacad.org/person/geoffrey-keith-pullum"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 29,
+            "citation_urls": [
+                "https://www.radcliffe.harvard.edu/people/barbara-c-scholz"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 30,
+            "citation_urls": [
+                "https://www.ae-info.org/ae/Member/Pullum_Geoffrey"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 31,
+            "citation_urls": [
+                "https://www.thebritishacademy.ac.uk/fellows/geoffrey-k-pullum-FBA/",
+                "https://www.ae-info.org/ae/Member/Pullum_Geoffrey"
+            ],
+            "pos": [
+                0,
+                1
+            ]
+        },
+        {
+            "fact": 32,
+            "citation_urls": [
+                "https://www.ed.ac.uk/profile/geoffrey-k-pullum"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 41,
+            "citation_urls": [
+                "https://plato.stanford.edu/archives/sum2025/entries/linguistics/"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 44,
+            "citation_urls": [
+                "https://link.springer.com/chapter/10.1007/3-540-48199-0_2"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 45,
+            "citation_urls": [
+                "https://www.cambridge.org/core/books/linguistics-and-the-formal-sciences/9ADCCE0D4CF143A9367718EC73DE5CB4"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 48,
+            "citation_urls": [
+                "https://www.cambridge.org/core/product/identifier/S0022226724000240/type/journal_article"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 50,
+            "citation_urls": [
+                "https://www.degruyterbrill.com/document/doi/10.1515/9783110219258.111/html",
+                "https://www.cambridge.org/core/product/identifier/S0022226724000240/type/journal_article",
+                "http://www.lel.ed.ac.uk/~gpullum/EssexLAGB.pdf"
+            ],
+            "pos": [
+                0,
+                0,
+                1
+            ]
+        },
+        {
+            "fact": 57,
+            "citation_urls": [
+                "https://www.nationalreview.com/magazine/2022/03/07/chomskys-forever-war/"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 59,
+            "citation_urls": [
+                "https://www.nationalreview.com/magazine/2022/03/07/chomskys-forever-war/"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 60,
+            "citation_urls": [
+                "https://arnoldzwicky.org/2020/12/18/denials/"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

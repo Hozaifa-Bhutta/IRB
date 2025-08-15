@@ -1,0 +1,66 @@
+{
+    "title": "Whispermoon",
+    "wiki_url": "https://en.wikipedia.org/?curid=10000088",
+    "extracted_sentences": [
+        "{{Music ratings\n| rev1 = AllMusic\n| rev1score = \n| rev2 = Dusted Magazine\n| rev2score = favorable\n| rev3 = Exclaim!",
+        "| rev3score = favorable\n| rev4 = Pitchfork\n| rev4score = 6.6/10\n| rev5 = Stylus Magazine\n| rev5score = C\n}}\nWhispermoon is the debut studio album by Listener.",
+        "It was released on Mush Records on July 29, 2003 .",
+        " It peaked at number 163 on the CMJ Radio 200 chart and at number 4 on CMJ's Hip-Hop chart .",
+        "Jason MacNeil of AllMusic gave the album 3 stars out of 5, saying, \"Not as polished or glossy as bigger rap stars, this record has a certain independent aura around it .",
+        "\" Rollie Pemberton of Pitchfork gave the album a 6.6 out of 10 and said, \"The saving grace of Whispermoon is its varied production .",
+        "\"\nCategory:2003 debut albums\nCategory:Listener (band) albums\nCategory:Mush Records albums"
+    ],
+    "raw_facts": [
+        {
+            "fact": 0,
+            "citation_urls": [
+                "http://www.allmusic.com/album/whispermoon-mw0000600065",
+                "http://www.dustedmagazine.com/reviews/1037"
+            ],
+            "pos": [
+                0,
+                1
+            ]
+        },
+        {
+            "fact": 1,
+            "citation_urls": [
+                "http://exclaim.ca/music/article/listener-whispermoon",
+                "http://pitchfork.com/reviews/albums/4956-whispermoon/",
+                "https://web.archive.org/web/20120504082124/http://www.stylusmagazine.com/reviews/listener/whispermoon.htm"
+            ],
+            "pos": [
+                0,
+                1,
+                2
+            ]
+        },
+        {
+            "fact": 2,
+            "citation_urls": [
+                "http://www.mushrecords.com/release/MH217.php"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 4,
+            "citation_urls": [
+                "http://www.allmusic.com/album/whispermoon-mw0000600065"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 5,
+            "citation_urls": [
+                "http://pitchfork.com/reviews/albums/4956-whispermoon/"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

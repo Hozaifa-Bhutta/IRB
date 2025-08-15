@@ -1,0 +1,47 @@
+{
+    "title": "David Littmann",
+    "wiki_url": "https://en.wikipedia.org/?curid=10000074",
+    "extracted_sentences": [
+        "thumb|right|A Littmann stethoscope\nDavid Littmann (July 28, 1906 - January 1, 1981) was an American cardiologist and Harvard Medical School professor and researcher .",
+        " The name Littmann is well known in the medical field for the patented Littmann Stethoscope reputed for its acoustic performances for auscultation.",
+        "Littman was born on July 28, 1906 in Chelsea, Massachusetts.",
+        "His parents, Isaac Litman and Sadie Zewat Litman, were Ukrainian immigrants from Novgorod.",
+        "With Gustev Machlup, Dr. David Littmann founded Cardiosonics, Inc.",
+        "to sell his stethoscopes.",
+        "At that time the stethoscope line consisted of two key models, the doctor's stethoscope and the nurse's stethoscope.",
+        "3M acquired the stethoscope company on April 1, 1967, and hired Dr. Littmann as a consultant.",
+        "3M currently produces the range of Littmann brand stethoscopes Stethoscope Littmann Stethoscopes .",
+        "The 1960s-era Littman Cardiology 3 stethoscope, which is out of patent, became the basis of a 3D-printed stethoscope developed by Dr. Tarek Loubani and a team of medical and technology specialists as part of the open source Glia project .",
+        "Dr. Littmann's son was jazz drummer Peter Littman (1935-1985).",
+        "3M Littmann Worldwide\nWhich stethoscope should you get\nComparison of Littmann Stethoscopes\nHow to Choose a Littmann Stethoscope Guide\nCategory:1906 births\nCategory:1981 deaths\nCategory:American cardiologists\nCategory:American people of Ukrainian-Jewish descent\nCategory:Harvard Medical School faculty\nCategory:20th-century American inventors"
+    ],
+    "raw_facts": [
+        {
+            "fact": 0,
+            "citation_urls": [
+                "https://web.archive.org/web/20100211165407/http://solutions.3m.com/wps/portal/3M/en_US/Littmann/stethoscope/products/history"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 8,
+            "citation_urls": [
+                "http://www.davidgregory.org/medical/littmann-stethoscopes.htm"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 9,
+            "citation_urls": [
+                "https://www.theregister.co.uk/2015/08/14/printed_stethoscope_cccamp/"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

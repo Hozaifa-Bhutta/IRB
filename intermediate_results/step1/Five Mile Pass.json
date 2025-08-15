@@ -1,0 +1,24 @@
+{
+    "title": "Five Mile Pass",
+    "wiki_url": "https://en.wikipedia.org/?curid=10001240",
+    "extracted_sentences": [
+        "thumb|right|200px|Five Mile Pass entry sign.",
+        "thumb|left|200px|Motocross biking trails at Five Mile Pass, Utah.",
+        "Five Mile Pass is a high arid region ~ west of Eagle Mountain, Utah, that is managed by the Bureau of Land Management and is popular for motocross, off highway vehicle recreation, mountain biking, hiking, and camping .",
+        "The area is on the Utah County and Tooele County line, and the Pony Express passed through the area during 1860-1861.",
+        "The area also was traveled by the stagecoach and pioneer families heading west for Nevada and California.",
+        "Other historical activities in the area include mineral mining and quarrying.",
+        "Category:Pony Express\nCategory:Protected areas of Tooele County, Utah\nCategory:Protected areas of Utah County, Utah\nCategory:Bureau of Land Management areas in Utah"
+    ],
+    "raw_facts": [
+        {
+            "fact": 2,
+            "citation_urls": [
+                "http://www.utahmountainbiking.com/trails/fivemile.htm"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

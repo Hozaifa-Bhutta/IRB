@@ -1,0 +1,32 @@
+{
+    "title": "A Intrusa",
+    "wiki_url": "https://en.wikipedia.org/?curid=10000156",
+    "extracted_sentences": [
+        "A Intrusa is a 1979 Brazilian drama film directed by Carlos Hugo Christensen, based on the short story \"La intrusa\" by Jorge Luis Borges.",
+        "The film is about the parallel lives of two gaucho brothers with Danish ancestry.",
+        "It was shot in Uruguaiana, Rio Grande do Sul .",
+        "Jose de Abreu as Christian\nArlindo Barreto as Eduardo\nMaria Zilda Bethlem as Juliana\nPalmira Barbosa as Efigenia\nFernando de Almeida as Joao Iberra\nRicardo Marnick\nMauricio Loyola\nHeloisa Gadel\nNelson Pinto Bastos\nHermes Lago\nAt the 1980 Gramado Film Festival the film won four Golden Kikito awards, including Best Director, Best Actor (Jose de Abreu), Best Cinematography (Antonio Goncalves) and Best Music (Astor Piazzolla), and was also nominated for Best Film .",
+        "A Intrusa on \"The Garden of Forking Paths\" Borges site.",
+        "Category:1979 drama films\nCategory:1979 LGBTQ-related films\nCategory:1979 films\nCategory:Brazilian drama films\nCategory:Brazilian LGBTQ-related films\nCategory:Films based on short fiction\nCategory:Films directed by Carlos Hugo Christensen\nCategory:Films shot in Rio Grande do Sul\nCategory:1970s Portuguese-language films\nCategory:1970s LGBTQ-related drama films\nCategory:Films about gauchos\nCategory:Films about threesomes\nCategory:Films scored by Astor Piazzolla\nCategory:1970s Brazilian films\nCategory:Portuguese-language drama films"
+    ],
+    "raw_facts": [
+        {
+            "fact": 2,
+            "citation_urls": [
+                "http://bases.cinemateca.gov.br/cgi-bin/wxis.exe/iah/?IsisScript=iah/iah.xis&base=FILMOGRAFIA&lang=p&nextAction=lnk&exprSearch=ID=003353&format=detailed.pft"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 3,
+            "citation_urls": [
+                "https://web.archive.org/web/20130701061820/http://www.festivaldegramado.net/premiados"
+            ],
+            "pos": [
+                0
+            ]
+        }
+    ]
+}

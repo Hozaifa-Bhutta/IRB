@@ -1,0 +1,60 @@
+{
+    "title": "Mattoon station",
+    "wiki_url": "https://en.wikipedia.org/?curid=10004610",
+    "extracted_sentences": [
+        "Mattoon station is an Amtrak intercity train station in Mattoon, Illinois, United States.",
+        "The station is a flag stop on the City of New Orleans route, served only when passengers have tickets to and from the station.",
+        "It is a regular stop for the .",
+        "The Mattoon station is housed in the former Illinois Central Railroad Depot.",
+        "The depot was completed in 1918 and placed on the National Register of Historic Places in 2001 National Register of Historic Places listings for Coles County, Illinois. www.nationalregisterofhistoricplaces.com.",
+        " At its height, the building housed a power plant, mail room, luggage room, and restaurant, in addition to the main hall where passengers waited to board trains.",
+        "As many as ten trains a day departed the depot in the 1950s Project Depot: History. www.projectdepot.org .",
+        "During 2010, a $3 million restoration project, paid for from a mix of private, state, and federal funding, was undertaken, replacing paint, flooring, and other interior fixtures .",
+        "There are no Amtrak employees at the station; the doors unlock and lock automatically before and after the arrival and departure of trains.",
+        "The station currently serves as a stop for the Illini, Saluki, and City of New Orleans passenger trains Great American Stations. Accessed March 27, 2013. The tracks themselves, formerly part of the Illinois Central Railroad, are now owned by the Canadian National Railway (CN) Great American Stations. Accessed March 27, 2013..",
+        " Freight trains run by CN pass through frequently.",
+        "Transit service to the depot from Mattoon and Charleston is provided by Dial-A-Ride Rural Public Transportation, which provides deviated fixed-route and demand-response service.",
+        "Pictures of the Mattoon station from projectdepot.org.",
+        "Mattoon Amtrak Station (USA Rail Guide -- Train Web)\nNational Register nomination\nCategory:Railway stations on the National Register of Historic Places in Illinois\nCategory:Amtrak stations in Illinois\nCategory:Transportation buildings and structures in Coles County, Illinois\nCategory:Former Illinois Central Railroad stations\nCategory:National Register of Historic Places in Coles County, Illinois\nCategory:Railway stations in the United States opened in 1855"
+    ],
+    "raw_facts": [
+        {
+            "fact": 4,
+            "citation_urls": [
+                "http://www.nationalregisterofhistoricplaces.com/IL/Coles/state.html"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 6,
+            "citation_urls": [
+                "https://web.archive.org/web/20050911093002/http://www.projectdepot.org/History.htm"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 7,
+            "citation_urls": [
+                "http://www.chicagotribune.com/news/chi-ap-il-traindepot-mattoo,0,972957.story"
+            ],
+            "pos": [
+                0
+            ]
+        },
+        {
+            "fact": 9,
+            "citation_urls": [
+                "http://www.greatamericanstations.com/Stations/MAT/Station_view",
+                "http://www.greatamericanstations.com/Stations/MAT/Station_view"
+            ],
+            "pos": [
+                0,
+                1
+            ]
+        }
+    ]
+}
