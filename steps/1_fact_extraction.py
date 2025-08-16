@@ -42,7 +42,7 @@ def slight_text_processing(wiki_raw_text: str):
     # IMPORTANT CHANGE: Removed this piece of code to take into account middle citations
     # res = wiki_raw_text.replace(",<ref", ".<ref")  
 
-    res = wiki_raw_text.replace("et al.", "et al") # et al. should not be the end of the sentence
+    res = wiki_raw_text.replace("et al.", "et al")
 
     return res
 
@@ -101,7 +101,11 @@ def process_wikilinks_and_replace_ref(raw_text: str):
     """
     wikicode = mwparserfromhell.parse(raw_text)
 
-    # STEP0: replace ref
+    # STEP: remove tables:
+    for table in wikicode.filter_tags(matches=lambda node: node.tag == "table"):
+        wikicode.remove(table)
+
+    # STEP: replace ref
     tag_name_2_url = {}
     placeholder_mapper = {}
     for i, node in enumerate(wikicode.filter_tags(matches=lambda node: node.tag == 'ref')):
@@ -119,7 +123,7 @@ def process_wikilinks_and_replace_ref(raw_text: str):
             pass
 
 
-    # STEP1: processing the templates
+    # STEP: processing the templates
     templates_to_replace = {}
     for template in wikicode.ifilter_templates():
         template_name = template.name.lower()
@@ -148,13 +152,13 @@ def process_wikilinks_and_replace_ref(raw_text: str):
             except ValueError:
                 templates_to_replace[str(template)] = display_text
 
-    # STEP2: throw away the headings
+    # STEP: throw away the headings
     for heading in wikicode.filter_headings():
         wikicode.remove(heading)
 
 
 
-    # STEP3: wiki internal link processing. Basically replace them with ordinary text
+    # STEP: wiki internal link processing. Basically replace them with ordinary text
     for node in wikicode.filter_wikilinks(recursive=True):
         # node.text is the visible part; if not present, use the title
         try:
@@ -162,6 +166,12 @@ def process_wikilinks_and_replace_ref(raw_text: str):
             wikicode.replace(node, visible)
         except ValueError:
             templates_to_replace[str(node)] = visible
+
+
+    # STEP: remove references section:
+    sections = wikicode.get_sections(matches="References")  # returns list of sections with that heading
+    for section in sections:
+        wikicode.remove(section)
 
     str_wikicode = str(wikicode)
     for k, v in templates_to_replace.items():
