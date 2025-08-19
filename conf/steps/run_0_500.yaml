@@ -1,6 +1,6 @@
 general:
-  local_llm_port: 8000
-  local_llm_model: "Qwen/Qwen2-7B-Instruct"
+  local_llm_port: null #8000
+  local_llm_model: null #"Qwen/Qwen2-7B-Instruct"
 
 step0:
   input_file: null

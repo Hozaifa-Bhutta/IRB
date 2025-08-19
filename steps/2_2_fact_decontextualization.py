@@ -109,7 +109,7 @@ def main(cfg: DictConfig):
             if not molecular_fact: continue
             modified_fact_mapper[int(fact["fact"])] = molecular_fact
 
-            # time.sleep(0.2)
+            time.sleep(0.2)
 
         to_save = {
             "title": ef_data.get("title"),

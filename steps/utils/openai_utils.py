@@ -17,7 +17,7 @@ def init_client(openai_api_key, local = False, port = None, model_name = None):
         if not local:
             assert openai_api_key is not None
             client = OpenAI(api_key=openai_api_key)
-            model = "gpt-4o"
+            model = "gpt-4.1-mini"
         else:
             client = OpenAI(api_key="test", base_url=f"http://localhost:{port}/v1")
             model = model_name

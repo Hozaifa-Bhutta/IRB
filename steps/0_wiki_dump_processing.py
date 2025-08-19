@@ -5,15 +5,22 @@
 #     "wiki_url": "...",
 #     "source": "wikitext...",
 # }
-import json, gzip, os, hydra
+import json, gzip, os, hydra, datetime
 from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
 from utils.generic import maybe_create_folder, write_to_json
 
 
-def read_wiki_dump_and_write(input_file, output_folder, max_pages, offset = 0):
+def read_wiki_dump_and_write(input_file, output_folder, max_pages, offset = 0, start_from = None):
     assert input_file.endswith(".gz")
+
+    if start_from is not None:
+        start_from_date_obj = datetime.strptime(start_from, "%Y-%m-%d") #(start_from, "%Y-%m-%dT%H:%M:%SZ")
+    else:
+        start_from_date_obj = datetime(1999, 1, 1, 0, 0, 0) # before wikipedia exist
+
+    
 
     length_data = 0
     count = 0
@@ -26,6 +33,14 @@ def read_wiki_dump_and_write(input_file, output_folder, max_pages, offset = 0):
                 if count >= offset:
                     title = obj.get("title")
                     source = obj.get("source_text")
+                    create_timestamp = obj.get("create_timestamp")
+
+                    if not create_timestamp:
+                        create_timestamp_obj = datetime(1998, 1, 1, 0, 0, 0)
+                    else: create_timestamp_obj = datetime.strptime(create_timestamp, "%Y-%m-%dT%H:%M:%SZ")
+
+                    if create_timestamp_obj < start_from_date_obj: continue
+
                     url = f"https://en.wikipedia.org/?curid={obj.get('page_id')}"
 
                     to_write = {
@@ -61,6 +76,7 @@ def main(cfg: DictConfig):
     output_folder = cfg.step0.output_folder #args.step0_output_folder
     offset = cfg.step0.offset
     max_pages = cfg.step0.max_pages
+    start_from = cfg.start_from
 
     assert os.path.exists(input_file)
 

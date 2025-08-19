@@ -24,24 +24,6 @@ def process_qrels(qrels):
     return pd.DataFrame(qrels_lines)
 
 
-def filter_qrels_based_on_num_citations(qrels, ef_data):
-    groups = {
-        1: {}, 2: {}, 3: {}
-    }
-
-    raw_facts = ef_data.get("raw_facts")
-    title = ef_data.get("title")
-    for fact in raw_facts:
-        fact_id = fact.get("fact")
-        citation_urls = fact.get("citation_urls")
-        qid = f"{title}--{fact_id}"
-        if len(citation_urls) > 3: continue
-
-        groups[len(citation_urls)][qid] = qrels[qid]
-
-    return groups
-
-
 
 
 
@@ -99,21 +81,25 @@ def main(cfg: DictConfig):
         for fact in raw_facts:
             fact_id = fact["fact"]
             citation_urls = fact["citation_urls"]
+            positions = fact["pos"]
+            group = 0
             if fact_id not in good_facts or not citation_urls: continue
 
             query_id = f"{wiki_title}--{fact_id}"
             if query_id not in qrels: qrels[query_id] = {}
 
-            for url in citation_urls:
+            for url, pos in zip(citation_urls, positions):
                 content = url_content_mapper.get(url)["url_content"]
                 if url_content_mapper.get(url, {}).get("error") or not content: continue
 
                 corpus.append({"_id": url, "title": "", "text": content})
 
                 qrels[query_id][url] = groundedness_check.get(f"{fact_id}--__--{url}", 0) + 1
+                group = max(group, pos)
             
-            if len(citation_urls) in [1,2,3]:
-                qrels_num_citations[len(citation_urls)][query_id] = qrels[query_id]
+            group += 1
+            if group in [1,2,3]:
+                qrels_num_citations[group][query_id] = qrels[query_id]
 
         for fact_id, modified_fact in modified_fact_mapper.items():
             fact_id = int(fact_id)
