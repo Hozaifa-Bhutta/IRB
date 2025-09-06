@@ -54,7 +54,5 @@ for model in "${models[@]}"; do
     general.retrieval_metadata_path="$RETRIEVAL_METADATA_PATH"
 
 
-    bert-score -r $OUTFOLDER/refs.txt -c $OUTFOLDER/hyps.txt --lang en --rescale_with_baseline
-
     done
 done

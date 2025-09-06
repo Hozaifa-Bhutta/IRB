@@ -5,24 +5,35 @@ from omegaconf import DictConfig
 # model = "Qwen/Qwen2-7B-Instruct" # replace this with the huggingface model you want to use
 # port = 8000
 
-@hydra.main(version_base=None, config_path="../conf/llm_api", config_name=os.getenv("LLM_API_CONFIG_NAME"))
+@hydra.main(
+    version_base=None,
+    config_path="../conf/llm_api",
+    config_name=os.getenv("LLM_API_CONFIG_NAME")
+)
 def main(cfg: DictConfig):
     model_name = cfg.model_name
     port = cfg.port
+    tensor_parallel_size = cfg.get("tensor_parallel_size", None)
 
-    subprocess.run([
+    # Build the base command for running the vLLM API server
+    cmd = [
         "python3",
-        "-m", "vllm.entrypoints.openai.api_server", # runs the module
-        "--model", model_name, # specify the HF model you want to load
+        "-m", "vllm.entrypoints.openai.api_server",
+        "--model", model_name,
         "--port", str(port),
-        "--gpu-memory-utilization", "0.8", # set GPU memory utilization to 80% cap
-        "--max-model-len", "8192",  # maximum number of tokens model can handle in input+output
+        "--gpu-memory-utilization", "0.9",
+        "--max-model-len", "32000",
         "--enable-prefix-caching"
-    ])
+    ]
 
+    # Append tensor parallel size if specified
+    if tensor_parallel_size:
+        cmd += ["--tensor-parallel-size", str(tensor_parallel_size)]
 
+    # Execute the server command
+    subprocess.run(cmd)
 
-    # we can now run the OpenAI client against this server at  "http://localhost:{port}/v1"
+    # Server available at "http://localhost:{port}/v1"
 
 
 if __name__ == "__main__":

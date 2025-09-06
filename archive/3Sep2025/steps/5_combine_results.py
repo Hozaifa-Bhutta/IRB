@@ -5,6 +5,7 @@ import os, hydra
 import pandas as pd
 from datetime import datetime
 from omegaconf import DictConfig
+from argparse import ArgumentParser
 from tqdm import tqdm
 from utils.generic import read_json_or_jsonl, write_to_jsonl, write_to_json, maybe_create_folder
 
@@ -65,30 +66,32 @@ def main(cfg: DictConfig):
 
         raw_facts = ef_data.get("raw_facts")
         url_content_mapper = cuc_data.get("url_content_mapper")
-        keypoints_mapper = dff_data.get("keypoints_mapper")
+        modified_fact_mapper = dff_data.get("modified_fact_mapper")
         groundedness_check = fgf_data.get("groundedness_check")
         fact_question_mapper = qg_data.get("fact_question_mapper")
 
         wiki_title = ef_data.get("title")
 
-        if any([item is None for item in [raw_facts, url_content_mapper, keypoints_mapper, fact_question_mapper]]): continue
+        if any([item is None for item in [raw_facts, url_content_mapper, modified_fact_mapper, fact_question_mapper]]): continue
 
-        fact_ids_to_include = set(fact_question_mapper.keys()).intersection(set(keypoints_mapper.keys()))
-        fact_ids_to_include = set([int(fact_id) for fact_id in fact_ids_to_include])
-
-        # queries
+        good_facts = set([])
         for fact_id, query in fact_question_mapper.items():
             fact_id = int(fact_id)
-            if fact_id not in fact_ids_to_include: continue
+            good_facts.add(fact_id)
             queries.append({"_id": f"{wiki_title}--{fact_id}", "text": query})
 
-
-        # corpus
         for fact in raw_facts:
             fact_id = fact["fact"]
             citation_urls = fact["citation_urls"]
+            positions = fact["pos"]
+            group_ = set()
+            earliest_published_year_ = set()
+            if fact_id not in good_facts or not citation_urls: continue
 
-            for url in citation_urls:
+            query_id = f"{wiki_title}--{fact_id}"
+            if query_id not in qrels: qrels[query_id] = {}
+
+            for url, pos in zip(citation_urls, positions):
                 content = url_content_mapper.get(url).get("url_content")
                 if url_content_mapper.get(url, {}).get("error") or not content: continue
 
@@ -97,35 +100,29 @@ def main(cfg: DictConfig):
 
                 corpus.append({"_id": url, "title": "", "text": content, "published_date": published_date})
 
-        # qrels
-        query_id_2_keypoints = {}
-        for fact_url_kp_id, check_label in groundedness_check.items():
-            fact_id, url, kp_id = fact_url_kp_id.split("--__--")
-            query_id = f"{wiki_title}--{fact_id}"
+                qrels[query_id][url] = groundedness_check.get(f"{fact_id}--__--{url}", 0) + 1
 
-            if int(fact_id) not in fact_ids_to_include: continue
+                group_.add(pos)
+                earliest_published_year_.add(published_year if published_year else 2006)
+            
+            group =len(group_)
+            if group in [1,2,3]:
+                qrels_num_citations[group][query_id] = qrels[query_id]
 
-            if query_id not in query_id_2_keypoints: query_id_2_keypoints[query_id] = set()
-            if check_label: query_id_2_keypoints[query_id].add(kp_id)
+            earliest_published_year = min(earliest_published_year_) if earliest_published_year_ else 2006
+            for year in [2030, 2025, 2020, 2015, 2010]:
+                from_year = year - 5
+                to_year = year
+                if from_year <= earliest_published_year < to_year: 
+                    qrels_by_time[year][query_id] = qrels[query_id]
 
-            if query_id not in qrels: qrels[query_id] = {}
-            qrels[query_id][url] = int(check_label) if url not in qrels[query_id] else max(int(check_label), int(qrels[query_id][url]))
-        
-        for query_id, keypoints in query_id_2_keypoints.items():
-            num_keypoints = len(keypoints)
-            if num_keypoints not in qrels_num_citations: continue
-            qrels_num_citations[num_keypoints][query_id] = qrels[query_id]
-        
-
-
-        # answer
-        for fact_id, keypoints in keypoints_mapper.items():
+        for fact_id, modified_fact in modified_fact_mapper.items():
             fact_id = int(fact_id)
             query_id = f"{wiki_title}--{fact_id}"
 
-            if fact_id not in fact_ids_to_include: continue
+            if fact_id not in good_facts: continue
 
-            answers.append({"_id": query_id, "text": keypoints})
+            answers.append({"_id": query_id, "text": modified_fact})
             
 
     
@@ -155,19 +152,19 @@ def main(cfg: DictConfig):
 
     # group queries and answers by time
 
-    # for year in [2030, 2025, 2020, 2015, 2010]:
-    #     group_folder = os.path.join(output_folder, f"{year-5}_{year}")
-    #     group_qrels_folder = os.path.join(group_folder, "qrels")
-    #     maybe_create_folder(group_folder)
-    #     maybe_create_folder(group_qrels_folder)
-    #     df_qrels = process_qrels(qrels_by_time[year])
+    for year in [2030, 2025, 2020, 2015, 2010]:
+        group_folder = os.path.join(output_folder, f"{year-5}_{year}")
+        group_qrels_folder = os.path.join(group_folder, "qrels")
+        maybe_create_folder(group_folder)
+        maybe_create_folder(group_qrels_folder)
+        df_qrels = process_qrels(qrels_by_time[year])
 
-    #     df_qrels.to_csv(os.path.join(group_qrels_folder, f"test.tsv"), sep='\t', index=False)
+        df_qrels.to_csv(os.path.join(group_qrels_folder, f"test.tsv"), sep='\t', index=False)
 
-    #     answers_grouped = [line for line in answers if line["_id"] in qrels_by_time[year]]
-    #     queries_grouped = [line for line in queries if line["_id"] in qrels_by_time[year]]
-    #     write_to_jsonl(answers_grouped, os.path.join(group_folder, f"answers.jsonl"))
-    #     write_to_jsonl(queries_grouped, os.path.join(group_folder, f"queries.jsonl"))
+        answers_grouped = [line for line in answers if line["_id"] in qrels_by_time[year]]
+        queries_grouped = [line for line in queries if line["_id"] in qrels_by_time[year]]
+        write_to_jsonl(answers_grouped, os.path.join(group_folder, f"answers.jsonl"))
+        write_to_jsonl(queries_grouped, os.path.join(group_folder, f"queries.jsonl"))
         
 
 

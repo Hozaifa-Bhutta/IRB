@@ -47,6 +47,3 @@ python evaluation/question_answering/eval.py \
     qa.outfolder=$OUTFOLDER \
     general.retrieval_model=$RETRIEVAL_MODEL \
     general.retrieval_metadata_path="$RETRIEVAL_METADATA_PATH"
-
-
-bert-score -r $OUTFOLDER/refs.txt -c $OUTFOLDER/hyps.txt --lang en --rescale_with_baseline

@@ -1,13 +1,16 @@
 # script to decontextualize facts (create molecular facts)
 # input is output of step 1
 # output are the molecular facts (modified facts) and should have the following format
-# {
-#     "title": "...",
-#     "wiki_url": "...",
-#     "modified_facts_mapper": {
-#         "fact1 (sentence id)": "modified fact" 
-#     }
-# }
+{
+    "title": "...",
+    "wiki_url": "...",
+    "modified_facts_mapper": {
+        "fact1 (sentence id)": "modified fact" 
+    },
+    "keypoints_mapper": {
+        "fact1 (sentence id)": "modified fact",
+    }
+}
 
 
 import os, json, hydra, time
@@ -26,7 +29,8 @@ def create_molecular_fact(fact: int,
                           molecular_user_prompt = MOLECULAR_USER_PROMPT):
     fact_sentence = extracted_sentences[fact]
 
-    surrounding_context = extracted_sentences[max(0, fact - context_window_size): min(len(extracted_sentences), fact + context_window_size)]
+    # surrounding_context = extracted_sentences[max(0, fact - context_window_size): min(len(extracted_sentences), fact + context_window_size)]
+    surrounding_context = extracted_sentences[max(0, fact - 2 * context_window_size): fact + 1]
     surrounding_context = " ".join(surrounding_context)
 
     user_prompt = molecular_user_prompt.replace("[ADD_CLAIM_HERE]", fact_sentence)
@@ -44,8 +48,9 @@ def create_molecular_fact(fact: int,
                 "content": user_prompt
             }
         ],
-        temperature=0.1,
+        # temperature=0.1,
         max_tokens = 100,
+        extra_body={"chat_template_kwargs": {"enable_thinking": False}},
     )
 
     result = resp.choices[0].message.content.strip()
@@ -67,10 +72,12 @@ def main(cfg: DictConfig):
     context_window_size = cfg.step2_2.context_window_size
     local_llm_port = cfg.general.local_llm_port
     local_llm_model = cfg.general.local_llm_model
+    openai_model_name = cfg.general.openai_model_name
 
     openai_api_key = os.getenv("OPENAI_API_KEY")
 
     init_client(openai_api_key, 
+                openai_model_name = openai_model_name,
                 local = local_llm_port is not None, 
                 port = local_llm_port, 
                 model_name = local_llm_model)

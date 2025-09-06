@@ -19,6 +19,10 @@ retrieval:
 
 
 qa:
+  max_num_contexts: 5
   outfolder: null
   local_llm_port: null
   local_llm_model: null
+  use_retrieval_contexts: true
+  minicheck_ckpt_path: "/scratch/lamdo/minicheck_ckpts"
+  eval_only: false # if true, only do evaluation without generating answer again

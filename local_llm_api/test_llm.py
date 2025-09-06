@@ -2,8 +2,8 @@ from openai import OpenAI
 import time
 # the api_key is not used in this case since we are running a local server
 # but it is required to initialize the OpenAI client
-client = OpenAI(api_key="test", base_url="http://localhost:8000/v1")
-model = "Qwen/Qwen2-7B-Instruct"
+client = OpenAI(api_key="test", base_url="http://localhost:6868/v1")
+model = "Qwen/Qwen3-8B"
 
 test_system_prompt = """\
 DECONTEXTUALIZATION CRITERIA: Decontextualization adds the right type of information to a CLAIM to make it standalone \
@@ -56,6 +56,7 @@ response = client.chat.completions.create(
         {"role": "user", "content": test_user_prompt},
     ],
     max_tokens=64,
+    extra_body={"chat_template_kwargs": {"enable_thinking": False}},
     # temperature=0.1
 )
 end = time.time()

@@ -103,6 +103,7 @@ def main(cfg: DictConfig):
 
     dataset_name_2_relative_path = {
         "irb": "data/irb",
+        "irb_new": "data/irb_new"
     }
 
     model = model_name_2_model_class[retrieval_model].from_pretrained(model_name_2_model_path[retrieval_model])

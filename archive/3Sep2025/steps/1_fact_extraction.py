@@ -146,6 +146,26 @@ def process_wikilinks_and_replace_ref(raw_text: str):
         if not any([desirable in template_name for desirable in ["cite"]]):
             display_text = ""
 
+
+        # if template_name.startswith("infobox"):
+        #     display_text = ""
+        
+        # elif any([to_exclude in template_name for to_exclude in ["box", "table"]]): 
+        #     display_text = ""
+        
+
+        # elif template_name.strip() == "ill" and len(template.params) > 0:
+        #     display_text = str(template.params[0].value.strip())
+
+        # # Handle citation templates
+        # elif template_name.startswith("cite") and template.has("title"):
+        #     display_text = ""
+
+        
+        # # Handle stub, hatnote, or maintenance templates (remove or skip)
+        # elif template_name in ("stub", "cleanup", "notability") or template_name.startswith(("other ", "main", "disambiguation")):
+        #     display_text = ""  # Remove these templates
+
         if isinstance(display_text, str):
             try:
                 wikicode.replace(template, display_text)
@@ -267,24 +287,6 @@ def find_pos(raw_text):
 
     return res
 
-
-def fact_marking(raw_text):
-    prev_pos = float('-inf')
-    cur_ind = 0
-
-    res = ""
-
-    for tag in get_all_refs(raw_text):
-        pos = raw_text.index(str(tag))
-        if abs(pos - prev_pos) >= 5: # distance threshold is 5
-            _keypoint = re.sub(r"\[REF-\d+\]", "", raw_text[cur_ind: pos + len(tag)]).strip() + " [KP] "
-            cur_ind = pos + len(tag)
-            res = res + _keypoint
-        prev_pos = pos + len(tag)
-
-    return res
-
-
 def put_back_ref(sentence, placeholder_mapper):
     """
     Puts back the references in the sentence using the placeholder mapper.
@@ -352,9 +354,6 @@ def main(cfg:DictConfig):
         # shift references back when needed
         fixed_sentences = shift_tags(cleaned_sentences)
 
-        # get marked facts
-        marked_sentences = [fact_marking(sent) for sent in fixed_sentences]
-
         # gets relative positions of each reference
         positions = [find_pos(sent) for sent in fixed_sentences]
 
@@ -394,7 +393,6 @@ def main(cfg:DictConfig):
             to_save = {
                 "title": wiki_page_data.get("title"),
                 "wiki_url": wiki_page_data.get("wiki_url"),
-                "marked_sentences": marked_sentences,
                 "extracted_sentences": extracted_sentences,
                 "raw_facts": raw_facts
             }

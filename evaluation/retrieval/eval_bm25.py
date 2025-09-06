@@ -198,7 +198,8 @@ def main(cfg: DictConfig):
         "cfscube_taxoindex":"data/cfscube/cfscube_taxoindex",
         "doris_mae_taxoindex": "data/doris_mae/doris_mae_taxoindex",
 
-        "irb": "data/irb"
+        "irb": "data/irb",
+        "irb_new": "data/irb_new"
     }
 
     queries_path = os.path.join(

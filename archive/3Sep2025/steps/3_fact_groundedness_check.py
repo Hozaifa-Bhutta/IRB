@@ -29,18 +29,18 @@ def init_minicheck(model_name='flan-t5-large', cache_dir='./ckpts'):
 
 
 def groundedness_check_func(raw_facts: list, 
-                       keypoints_mapper: dict, 
+                       modified_fact_mapper: dict, 
                        url_content_mapper,
                        max_words = 2000):
     
     res = {}
-    keypoints_contexts_pairs = []
+    facts_contexts_pairs = []
     skipped = []
     for fact in raw_facts:
         fact_id = fact.get("fact")
         citation_urls = fact.get("citation_urls")
-        keypoints = keypoints_mapper.get(fact_id)
-        if not keypoints or not citation_urls: continue
+        modified_fact = modified_fact_mapper.get(fact_id)
+        if not modified_fact or not citation_urls: continue
 
         for url in citation_urls:
             temp = url_content_mapper.get(url)
@@ -50,17 +50,15 @@ def groundedness_check_func(raw_facts: list,
             content = " ".join(content.split()[:max_words])
             if url_content_mapper.get(url, {}).get("error") or not content: continue
 
-            for kp_index, kp in enumerate(keypoints):
-                keypoints_contexts_pairs.append([f"{fact_id}--__--{url}--__--{kp_index}", kp, content])
+            facts_contexts_pairs.append([f"{fact_id}--__--{url}", modified_fact, content])
 
-    groundedness_pred, raw_prob, _, _ = MINICHECK["model"].score(
-        docs=[line[2] for line in keypoints_contexts_pairs], 
-        claims=[line[1] for line in keypoints_contexts_pairs]
-    )
+    groundedness_pred, raw_prob, _, _ = MINICHECK["model"].score(docs=[line[2] for line in facts_contexts_pairs], 
+                                                                 claims=[line[1] for line in facts_contexts_pairs])
     
-    assert len(groundedness_pred) == len(keypoints_contexts_pairs)
-    for i in range(len(keypoints_contexts_pairs)):
-        res[keypoints_contexts_pairs[i][0]] = groundedness_pred[i] if groundedness_pred else 0
+    assert len(groundedness_pred) == len(facts_contexts_pairs)
+    for i in range(len(facts_contexts_pairs)):
+        res[facts_contexts_pairs[i][0]] = groundedness_pred[i] if groundedness_pred else 0
+
 
     return res
 
@@ -97,15 +95,15 @@ def main(cfg: DictConfig):
 
         raw_facts = ef_data.get("raw_facts")
         url_content_mapper = cuc_data.get("url_content_mapper")
-        keypoints_mapper = dff_data.get("keypoints_mapper")
+        modified_fact_mapper = dff_data.get("modified_fact_mapper")
 
-        if not raw_facts or not url_content_mapper or not keypoints_mapper: continue
+        if not raw_facts or not url_content_mapper or not modified_fact_mapper: continue
 
-        keypoints_mapper = {int(k): v for k,v in keypoints_mapper.items()}
+        modified_fact_mapper = {int(k): v for k,v in modified_fact_mapper.items()}
 
         groundedness_check = groundedness_check_func(
             raw_facts = raw_facts,
-            keypoints_mapper = keypoints_mapper,
+            modified_fact_mapper = modified_fact_mapper,
             url_content_mapper = url_content_mapper,
             max_words = max_words
         )

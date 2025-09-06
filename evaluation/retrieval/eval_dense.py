@@ -231,6 +231,7 @@ def main(cfg: DictConfig):
 
     dataset_name_2_relative_path = {
         "irb": "data/irb",
+        "irb_new": "data/irb_new"
     }
 
     queries_path = os.path.join(
