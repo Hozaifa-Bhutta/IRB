@@ -80,7 +80,7 @@ def main(cfg: DictConfig):
     output_folder = cfg.step0.output_folder #args.step0_output_folder
     offset = cfg.step0.offset
     max_pages = cfg.step0.max_pages
-    start_from = cfg.step0.start_from
+    start_from = cfg.general.start_from
 
     assert os.path.exists(input_file)
 

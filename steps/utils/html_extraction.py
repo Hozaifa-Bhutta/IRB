@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 from trafilatura import extract as extract_trafilatura
 
-with open("data/words_alpha.txt") as f:
+with open("../data/words_alpha.txt") as f:
     WEB2LOWERSET = set()
     for line in f:
         WEB2LOWERSET.add(line.strip().lower())
@@ -89,7 +89,6 @@ def extract_text_from_html(html_text: str):
 def get_publication_date(response):
     try:
         res = find_date(response)
-        print(res)
         return res
 
     except Exception:
