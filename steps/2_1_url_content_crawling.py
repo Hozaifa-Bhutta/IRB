@@ -71,9 +71,20 @@ def rate_limited(func):
 
     return wrapper
 
+def is_valid_date(published_time_str, start_from):
+    if not start_from:
+        return True
+    if not published_time_str:
+        return False
+    try:
+        published_date = datetime.strptime(published_time_str, "%Y-%m-%d")
+        start_from_date = datetime.strptime(start_from, "%Y-%m-%d")
+        return published_date >= start_from_date
+    except ValueError:
+        return False
 
 @rate_limited
-def is_url_accessible(url):
+def is_url_accessible(url, start_from):
     time.sleep(0.2)
     # print(f"Processing URL: {url}....")
     headers = {
@@ -123,9 +134,14 @@ def is_url_accessible(url):
         if "text/html" in content_type:
             text = extract_text_from_html(response.text)
             published_date = get_publication_date(response.content)
-            if text:
+            print(f"Published date for {url}: {published_date}. Start from: {start_from}. Valid: {is_valid_date(published_date, start_from)}")
+            if not is_valid_date(published_date, start_from):
+                return False, {"content": "Published date is before the start_from date", "published_date": published_date}
+            elif not text:
+                return False, {"content": "Empty HTML content", "published_date": published_date}
+            else:
                 return True, {"content": text, "published_date": published_date}
-            return False, {"content": "Empty HTML content", "published_date": None}
+
 
         return False, {"content": f"Content type is {content_type}", "published_date": None}
     except Exception as e:
@@ -134,14 +150,14 @@ def is_url_accessible(url):
 
 
 
-async def is_url_accessible_async(url, semaphore):
+async def is_url_accessible_async(url, start_from, semaphore):
     loop = asyncio.get_event_loop()
     async with semaphore:
-        return await loop.run_in_executor(None, is_url_accessible, url)
+        return await loop.run_in_executor(None, is_url_accessible, url, start_from)
 
-async def check_urls_in_parallel(url_list, max_concurrent=5):
+async def check_urls_in_parallel(url_list, start_from, max_concurrent=5):
     semaphore = asyncio.Semaphore(max_concurrent)
-    tasks = [is_url_accessible_async(url, semaphore) for url in url_list]
+    tasks = [is_url_accessible_async(url, start_from, semaphore) for url in url_list]
     return await asyncio.gather(*tasks)
 
 
@@ -170,6 +186,7 @@ def main(cfg: DictConfig):
     output_folder = cfg.step2_1.output_folder
     max_facts_per_page = cfg.step2_1.max_facts_per_page
     max_concurrents = cfg.step2_1.max_concurrents
+    start_from = cfg.general.start_from
 
     files = os.listdir(input_folder)
     files = [file for file in files if file.endswith('.json')]
@@ -191,7 +208,7 @@ def main(cfg: DictConfig):
             all_urls.update(citation_urls)
 
         all_urls = list(all_urls)
-        responses = asyncio.run(check_urls_in_parallel(all_urls, max_concurrent=max_concurrents))
+        responses = asyncio.run(check_urls_in_parallel(all_urls, start_from, max_concurrent=max_concurrents))
 
         assert len(all_urls) == len(responses)
 
