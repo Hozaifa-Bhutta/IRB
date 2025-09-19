@@ -175,7 +175,13 @@ Predicted answer: [PREDICTION]"""
 
 
 
-def run_llm_based_evaluation_keypoints(queries, outfile_pred, outfile_gt, OPENAI_CLIENT, evaluation_metadata_file):
+def run_llm_based_evaluation_keypoints(
+        queries, 
+        outfile_pred, 
+        outfile_gt, 
+        OPENAI_CLIENT,
+        evaluation_metadata_file
+    ):
     assert os.path.exists(outfile_pred) and os.path.exists(outfile_gt), "Prediction or outfile file missing"
 
     predictions = []
@@ -271,14 +277,15 @@ Example 4:
                     "content": user_prompt
                 }
             ],
-            max_tokens = 100,
-            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+            max_tokens = 128,
+            # extra_body={"chat_template_kwargs": {"enable_thinking": True, "thinking_budget": 68}},
         )
 
         result = resp.choices[0].message.content.strip()
         print(result)
         try:
-            json_result = json.loads(result)
+            json_result = json.loads(result.split("</think>")[-1].strip())
+            print("JSON:", json_result)
         except Exception as e:
             continue
             

@@ -1,25 +1,28 @@
 import json, os, hydra
 from omegaconf import DictConfig
 from utils.text_chunking import init_chunker, text_chunking
+from utils.allowed_datasets import ALLOWED_DATASETS
 
 
 @hydra.main(version_base=None, config_path="../../conf/evaluation/", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig):
     dataset_name = cfg.general.dataset
+    dataset_date = cfg.general.dataset_date
     work_dir = cfg.general.work_dir
     outfolder = cfg.retrieval.index.outfolder
     chunk_size = cfg.retrieval.index.chunk_size
     chunk_overlap = cfg.retrieval.index.chunk_overlap
+
+    assert dataset_name in ALLOWED_DATASETS
 
     init_chunker(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap
     )
 
-
     dataset_name_2_relative_path = {
-        "irb": "data/irb",
-        "irb_new": "data/irb_new"
+        dn: os.path.join("benchmarks", dataset_date, dn) if dataset_date is not None else os.path.join("data", dn) \
+            for dn in ALLOWED_DATASETS
     }
 
     # load corpus

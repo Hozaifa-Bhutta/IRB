@@ -5,7 +5,10 @@ from omegaconf import DictConfig
 from openai_utils import init_client, OPENAI_CLIENT
 from utils.qa_prompt import QA_SYSTEM_PROMPT, QA_USER_PROMPT, QA_SYSTEM_PROMPT_WITHOUT_CONTEXT, QA_USER_PROMPT_WITHOUT_CONTEXT
 from utils.qa_eval_metrics import run_bertscore_evaluation, run_minicheck_based_evaluation, run_llm_based_evaluation, run_llm_based_evaluation_keypoints
+from utils.allowed_datasets import ALLOWED_DATASETS
 from tqdm import tqdm
+
+NUM_SAMPLE = 100
 
 
 def create_enumerated_list(texts):
@@ -16,7 +19,7 @@ def generate_answer(query,
                     contexts, 
                     use_retrieval_contexts = True,
                     max_num_contexts = 20):
-    time.sleep(2)
+    time.sleep(0.5)
     qa_user_prompt = QA_USER_PROMPT if use_retrieval_contexts else QA_USER_PROMPT_WITHOUT_CONTEXT
     qa_system_prompt = QA_SYSTEM_PROMPT if use_retrieval_contexts else QA_SYSTEM_PROMPT_WITHOUT_CONTEXT
 
@@ -38,8 +41,7 @@ def generate_answer(query,
                     "content": user_prompt
                 }
             ],
-            temperature=0.1,
-            max_tokens = 100,
+            max_tokens = 2048,
         )
 
         result = resp.choices[0].message.content.strip()
@@ -47,6 +49,15 @@ def generate_answer(query,
         return result
     except openai.RateLimitError as e:
         return "Could not answer this question due to an error"
+    
+
+def data_relative_path(dataset_name, dataset_date = None, subset = None):
+    if dataset_date and subset:
+        return os.path.join("benchmarks", dataset_date, dataset_name, subset)
+    elif dataset_date and not subset:
+        return os.path.join("benchmarks", dataset_date, dataset_name)
+    else:
+        raise NotImplemented
 
 @hydra.main(version_base=None, config_path="../../conf/evaluation", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig):
@@ -54,51 +65,38 @@ def main(cfg: DictConfig):
     retrieval_metadata_folder = cfg.general.retrieval_metadata_path
     work_dir = cfg.general.work_dir
     dataset = cfg.general.dataset
+    dataset_date = cfg.general.dataset_date
     max_num_contexts = cfg.qa.max_num_contexts
     outfolder = cfg.qa.outfolder
     use_retrieval_contexts = cfg.qa.use_retrieval_contexts
     minicheck_ckpt_path = cfg.qa.minicheck_ckpt_path
     eval_only = cfg.qa.eval_only
     openai_model_name = cfg.qa.openai_model_name
+    subset = cfg.qa.subset
 
     local_llm_port = cfg.qa.local_llm_port
     local_llm_model = cfg.qa.local_llm_model
 
     eval_local_llm_port = cfg.qa.eval_local_llm_port
     eval_local_llm_model = cfg.qa.eval_local_llm_model
+    eval_openai_model_name = cfg.qa.eval_openai_model_name
 
     openai_api_key = os.getenv("OPENAI_API_KEY")
 
     dataset_name_2_relative_path = {
-        "irb": "data/irb",
-        "irb_1_citations": "data/irb/1_citations",
-        "irb_2_citations": "data/irb/2_citations",
-        "irb_3_citations": "data/irb/3_citations",
-        "irb_2005_2010":"data/irb/2005_2010",
-        "irb_2010_2015":"data/irb/2010_2015",
-        "irb_2015_2020":"data/irb/2015_2020",
-        "irb_2020_2025":"data/irb/2020_2025",
-        "irb_2025_2030":"data/irb/2025_2030",
-
-        "irb_new": "data/irb_new",
-        "irb_new_1_citations": "data/irb_new/1_citations",
-        "irb_new_2_citations": "data/irb_new/2_citations",
-        "irb_new_3_citations": "data/irb_new/3_citations",
-
-        "irb_new_2025_2030": "data/irb_new/2025_2030"
+        dn: data_relative_path(dn, dataset_date, subset) \
+            for dn in ALLOWED_DATASETS
     }
 
-    outfile_pred = os.path.join(outfolder, f"{dataset}__{retrieval_model}__rc{int(use_retrieval_contexts)}.hyps.txt")
-    outfile_gt = os.path.join(outfolder, f"{dataset}__{retrieval_model}__rc{int(use_retrieval_contexts)}.refs.txt")
-
-
-    experiment_name = None
-    if dataset in ["irb_1_citations", "irb_2_citations", "irb_3_citations", "irb_2005_2010", "irb_2010_2015", "irb_2015_2020", "irb_2020_2025", "irb_2025_2030"]:
-        experiment_name = f"irb__{retrieval_model}"
-    elif dataset in ["irb_new_1_citations", "irb_new_2_citations", "irb_new_3_citations"]:
-        experiment_name = f"irb_new__{retrieval_model}"
+    if subset:
+        outfile_pred = os.path.join(outfolder, f"{dataset}__{subset}__{retrieval_model}__rc{int(use_retrieval_contexts)}.hyps.txt")
+        outfile_gt = os.path.join(outfolder, f"{dataset}__{subset}__{retrieval_model}__rc{int(use_retrieval_contexts)}.refs.txt")
     else:
-        experiment_name = f"{dataset}__{retrieval_model}"
+        outfile_pred = os.path.join(outfolder, f"{dataset}__{retrieval_model}__rc{int(use_retrieval_contexts)}.hyps.txt")
+        outfile_gt = os.path.join(outfolder, f"{dataset}__{retrieval_model}__rc{int(use_retrieval_contexts)}.refs.txt")
+
+
+    experiment_name = f"{dataset}__{retrieval_model}"
 
     retrieval_metadata_path = os.path.join(retrieval_metadata_folder, f"{experiment_name}.json")
 
@@ -165,7 +163,7 @@ def main(cfg: DictConfig):
             to_append = [gt_answer_text, answer]
 
             groundtruths_preds.append(to_append)
-            if len(groundtruths_preds) == 100: break
+            if len(groundtruths_preds) == NUM_SAMPLE: break
 
         with open(outfile_pred, "w") as f:
             for line in groundtruths_preds:
@@ -179,6 +177,22 @@ def main(cfg: DictConfig):
                 f.write(gt.replace("\n", " "))
                 f.write("\n")
 
+    else:
+        groundtruths = []
+        for gt_answer in groundtruth_answers:
+            gt_answer_text = gt_answer.get("text")
+            gt_answer_text = gt_answer_text if isinstance(gt_answer_text, str) else "--__--".join(gt_answer_text)
+
+            groundtruths.append(gt_answer_text)
+
+            if len(groundtruths) == NUM_SAMPLE: break
+        
+        with open(outfile_gt, "w") as f:
+            for gt in groundtruths:
+                f.write(gt.replace("\n", " "))
+                f.write("\n")
+
+        
     assert os.path.exists(outfile_gt) and os.path.exists(outfile_pred)
     # print("====BERTSCORE====")
     # run_bertscore_evaluation(outfile_pred, outfile_gt)
@@ -189,13 +203,14 @@ def main(cfg: DictConfig):
 
     # re-init client
     init_client(
-        "no-key", 
+        openai_api_key, 
+        openai_model_name = eval_openai_model_name,
         local = eval_local_llm_port is not None, 
         port = eval_local_llm_port, 
         model_name = eval_local_llm_model
     )
     run_llm_based_evaluation_keypoints(
-        queries = [q.get("text") for q in queries][:100],
+        queries = [q.get("text") for q in queries][:NUM_SAMPLE],
         outfile_pred=outfile_pred,
         outfile_gt = outfile_gt,
         OPENAI_CLIENT = OPENAI_CLIENT,

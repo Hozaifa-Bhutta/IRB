@@ -3,6 +3,7 @@ general:
   dataset: null
   retrieval_metadata_path: null
   retrieval_model: bm25
+  dataset_date: 16Sep2025
 
 retrieval:
   index:
@@ -24,6 +25,8 @@ qa:
   minicheck_ckpt_path: "/scratch/lamdo/minicheck_ckpts"
   eval_only: false # if true, only do evaluation without generating answer again
   openai_model_name: "gpt-4o-2024-05-13"
+  subset: null # 1_citations, 2_citations, 3_citations
 
-  eval_local_llm_port: 6868
-  eval_local_llm_model: "Qwen/Qwen3-8B"
+  eval_local_llm_port:  null #6868
+  eval_local_llm_model: null #"Qwen/Qwen3-8B"
+  eval_openai_model_name: "gpt-4o-mini-2024-07-18"

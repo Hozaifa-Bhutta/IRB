@@ -5,6 +5,7 @@ from omegaconf import DictConfig
 from pyserini.search.lucene import LuceneSearcher
 from typing import List, Dict, Tuple
 from tqdm import tqdm
+from utils.allowed_datasets import ALLOWED_DATASETS
 
 logger = logging.getLogger(__name__)
 
@@ -166,40 +167,20 @@ def read_qrels(qrel_path):
 def main(cfg: DictConfig):
     work_dir = cfg.general.work_dir
     dataset_name = cfg.general.dataset
+    dataset_date = cfg.general.dataset_date
     retrieval_metadata_path = cfg.general.retrieval_metadata_path
     batch_size = cfg.retrieval.eval.batch_size
     threads = cfg.retrieval.eval.threads
     index_folder = cfg.retrieval.eval.index_folder
 
+    assert dataset_name in ALLOWED_DATASETS
 
-
-    if dataset_name in ["trec_dl_2019", "trec_dl_2020"]:
-        index_path = os.path.join(index_folder, f"msmarco__bm25")
-    else:
-        index_path = os.path.join(index_folder, f"{dataset_name}__bm25")
+    index_path = os.path.join(index_folder, f"{dataset_name}__bm25")
 
 
     dataset_name_2_relative_path = {
-        "scifact": "data/beir/scifact",
-        "scidocs": "data/beir/scidocs",
-        "nfcorpus": "data/beir/nfcorpus",
-        "arguana": "data/beir/arguana",
-        "fiqa": "data/beir/fiqa",
-        "trec-covid": "data/beir/trec-covid",
-        "msmarco": "data/msmarco/msmarco",
-        "doris_mae": "data/doris_mae/doris_mae",
-        "cfscube": "data/cfscube/cfscube",
-        "trec_dl_2019": "data/msmarco/trec_dl_2019",
-        "trec_dl_2020": "data/msmarco/trec_dl_2020",
-        "acm_cr": "data/acm_cr/acm_cr",
-        "litsearch": "data/litsearch/litsearch",
-        "relish": "data/relish/relish",
-
-        "cfscube_taxoindex":"data/cfscube/cfscube_taxoindex",
-        "doris_mae_taxoindex": "data/doris_mae/doris_mae_taxoindex",
-
-        "irb": "data/irb",
-        "irb_new": "data/irb_new"
+        dn: os.path.join("benchmarks", dataset_date, dn) if dataset_date is not None else os.path.join("data", dn) \
+            for dn in ALLOWED_DATASETS
     }
 
     queries_path = os.path.join(

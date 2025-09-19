@@ -52,7 +52,7 @@ def create_keypoints(fact: int,
             ],
             # temperature=0.1,
             max_tokens = 512,
-            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+            # extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
     except Exception: return None
 

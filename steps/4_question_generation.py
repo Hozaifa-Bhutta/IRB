@@ -39,12 +39,12 @@ def generate_question(keypoints, wiki_title):
             }
         ],
         # temperature=0.1,
-        max_tokens = 200,
-        extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+        max_tokens = 512,
+        # extra_body={"chat_template_kwargs": {"enable_thinking": False}},
     )
 
     result = resp.choices[0].message.content.strip()
-    return result.replace("##OUTPUT##:", "").strip()
+    return result.replace("**QUESTION**:", "").strip()
 
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
@@ -53,6 +53,7 @@ def main(cfg: DictConfig):
     fact_groundedness_folder = cfg.step3.output_folder
     output_folder = cfg.step4.output_folder
 
+    utilize_fact_groundedness_check = cfg.general.utilize_fact_groundedness_check
     local_llm_port = cfg.general.local_llm_port
     local_llm_model = cfg.general.local_llm_model
     openai_model_name = cfg.general.openai_model_name
@@ -60,6 +61,7 @@ def main(cfg: DictConfig):
     openai_api_key = os.getenv("OPENAI_API_KEY")
 
     init_client(openai_api_key, 
+                openai_model_name = openai_model_name,
                 local = local_llm_port is not None, 
                 port = local_llm_port, 
                 model_name = local_llm_model)
@@ -88,7 +90,7 @@ def main(cfg: DictConfig):
         groundedness_check = {tuple(k.split("--__--")): v for k,v in groundedness_check.items()}
         good_keypoints = set([])
         for k, v in groundedness_check.items():
-            if v == 1:
+            if (utilize_fact_groundedness_check and v == 1) or not utilize_fact_groundedness_check:
                 good_keypoints.add(f"{k[0]}--__--{k[-1]}")
 
         print(good_keypoints)

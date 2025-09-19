@@ -2,13 +2,13 @@ general:
   local_llm_port: null #8000
   local_llm_model: null #"Qwen/Qwen2-7B-Instruct"
   openai_model_name: "gpt-4.1-mini" # if use OpenAI models, this will be the name of the one used for running the pipeline
+  start_from: 2025-01-01 # "%Y-%m-%d"
 
 step0:
   input_file: null
   output_folder: null
   offset: 0
   max_pages: 500
-  start_from: 2025-01-01 # "%Y-%m-%d"
 
 
 step1:

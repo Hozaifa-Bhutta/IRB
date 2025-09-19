@@ -1,7 +1,7 @@
 # script to combine the results of the previous step into the final dataset
 # the input include: output of steps 1, 2_1, 2_2, 3, 4
 
-import os, hydra
+import os, hydra, random
 import pandas as pd
 from datetime import datetime
 from omegaconf import DictConfig
@@ -24,7 +24,16 @@ def process_qrels(qrels):
     return pd.DataFrame(qrels_lines)
 
 
-
+def sample_qa(queries, answers, num_samples, seed=42):
+    assert len(queries) == len(answers)
+    if seed is not None:
+        random.seed(seed)
+    indices = random.sample(range(len(queries)), min(len(queries), num_samples))
+    sampled_queries = [queries[i] for i in indices]
+    sampled_answers = [answers[i] for i in indices]
+    for q, a in zip(sampled_queries, sampled_answers):
+        assert q["_id"] == a["_id"], (q["_id"], a["_id"])
+    return sampled_queries, sampled_answers
 
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
@@ -35,6 +44,8 @@ def main(cfg: DictConfig):
     fact_groundedness_folder = cfg.step3.output_folder
     question_generation_folder = cfg.step4.output_folder
     output_folder = cfg.step5.output_folder
+
+    utilize_fact_groundedness_check = cfg.general.utilize_fact_groundedness_check
 
     files = os.listdir(extracted_facts_folder)
     files = [file for file in files if file.endswith('.json')]
@@ -83,6 +94,35 @@ def main(cfg: DictConfig):
             queries.append({"_id": f"{wiki_title}--{fact_id}", "text": query})
 
 
+        # answer
+        good_keypoints = {}
+        for fact_url_kp_id, check_label in groundedness_check.items():
+            if utilize_fact_groundedness_check and not check_label: continue
+            fact_id, url, kp_id = fact_url_kp_id.split("--__--")
+            fact_id = int(fact_id)
+            kp_id = int(kp_id)
+
+            if fact_id not in good_keypoints: good_keypoints[fact_id] = set()
+            good_keypoints[fact_id].add(kp_id)
+
+        for fact_id, keypoints in keypoints_mapper.items():
+            fact_id = int(fact_id)
+            query_id = f"{wiki_title}--{fact_id}"
+
+            if fact_id not in fact_ids_to_include: continue
+
+            answers.append({"_id": query_id, "text": [kp for kp_index, kp in enumerate(keypoints) if kp_index in good_keypoints[fact_id]]})
+
+        # filter queries and answers based on if the answer contain any keypoints (if not then remove the id)
+        good_qids = set([])
+        for line in answers:
+            query_id = line["_id"]
+            keypoints = line["text"]
+            if keypoints: good_qids.add(query_id)
+
+        queries = [line for line in queries if line["_id"] in good_qids]
+        answers = [line for line in answers if line["_id"] in good_qids]
+
         # corpus
         for fact in raw_facts:
             fact_id = fact["fact"]
@@ -106,7 +146,7 @@ def main(cfg: DictConfig):
             if int(fact_id) not in fact_ids_to_include: continue
 
             if query_id not in query_id_2_keypoints: query_id_2_keypoints[query_id] = set()
-            if check_label: query_id_2_keypoints[query_id].add(kp_id)
+            if (utilize_fact_groundedness_check and check_label) or not utilize_fact_groundedness_check: query_id_2_keypoints[query_id].add(kp_id)
 
             if query_id not in qrels: qrels[query_id] = {}
             qrels[query_id][url] = int(check_label) if url not in qrels[query_id] else max(int(check_label), int(qrels[query_id][url]))
@@ -117,15 +157,6 @@ def main(cfg: DictConfig):
             qrels_num_citations[num_keypoints][query_id] = qrels[query_id]
         
 
-
-        # answer
-        for fact_id, keypoints in keypoints_mapper.items():
-            fact_id = int(fact_id)
-            query_id = f"{wiki_title}--{fact_id}"
-
-            if fact_id not in fact_ids_to_include: continue
-
-            answers.append({"_id": query_id, "text": keypoints})
             
 
     
@@ -150,8 +181,12 @@ def main(cfg: DictConfig):
 
         answers_grouped = [line for line in answers if line["_id"] in qrels_num_citations[length]]
         queries_grouped = [line for line in queries if line["_id"] in qrels_num_citations[length]]
-        write_to_jsonl(answers_grouped, os.path.join(group_folder, f"answers.jsonl"))
-        write_to_jsonl(queries_grouped, os.path.join(group_folder, f"queries.jsonl"))
+
+        sampled_queries_grouped, sampled_answers_grouped = sample_qa(queries_grouped, answers_grouped, num_samples = 100, seed = 42)
+
+        assert all([len(line["text"]) == length for line in answers_grouped])
+        write_to_jsonl(sampled_answers_grouped, os.path.join(group_folder, f"answers.jsonl"))
+        write_to_jsonl(sampled_queries_grouped, os.path.join(group_folder, f"queries.jsonl"))
 
     # group queries and answers by time
 
