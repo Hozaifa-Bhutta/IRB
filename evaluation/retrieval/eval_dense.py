@@ -7,6 +7,7 @@ from typing import List, Dict, Tuple
 from dataclasses import dataclass
 from utils.model_name_2_model_info_dense import model_name_2_model_class, \
     model_name_2_tokenizer_class, model_name_2_model_path, model_name_2_prefix
+from utils.generic import process_search_results
 
 
 logger = logging.getLogger(__name__)
@@ -286,23 +287,12 @@ def main(cfg: DictConfig):
         
         all_hits.update(batch_search_results)
 
-    predictions_metadata = {}
-    all_search_results = []
-    for query_id in queries_ids:
-        hits = all_hits[query_id]
-        temp = {}
-        predictions_metadata[query_id] = []
-        for hit in hits:
-            docid = hit.docid.split("--__--")[0]
-            if docid not in temp: temp[docid] = 0
-            temp[docid] = max(temp[docid], hit.score)
-            
-            if len(predictions_metadata[query_id]) < 20: 
-                predictions_metadata[query_id].append(json.loads(hit.lucene_document.get('raw')))
 
-        formatted_results = [{"docid": k, "score": v} for k,v in temp.items()]
-
-        all_search_results.append(formatted_results)
+    predictions_metadata = process_search_results(
+        queries_ids = queries_ids,
+        all_hits = all_hits
+    )
+    all_search_results = [predictions_metadata["full"][query_id] for query_id in queries_ids]
 
 
     predictions = convert_to_pytrec_eval_format(queries = queries_ids, all_search_results=all_search_results, type = "prediction")

@@ -13,31 +13,65 @@ import os, json, hydra, time
 from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
+from typing import List, Union
 from utils.generic import read_json_or_jsonl, write_to_json
 from utils.openai_utils import init_client, OPENAI_CLIENT
 from utils.keypoints_prompt import KEYPOINTS_SYSTEM_PROMPT, KEYPOINTS_USER_PROMPT
 
 
+def get_first_paragraph(extracted_sentences: List[int]):
+    results = []
+    for sent in extracted_sentences:
+        if sent.startswith("SECTION:"): break
+        results.append(sent)
+    
+    return " ".join(results)
+
+
+def get_section_context(fact: int, extracted_sentences: List[str]):
+    results = []
+    section_name = None
+
+    assert fact < len(extracted_sentences)
+
+    for i in reversed(range(fact + 1)):
+        sent = extracted_sentences[i]
+        if sent.startswith("SECTION:"):
+            section_name = sent.replace("SECTION:", "").strip()
+
+            break
+        results.append(sent)
+
+    results = list(reversed(results))
+
+    return f"Section Name: {section_name}\n\n" + " ".join(results)
+
+
+
 
 def create_keypoints(fact: int, 
-                     marked_sentences: list,
-                     extracted_sentences: list, 
+                     marked_sentences: List[str],
+                     extracted_sentences: List[str], 
                      context_window_size: int,
-                     wiki_title: str = None):
+                     wiki_title: str = None) -> Union[List[str], None]:
     
     fact_sentence = marked_sentences[fact]
     keypoint_count = fact_sentence.count("[KP]")
 
-    surrounding_context = extracted_sentences[:context_window_size] + ["\n...\n"] +  extracted_sentences[max(0, fact - context_window_size): fact + 1]
-    if wiki_title: surrounding_context = [wiki_title + "\n"] + surrounding_context
-    surrounding_context = " ".join(surrounding_context)
+    # surrounding context include: Title of the wiki page + The first paragraph (abstract) of the wiki page
+    # + the previous context within the section the fact belongs to
+    first_paragraph = get_first_paragraph(extracted_sentences)
+    section_context = get_section_context(fact, extracted_sentences)
+    surrounding_context = first_paragraph + "\n...\n" + section_context
+
+    if wiki_title:
+        surrounding_context = f"Document Title: {wiki_title}\n\n" + surrounding_context
 
     user_prompt = KEYPOINTS_USER_PROMPT.replace("[ADD_CLAIM_HERE]", fact_sentence)
     user_prompt = user_prompt.replace("[ADD_CONTEXT_HERE]", surrounding_context)
     user_prompt = user_prompt.replace("[ADD_KEYPOINTS_COUNT_HERE]", str(keypoint_count))
 
     try:
-
         resp = OPENAI_CLIENT["client"].chat.completions.create(
             model=OPENAI_CLIENT["model"],
             messages=[

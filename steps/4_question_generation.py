@@ -13,12 +13,13 @@ import os, json, hydra
 from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
+from typing import List
 from utils.generic import read_json_or_jsonl, write_to_json
 from utils.openai_utils import init_client, OPENAI_CLIENT
 from utils.question_generation_prompt import QUESTION_GENERATION_SYSTEM_PROMPT, QUESTION_GENERATION_USER_PROMPT
 
 
-def generate_question(keypoints, wiki_title):
+def generate_question(keypoints: List[str], wiki_title: str):
     system_prompt = QUESTION_GENERATION_SYSTEM_PROMPT
     user_prompt = QUESTION_GENERATION_USER_PROMPT
 

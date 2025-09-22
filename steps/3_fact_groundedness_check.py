@@ -15,12 +15,14 @@ from argparse import ArgumentParser
 from utils.generic import read_json_or_jsonl, write_to_json
 from minicheck.minicheck import MiniCheck
 from tqdm import tqdm
+from typing import List, Dict
 
 MINICHECK = {
     "model": None,
     "model_name": None
 }
-def init_minicheck(model_name='flan-t5-large', cache_dir='./ckpts'):
+def init_minicheck(model_name: str = 'flan-t5-large', 
+                   cache_dir:str = './ckpts'):
     if MINICHECK["model_name"] != model_name:
         print(f"Initializing Minicheck ({model_name})")
         model = MiniCheck(model_name=model_name, cache_dir=cache_dir)
@@ -28,10 +30,10 @@ def init_minicheck(model_name='flan-t5-large', cache_dir='./ckpts'):
         
 
 
-def groundedness_check_func(raw_facts: list, 
-                       keypoints_mapper: dict, 
+def groundedness_check_func(raw_facts: List, 
+                       keypoints_mapper: Dict[str], 
                        url_content_mapper,
-                       max_words = 2000):
+                       max_words: int = 2000):
     
     res = {}
     keypoints_contexts_pairs = []
@@ -39,18 +41,19 @@ def groundedness_check_func(raw_facts: list,
     for fact in raw_facts:
         fact_id = fact.get("fact")
         citation_urls = fact.get("citation_urls")
+        citation_positions = fact.get("pos")
         keypoints = keypoints_mapper.get(fact_id)
         if not keypoints or not citation_urls: continue
 
-        for url in citation_urls:
-            temp = url_content_mapper.get(url)
-            if not temp: continue
-            
-            content = temp["url_content"]
-            content = " ".join(content.split()[:max_words])
-            if url_content_mapper.get(url, {}).get("error") or not content: continue
+        for kp_index, kp in enumerate(keypoints):
+            for pos, url in zip(citation_positions, citation_urls):
+                temp = url_content_mapper.get(url)
+                if not temp or kp_index != pos: continue
 
-            for kp_index, kp in enumerate(keypoints):
+                content = temp["url_content"]
+                content = " ".join(content.split()[:max_words])
+                if url_content_mapper.get(url, {}).get("error") or not content: continue
+
                 keypoints_contexts_pairs.append([f"{fact_id}--__--{url}--__--{kp_index}", kp, content])
 
     groundedness_pred, raw_prob, _, _ = MINICHECK["model"].score(

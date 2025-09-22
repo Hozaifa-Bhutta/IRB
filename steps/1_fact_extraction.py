@@ -19,10 +19,10 @@
 import json, re, mwparserfromhell, os, hydra
 from omegaconf import DictConfig
 from argparse import ArgumentParser
-from nltk.tokenize import sent_tokenize
 from tqdm import tqdm
 from cleantext import clean
-from utils.generic import read_json_or_jsonl, write_to_json
+from nltk.tokenize import sent_tokenize
+from utils.generic import read_json_or_jsonl, write_to_json, split_sentence_with_newlines, sentence_filtering
 from utils.bad_domains import BAD_DOMAINS
 
 
@@ -43,9 +43,6 @@ def is_pdf(url):
 
 def slight_text_processing(wiki_raw_text: str):
     """removes period after et al."""
-
-    # IMPORTANT CHANGE: Removed this piece of code to take into account middle citations
-    # res = wiki_raw_text.replace(",<ref", ".<ref")  
 
     res = wiki_raw_text.replace("et al.", "et al")
 
@@ -152,9 +149,22 @@ def process_wikilinks_and_replace_ref(raw_text: str):
             except ValueError:
                 templates_to_replace[str(template)] = display_text
 
-    # STEP: throw away the headings
+    # STEP: process the headings
+    path_list = []
     for heading in wikicode.filter_headings():
-        wikicode.remove(heading)
+        # Get the heading's level (e.g., ==Title== is level 2)
+        level = heading.level
+        title = heading.title.strip()
+
+        path_list = path_list[:level - 2]
+
+        # Now, append the current heading's title
+        path_list.append(title)
+
+        # Print the full, correct path
+        to_replace = "SECTION: " + " > ".join(path_list)
+
+        wikicode.replace(heading, to_replace)
 
 
 
@@ -341,16 +351,18 @@ def main(cfg:DictConfig):
         # placeholder_mapper is of the format {"[REF_I]": url_i}
 
         # Tokenizes the sentences
-        wiki_raw_text_sentences = [sent for sent in sent_tokenize(wiki_raw_text)]
+        wiki_raw_text_sentences = sent_tokenize(wiki_raw_text)
         # output is each sentence (with placeholder referenes)
 
         
         # Clean sentences, strips code (keeps placeholders)
         cleaned_sentences = [get_info_from_raw_text(raw) for raw in wiki_raw_text_sentences]
+        cleaned_sentences = [sent for sent in cleaned_sentences if sent]
         # output is each sentence cleaned up with reference tags
 
         # shift references back when needed
         fixed_sentences = shift_tags(cleaned_sentences)
+        fixed_sentences = split_sentence_with_newlines(fixed_sentences)
 
         # get marked facts
         marked_sentences = [fact_marking(sent) for sent in fixed_sentences]
@@ -368,12 +380,17 @@ def main(cfg:DictConfig):
         # Extracts the sentences into a list
         extracted_sentences = [item["text"] for item in wiki_info_sentences]
 
+        # Sentence filtering based on length
+        good_sentence_indices = set(sentence_filtering(extracted_sentences))
+        for i in range(len(extracted_sentences)):
+            if i not in good_sentence_indices:
+                marked_sentences[i] = ""
 
         raw_facts = []
 
         # For each sentence, clean up the reference urls and remove fact if no urls
         # also adjust the positions accordingly
-        for i in range(0, len(wiki_raw_text_sentences)):
+        for i in range(0, len(wiki_info_sentences)):
             
             reference_urls = wiki_info_sentences[i]["urls"]
             pos = wiki_info_sentences[i]["pos"]

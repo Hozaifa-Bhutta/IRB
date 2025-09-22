@@ -13,7 +13,8 @@ NUM_SAMPLE = 100
 
 def create_enumerated_list(texts):
     if not texts: return ""
-    return '\n\n\n'.join(f"Context #{i+1}. {text}" for i, text in enumerate(texts))
+    truncated_texts = [" ".join(text.split()[:5000]) for text in texts]
+    return '\n\n\n'.join(f"Context #{i+1}. {text}" for i, text in enumerate(truncated_texts))
 
 def generate_answer(query, 
                     contexts, 
@@ -27,6 +28,8 @@ def generate_answer(query,
 
     user_prompt = qa_user_prompt.replace("[ADD CONTEXT HERE]", str_context)
     user_prompt = user_prompt.replace("[ADD QUESTION HERE]", query)
+
+    print(user_prompt)
 
     try:
         resp = OPENAI_CLIENT["client"].chat.completions.create(
@@ -73,6 +76,7 @@ def main(cfg: DictConfig):
     eval_only = cfg.qa.eval_only
     openai_model_name = cfg.qa.openai_model_name
     subset = cfg.qa.subset
+    use_chunk = cfg.qa.use_chunk
 
     local_llm_port = cfg.qa.local_llm_port
     local_llm_model = cfg.qa.local_llm_model
@@ -105,6 +109,12 @@ def main(cfg: DictConfig):
         dataset_name_2_relative_path[dataset],
         "queries.jsonl")
     
+    corpus_path= os.path.join(
+        work_dir, 
+        data_relative_path(dataset, dataset_date),
+        "corpus.jsonl"
+    )
+    
     groundtruth_answers_path = os.path.join(
         work_dir,
         dataset_name_2_relative_path[dataset],
@@ -114,6 +124,16 @@ def main(cfg: DictConfig):
     # load queries
     with open(queries_path) as f:
         queries = [json.loads(line) for line in f]
+
+    # load corpus
+    with open(corpus_path) as f:
+        docid2fulltext = {}
+        for line in f:
+            jline = json.loads(line)
+            docid = jline["_id"]
+            text = jline["text"]
+            docid2fulltext[docid] = text
+
     
     with open(groundtruth_answers_path) as f:
         groundtruth_answers = [json.loads(line) for line in f]
@@ -132,6 +152,23 @@ def main(cfg: DictConfig):
 
             with open(retrieval_metadata_path) as f:
                 retrieval_metadata = json.load(f)
+
+            if use_chunk:
+                retrieval_metadata = retrieval_metadata["chunk"]
+            else:
+                temp = {}
+                for query_id, contexts in retrieval_metadata["full"].items():
+                    temp[query_id] = []
+                    for line in contexts:
+                        docid = line["docid"]
+                        content = docid2fulltext[docid]
+
+                        to_append = {"id": docid, "contents": content}
+                        temp[query_id].append(to_append)
+
+                retrieval_metadata = temp
+
+
 
             queries = [line for line in queries if line["_id"] in retrieval_metadata]
             groundtruth_answers = [line for line in groundtruth_answers if line["_id"] in retrieval_metadata]

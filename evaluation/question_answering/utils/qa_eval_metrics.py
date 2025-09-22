@@ -197,73 +197,104 @@ def run_llm_based_evaluation_keypoints(
 
     assert len(queries) == len(groundtruths) == len(predictions)
 
-    system_prompt = f"""In this task , you will receive a question , a generated answer , and multiple key points \
-from a standard answer . Please categorize each key point by determining whether it is Relevant , \
-Irrelevant , or Wrong based on the generated answer .
-- Relevant: indicates that the generated answer contains key information that is related to and
-consistent with the key point described in the standard answer .
-- Irrelevant: indicates that the generated answer does not contain or involve information related
-to the key point in the standard answer .
-- Wrong: indicates that the generated answer contains information related to the key point but it
-is incorrect or contradicts the standard answer keypoints .
+    system_prompt = f"""In this task, you will receive a question, a generated answer, and multiple key points \
+from a standard answer. For each keypoint, please categorize if the generated answer is CORRECT, INCORRECT, or NOT_ATTEMPTED \
+given the keypoint.
+
+1. CORRECT: 
+    + Fully contain the important information in the keypoint.
+    + Do not contain any information that contradicts the keypoint.
+    + Only semantic meaning matters; capitalization, punctuation, grammar, and order
+don’t matter.
+    + Hedging and guessing are permissible, provided that the keypoint is fully
+included and the response contains no incorrect information or
+contradictions.
+
+2. INCORRECT: 
+    + A factual statement in the answer contradicts the keypoint. Incorrect
+statements that have some hedging (e.g., "it is possible that", "although i’
+m not sure, i think") are also considered incorrect.
+
+
+3. NOT_ATTEMPTED: 
+    + The important information in the gold target is not included in the answer.
+    + No statements in the answer contradict the gold target.
 
 
 Example 1:
 ##QUESTION##: What ukulele-based music education program, created by James Hill and Chalmers Doane in 2008, is widely used in Canadian schools?
 ##GENERATED_ANSWER##: The widely used ukulele-based music education program created by James Hill and Chalmers Doane in 2008 is called Ukulele in the Classroom.
+##NUM_KEYPOINTS##: 1
 ##KEYPOINTS##: 
 - "Ukulele in the Classroom", a revised program created by James Hill and Doane in 2008, is a staple of music education in Canada.
-##OUTPUT##: ["Relevant"]
-
+##OUTPUT##: ["CORRECT"]
 
 Example 2:
-##QUESTION##: What historic achievements did Cristiano Ronaldo earn while playing for Manchester United regarding the Ballon d'Or and the FIFA World Player of the Year award?
-##GENERATED_ANSWER##: Cristiano Ronaldo made historic achievements while playing for Manchester United by winning the Ballon d'Or in 2008, becoming the club's first Ballon d'Or winner since George Best in 1968. In the same year, he also won the FIFA World Player of the Year award, making him the first Premier League player to receive this prestigious title
+##QUESTION##: What are the names of Barack Obama’s children?
+##GENERATED_ANSWER##: Without researching the web, I cannot answer this question. However, I can tell you that Barack Obama has two children.
+##NUM_KEYPOINTS##: 2
 ##KEYPOINTS##: 
-- Cristiano Ronaldo became United's first Ballon d'Or winner since Best in 1968.
-- Cristiano Ronaldo was the first Premier League player to be named the FIFA World Player of the Year.
-##OUTPUT##: ["Relevant", "Relevant"]
+- Malia Ann Obama is Barrack Obama's daughter
+- Sasha Obama is Barrack Obama's daughter
+##OUTPUT##: ["NOT_ATTEMPTED", "NOT_ATTEMPTED"]
 
 
 Example 3:
+##QUESTION##: What historic achievements did Cristiano Ronaldo earn while playing for Manchester United regarding the Ballon d'Or and the FIFA World Player of the Year award?
+##GENERATED_ANSWER##: Cristiano Ronaldo made historic achievements while playing for Manchester United by winning the Ballon d'Or in 2008, becoming the club's first Ballon d'Or winner since George Best in 1968. In the same year, he also won the FIFA World Player of the Year award, making him the first Premier League player to receive this prestigious title
+##NUM_KEYPOINTS##: 2
+##KEYPOINTS##: 
+- Cristiano Ronaldo became United's first Ballon d'Or winner since Best in 1968.
+- Cristiano Ronaldo was the first Premier League player to be named the FIFA World Player of the Year.
+##OUTPUT##: ["CORRECT", "CORRECT"]
+
+
+Example 4:
 ##QUESTION##: What are the primary ingredients and traditional preparation method for Italian carbonara pasta?
 ##GENERATED_ANSWER##: Italian carbonara pasta is traditionally made with spaghetti, eggs, Pecorino Romano cheese, guanciale, and black pepper. The preparation involves cooking the guanciale until crispy, then mixing it with cooked pasta and a sauce made from beaten eggs and cheese, without using cream.
+##NUM_KEYPOINTS##: 4
 ##KEYPOINTS##:
 - Primary ingredients: spaghetti, eggs, Pecorino Romano cheese, guanciale (cured pork cheek), black pepper.
 - No cream is used in the authentic recipe; the sauce is created from eggs and cheese emulsified with pasta water.
 - Often mistakenly includes pancetta instead of guanciale, but guanciale is traditional.
 - The dish originated in Rome during the mid-20th century.
-##OUTPUT##: ["Relevant", "Relevant", "Irrelevant", "Irrelevant"]
+##OUTPUT##: ["CORRECT", "CORRECT", "INCORRECT", "INCORRECT"]
 
-Example 4:
+Example 5:
 ##QUESTION##: What were Albert Einstein's major contributions to physics, including his famous equation?
 ##GENERATED_ANSWER##: Albert Einstein's major contributions include the theory of general relativity in 1905, which revolutionized our understanding of gravity, and his famous equation E=mc² from special relativity. He also won the Nobel Prize in Physics in 1921 for his work on the photoelectric effect.
+##NUM_KEYPOINTS##: 4
 ##KEYPOINTS##:
 - Developed the theory of special relativity in 1905, including the equation E=mc².
 - Developed the theory of general relativity in 1915.
 - Won the Nobel Prize in 1921 for the photoelectric effect, not relativity.
 - Contributed to quantum theory through his explanation of the photoelectric effect.
-##OUTPUT##: ["Wrong", "Wrong", "Relevant", "Irrelevant"]"""
+##OUTPUT##: ["INCORRECT", "INCORRECT", "CORRECT", "INCORRECT"]"""
     
     user_prompt_template = f"""User input:
 ##QUESTION##: [QUESTION]
 ##GENERATED_ANSWER##: [GENERATED_ANSWER]
+##NUM_KEYPOINTS##: [NUM_KEYPOINTS]
 ##KEYPOINTS##:
 [KEYPOINTS]
 ##OUTPUT##:"""
     
 
 
-    relevance = []
-    irrelevance = []
-    wrong = []
+    correct = []
+    incorrect = []
+    not_attempted = []
     for query, prediction, groundtruth in tqdm(zip(queries, predictions, groundtruths)):
         keypoints = groundtruth.split("--__--")
         keypoints = "\n".join(["- " + kp for kp in keypoints])
+        num_keypoints = len(groundtruth.split("--__--"))
 
-        print(prediction, keypoints)
+        print(query, prediction, keypoints)
 
-        user_prompt = user_prompt_template.replace("[QUESTION]", query).replace("[KEYPOINTS]", keypoints).replace("[GENERATED_ANSWER]", prediction)
+        user_prompt = user_prompt_template.replace("[QUESTION]", query)\
+                                            .replace("[KEYPOINTS]", keypoints)\
+                                            .replace("[GENERATED_ANSWER]", prediction)\
+                                            .replace("[NUM_KEYPOINTS]", str(num_keypoints))
 
         resp = OPENAI_CLIENT["client"].chat.completions.create(
             model=OPENAI_CLIENT["model"],
@@ -285,6 +316,7 @@ Example 4:
         print(result)
         try:
             json_result = json.loads(result.split("</think>")[-1].strip())
+            assert len(json_result) == num_keypoints
             print("JSON:", json_result)
         except Exception as e:
             continue
@@ -295,15 +327,15 @@ Example 4:
 
         print(result_counter)
 
-        relevance.append(result_counter["Relevant"] / total)
-        irrelevance.append(result_counter["Irrelevant"] / total)
-        wrong.append(result_counter["Wrong"] / total)
+        correct.append(result_counter["CORRECT"] / total)
+        incorrect.append(result_counter["INCORRECT"] / total)
+        not_attempted.append(result_counter["NOT_ATTEMPTED"] / total)
 
     
-    formatted_output = f"REL: {np.mean(relevance)}\nIRREL: {np.mean(irrelevance)}\nWRONG: {np.mean(wrong)}"
+    formatted_output = f"CORRECT: {np.mean(correct)}\nINCORRECT: {np.mean(incorrect)}\nNOT_ATTEMPTED: {np.mean(not_attempted)}"
     print(formatted_output)    
 
     if isinstance(evaluation_metadata_file, str):
         with open(evaluation_metadata_file, "w") as f:
-            for r,i,w in zip(relevance, irrelevance, wrong):
+            for r,i,w in zip(correct, incorrect, not_attempted):
                 f.write(f"{r},{i},{w}" + "\n")
