@@ -15,7 +15,7 @@ from argparse import ArgumentParser
 from utils.generic import read_json_or_jsonl, write_to_json
 from minicheck.minicheck import MiniCheck
 from tqdm import tqdm
-from typing import List, Dict
+from typing import List, Dict, Union
 
 MINICHECK = {
     "model": None,
@@ -31,7 +31,7 @@ def init_minicheck(model_name: str = 'flan-t5-large',
 
 
 def groundedness_check_func(raw_facts: List, 
-                       keypoints_mapper: Dict[str], 
+                       keypoints_mapper: Dict[Union[int, str], str], 
                        url_content_mapper,
                        max_words: int = 2000):
     
