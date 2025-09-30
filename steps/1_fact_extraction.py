@@ -14,8 +14,7 @@
 #     ]
 # }
 
-
-
+from typing import Union, Any, Dict, List, Tuple
 import json, re, mwparserfromhell, os, hydra
 from omegaconf import DictConfig
 from argparse import ArgumentParser
@@ -95,7 +94,7 @@ def slight_text_processing(wiki_raw_text: str) -> str:
 
     return res
 
-def get_starting_refs(ref_tags: list, raw_text: str) -> list:
+def get_starting_refs(ref_tags: list[str], raw_text: str) -> list[str]:
     """ Returns a list of consecutive reference tags that appear at the start of raw_text.
     Parameters
     ----------
@@ -116,7 +115,7 @@ def get_starting_refs(ref_tags: list, raw_text: str) -> list:
 
     return res
 
-def get_all_refs(text: str) -> list:
+def get_all_refs(text: str) -> list[str]:
     """Returns a list of all reference tags in the text.
     Parameters
     ----------
@@ -130,7 +129,7 @@ def get_all_refs(text: str) -> list:
     matches = re.findall(r"\[REF-\d+\]", text)
     return matches
 
-def get_info_from_raw_text(raw_text):
+def get_info_from_raw_text(raw_text: str) -> str:
     """
     Cleans up texts
     """
@@ -143,9 +142,17 @@ def get_info_from_raw_text(raw_text):
     return cleaned_text
 
 
-def shift_tags(wiki_info_sentences):
+def shift_tags(wiki_info_sentences: list[str]) -> list[str]:
     """
     For each reference that starts the sentence, shift it to the previous sentence
+    Parameters
+    ----------
+    wiki_info_sentences : list
+        List of sentences from the Wikipedia page.
+    Returns
+    -------
+    list
+        The modified list of sentences with starting reference tags shifted to the previous sentence.
     """
     for i, sent in enumerate(wiki_info_sentences):
         tags = get_all_refs(sent)
@@ -159,9 +166,20 @@ def shift_tags(wiki_info_sentences):
     return wiki_info_sentences
     
 
-def process_wikilinks_and_replace_ref(raw_text: str):
+def process_wikilinks_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str], dict[str, str]]:
     """
     Processes the wikilinks and replaces reference tags with placeholders.
+    Parameters
+    ----------
+    raw_text : str
+        The raw text from the Wikipedia page.
+    Returns
+    -------
+    tuple
+        A tuple containing:
+        - The processed text with reference tags replaced by placeholders.
+        - A dictionary mapping placeholders to their original reference tags.
+        - A dictionary mapping reference tag names to their associated URLs.
     """
     wikicode = mwparserfromhell.parse(raw_text)
 
@@ -252,9 +270,17 @@ def process_wikilinks_and_replace_ref(raw_text: str):
     return str_wikicode, placeholder_mapper, tag_name_2_url
 
 
-def _extract_urls_from_text(text):
+def _extract_urls_from_text(text: str) -> str | None:
     """
     Extracts URLs from a text string.
+    Parameters
+    ----------
+    text : str
+        The text from which to extract URLs.
+    Returns
+    -------
+    str | None
+        The first URL found in the text, or None if no URLs are found.
     """
     if not text: return None
     url_pattern = r'https?://[\w\-.]+(?:\.[a-z]{2,})+(?:/[\w\-.~:/?#[\]@!$&\'()*+,;=%]*)?'
@@ -268,9 +294,19 @@ def _extract_urls_from_text(text):
     return urls[0] if urls else None
 
 
-def extract_urls(tag, tag_name_2_url = {}):
+def extract_urls(tag: mwparserfromhell.nodes.Tag, tag_name_2_url: dict[str, str]) -> str | None:
     """
     Extracts URLs from a MediaWiki tag.
+    Parameters
+    ----------
+    tag : mwparserfromhell.nodes.Tag
+        The MediaWiki tag from which to extract URLs.
+    tag_name_2_url : dict[str, str]
+        A dictionary mapping tag names to their associated URLs.
+    Returns
+    -------
+    str | None
+        The extracted URL, or None if no URL is found.
     """
     text = str(tag.contents)
     res = _extract_urls_from_text(text)
@@ -285,9 +321,22 @@ def extract_urls(tag, tag_name_2_url = {}):
     else: return None
 
 
-def wikiinfo(cleaned_text, pos, tag_name_2_url):
+def wikiinfo(cleaned_text: str, pos: list[int], tag_name_2_url: dict[str, str]) -> dict[str, Any]:
     """
     Returns the full wiki info entry
+    Parameters
+    ----------
+    cleaned_text : str
+        The cleaned text from the Wikipedia page.
+    pos : list[int]
+        List of positions for each reference tag in the text.
+    tag_name_2_url : dict[str, str]
+        A dictionary mapping tag names to their associated URLs.
+    Returns
+    -------
+    dict
+        A dictionary containing the cleaned text, list of extracted URLs, and their positions.
+
     """
     # gets all urls from text and strips code
     wikicode = mwparserfromhell.parse(cleaned_text)
@@ -323,9 +372,17 @@ def wikiinfo(cleaned_text, pos, tag_name_2_url):
         "pos": res_pos
     }
 
-def find_pos(raw_text):
+def find_pos(raw_text: str) -> list[int]:
     """
     Returns a list of positions for each reference tag in the text. First tag starts off at index 0 and nearby tags are assigned the same index.
+    Parameters
+    ----------
+    raw_text : str
+        The raw text from which to extract reference tag positions.
+    Returns
+    -------
+    list[int]
+        A list of positions for each reference tag in the text.
     """
     prev_pos = float('-inf')
     cur_ind = -1
@@ -340,7 +397,18 @@ def find_pos(raw_text):
     return res
 
 
-def fact_marking(raw_text):
+def fact_marking(raw_text: str) -> str:
+    """
+    Marks the fact sentences by appending [KP] after each fact.
+    Parameters
+    ----------
+    raw_text : str
+        The raw text from the Wikipedia page.
+    Returns 
+    -------
+    str
+        The marked text with [KP] appended to each fact.
+    """
     prev_pos = float('-inf')
     cur_ind = 0
 
@@ -357,9 +425,19 @@ def fact_marking(raw_text):
     return res
 
 
-def put_back_ref(sentence, placeholder_mapper):
+def put_back_ref(sentence: str, placeholder_mapper: dict[str, str]) -> str:
     """
     Puts back the references in the sentence using the placeholder mapper.
+    Parameters
+    ----------
+    sentence : str
+        The sentence with placeholders.
+    placeholder_mapper : dict[str, str]
+        A dictionary mapping placeholders to their original reference tags.
+    Returns
+    -------
+    str
+        The sentence with original reference tags put back in place.
     """
     for k in placeholder_mapper:
         if k in sentence:
@@ -369,8 +447,15 @@ def put_back_ref(sentence, placeholder_mapper):
 
 
 
-def get_file_paths(cfg:DictConfig):
-    """Sets up input and output folders"""
+def get_file_paths(cfg:DictConfig) -> tuple[list[str], list[str]]:
+    """Sets up input and output folders
+    Parameters
+    ----------
+    cfg : DictConfig
+        The configuration object containing input and output folder paths.
+    Returns
+    -------
+    tuple[list[str], list[str]]"""
     input_folder = cfg.step0.output_folder
     output_folder = cfg.step1.output_folder
 
@@ -382,9 +467,21 @@ def get_file_paths(cfg:DictConfig):
     return input_files_full_path, output_files_full_path
 
 
-def remove_bad_urls(reference_urls, pos):
+def remove_bad_urls(reference_urls: list[str], pos: list[int]) -> tuple[list[str], list[int]]:
     """
     Removes URLs from bad domains and adjusts positions accordingly.
+    Parameters
+    ----------
+    reference_urls : list[str]
+        List of reference URLs.
+    pos : list[int]
+        List of positions for each reference URL.
+    Returns
+    -------
+    tuple[list[str], list[int]]
+        A tuple containing:
+        - A list of cleaned URLs (excluding those from bad domains).
+        - A list of adjusted positions corresponding to the cleaned URLs.
     """
     cleaned_urls = []
     cleaned_pos = []
@@ -401,7 +498,7 @@ def remove_bad_urls(reference_urls, pos):
     return cleaned_urls, cleaned_pos
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
-def main(cfg:DictConfig):
+def main(cfg:DictConfig) -> None:
     input_files_full_path, output_files_full_path = get_file_paths(cfg)
 
 
