@@ -11,6 +11,7 @@ from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
 from utils.generic import maybe_create_folder, write_to_json
+from typing import Optional
 
 
 def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int, offset: int = 0, start_from: Optional[str] = None) -> None:

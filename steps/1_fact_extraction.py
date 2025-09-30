@@ -26,32 +26,85 @@ from utils.generic import read_json_or_jsonl, write_to_json, split_sentence_with
 from utils.bad_domains import BAD_DOMAINS
 
 
-# this function cleans up text
-clean_text_func = lambda text: clean(text,
-    fix_unicode=True,               # fix various unicode errors
-    to_ascii=True,                  # transliterate to closest ASCII representation
-    lang="en",                       # set to 'de' for German special handling,
-    lower = False
-)
+# this function cleans up text 
+# clean_text_func = lambda text: clean(text,
+#     fix_unicode=True,               # fix various unicode errors
+#     to_ascii=True,                  # transliterate to closest ASCII representation
+#     lang="en",                       # set to 'de' for German special handling,
+#     lower = False
+# )
+def clean_text_func(text: str) -> str:
+    """
+    Clean up the input text by fixing Unicode errors, converting to ASCII,
+    and doing general text normalization.
+
+    Parameters
+    ----------
+    text : str
+        The text string to be cleaned.
+
+    Returns
+    -------
+    str
+        The cleaned text.
+    """
+    return clean(
+        text,
+        fix_unicode=True,  # misencoded characters fixed
+        to_ascii=True,     # non-ASCII characters converted to closest ASCII representation
+        lang="en",         # english specific cleaning (e.g., standardize quotes/apostrophes)
+        lower=False        # keep capitalization of original text
+    )
 
 
-def is_pdf(url):
+def is_pdf(url: str) -> bool:
+    """Checks if a URL points to a PDF document.
+    
+    Parameters
+    ----------
+    url : str
+        The URL to be checked.
+        
+    Returns
+    -------
+    bool
+        True if the URL points to a PDF document, False otherwise.
+
+    """
     if not url: return False
     if url.endswith(".pdf") or "/pdf/" in url or "/pdfs/" in url: return True
     return False
 
 
-def slight_text_processing(wiki_raw_text: str):
-    """removes period after et al."""
+def slight_text_processing(wiki_raw_text: str) -> str:
+    """Removes period after 'et al.' in the text.
+
+    Parameters
+    ----------
+    wiki_raw_text : str
+        The raw text of the Wikipedia page.
+
+    Returns
+    -------
+    str
+        The processed text with the period removed after all instances of 'et al.'.
+
+    """
 
     res = wiki_raw_text.replace("et al.", "et al")
 
     return res
 
-def get_starting_refs(ref_tags, raw_text):
+def get_starting_refs(ref_tags: list, raw_text: str) -> list:
+    """ Returns a list of consecutive reference tags that appear at the start of raw_text.
+    Parameters
+    ----------
+    ref_tags : list
+        List of reference tags (e.g., ['[REF-0]', '[REF-1]', ...]).
+    raw_text : str
+        The raw sentence from the Wikipedia page.
     """
-    Inputs: ref_tags (list of reference tags), raw_text (raw sentence from the wikipage)
-    Output: list of consecutive reference tags that appear at the start of raw_text."""
+
     current = 0
     res = []
     for tag in ref_tags:
@@ -63,8 +116,17 @@ def get_starting_refs(ref_tags, raw_text):
 
     return res
 
-def get_all_refs(text):
-    """Returns a list of all reference tags in the text."""
+def get_all_refs(text: str) -> list:
+    """Returns a list of all reference tags in the text.
+    Parameters
+    ----------
+    text : str
+        The text from which to extract reference tags.
+    Returns
+    -------
+    list
+        A list of reference tags found in the text.
+    """
     matches = re.findall(r"\[REF-\d+\]", text)
     return matches
 
