@@ -41,10 +41,8 @@ def convert_text_to_soup(source: str, feature: str = FEATURE):
 
 def extract_text_from_html(html_text: str):
     return extract_trafilatura(
-        html_text, 
-        target_language="en", 
-        favor_precision=True, 
-        include_tables = False
+        html_text,
+        include_comments=False,
     )
 
 

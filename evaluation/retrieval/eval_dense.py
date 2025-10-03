@@ -5,9 +5,10 @@ from omegaconf import DictConfig
 from tqdm import tqdm
 from typing import List, Dict, Tuple
 from dataclasses import dataclass
-from utils.model_name_2_model_info_dense import model_name_2_model_class, \
-    model_name_2_tokenizer_class, model_name_2_model_path, model_name_2_prefix
+from utils.text_embeddings import model_name_2_model_class, \
+    model_name_2_tokenizer_class, model_name_2_model_path, model_name_2_prefix, text_embedding_batch
 from utils.generic import process_search_results
+from utils.allowed_datasets import ALLOWED_DATASETS
 
 
 logger = logging.getLogger(__name__)
@@ -178,24 +179,6 @@ def batch_search(embeddings, q_ids, index, k, id_map=None, id2raw = None):
     return results
 
 
-def text_embedding_batch(batch, model, tokenizer, model_name, prefix = None):
-    if prefix is not None:
-        batch = [prefix + " " + text for text in batch]
-    inputs = tokenizer(batch, padding=True, truncation=True,
-                                   return_tensors="pt", return_token_type_ids=False, max_length=256).to(DEVICE)
-    output = model(**inputs)
-
-    if model_name in ["specter2"]:
-        return output.last_hidden_state[:, 0, :].cpu()
-    
-    elif model_name in ["e5_base"]:
-        attention_mask = inputs["attention_mask"]
-        last_hidden = output.last_hidden_state.masked_fill(~attention_mask[..., None].bool(), 0.0)
-        return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
-    
-    else:
-        raise NotImplementedError
-
 
 def load_index(index_folder):
     index = faiss.read_index(os.path.join(index_folder, "faiss_index_flatip.index"))
@@ -225,14 +208,15 @@ def main(cfg: DictConfig):
     index_folder = cfg.general.index_folder
     work_dir = cfg.general.work_dir
     dataset = cfg.general.dataset
+    dataset_date = cfg.general.dataset_date
     batch_size = cfg.retrieval.eval.batch_size
     threads = cfg.retrieval.eval.threads
     retrieval_metadata_path = cfg.general.retrieval_metadata_path
 
 
     dataset_name_2_relative_path = {
-        "irb": "data/irb",
-        "irb_new": "data/irb_new"
+        dn: os.path.join("benchmarks", dataset_date, dn) if dataset_date is not None else os.path.join("data", dn) \
+            for dn in ALLOWED_DATASETS
     }
 
     queries_path = os.path.join(
@@ -279,7 +263,7 @@ def main(cfg: DictConfig):
 
 
         batch_queries_embeddings = text_embedding_batch(batch = batch_queries, model = model, 
-                                                        tokenizer = tokenizer, model_name = retrieval_model, prefix = prefix).cpu().detach().numpy()
+                                                        tokenizer = tokenizer, model_name = retrieval_model, prefix = prefix, device = DEVICE).cpu().detach().numpy()
         
 
         batch_search_results = batch_search(embeddings = batch_queries_embeddings, 

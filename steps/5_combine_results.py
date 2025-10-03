@@ -7,8 +7,7 @@ from datetime import datetime
 from omegaconf import DictConfig
 from tqdm import tqdm
 from utils.generic import read_json_or_jsonl, write_to_jsonl, write_to_json, maybe_create_folder
-
-
+from utils.token_counting import token_count_tiktoken
 
 def process_qrels(qrels):
     qrels_lines = []
@@ -36,6 +35,8 @@ def sample_qa(queries, answers, num_samples, seed=42):
     return sampled_queries, sampled_answers
 
 
+
+
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig):
     extracted_facts_folder = cfg.step1.output_folder
@@ -55,12 +56,11 @@ def main(cfg: DictConfig):
     fact_groundedness_files_full_path = [os.path.join(fact_groundedness_folder, file) for file in files]
     question_generation_files_full_path = [os.path.join(question_generation_folder, file) for file in files]
 
-    queries = []
-    corpus = []
-    answers = []
-    qrels = {}
-    qrels_num_citations = {1:{}, 2:{}, 3:{}}
-    qrels_by_time = {2030:{}, 2025: {}, 2020: {}, 2015: {}, 2010: {}}
+    all_queries = []
+    all_corpus = []
+    all_answers = []
+    all_qrels = {}
+    all_attributes = []
     for ef_file_path, cuc_file_path, dff_file_path, fgf_file_path, qg_file_path in tqdm(zip(extracted_facts_files_full_path, 
                                                                                                             crawled_url_content_files_full_path, 
                                                                                                             decontextualized_facts_files_full_path,
@@ -81,6 +81,11 @@ def main(cfg: DictConfig):
         fact_question_mapper = qg_data.get("fact_question_mapper")
 
         wiki_title = ef_data.get("title")
+
+        queries = []
+        corpus = []
+        answers = []
+        qrels = {}
 
         if any([item is None for item in [raw_facts, url_content_mapper, keypoints_mapper, fact_question_mapper]]): continue
 
@@ -133,7 +138,6 @@ def main(cfg: DictConfig):
                 if url_content_mapper.get(url, {}).get("error") or not content: continue
 
                 published_date = url_content_mapper.get(url).get("published_date")
-                published_year = datetime.strptime(published_date, "%Y-%m-%d").year if published_date else None
 
                 corpus.append({"_id": url, "title": "", "text": content, "published_date": published_date})
 
@@ -145,67 +149,78 @@ def main(cfg: DictConfig):
 
             if int(fact_id) not in fact_ids_to_include: continue
 
-            if query_id not in query_id_2_keypoints: query_id_2_keypoints[query_id] = set()
-            if (utilize_fact_groundedness_check and check_label) or not utilize_fact_groundedness_check: query_id_2_keypoints[query_id].add(kp_id)
+            if query_id not in query_id_2_keypoints: query_id_2_keypoints[query_id] = {}
+
+            if (utilize_fact_groundedness_check and check_label) or not utilize_fact_groundedness_check: 
+                url_lang = url_content_mapper.get(url, {}).get("lang")
+                published_date = url_content_mapper.get(url, {}).get("published_date")
+                content = url_content_mapper.get(url).get("url_content")
+
+                content_lengths = token_count_tiktoken(content, model_name = "gpt-4o")
+
+                if kp_id not in query_id_2_keypoints[query_id]:
+                    query_id_2_keypoints[query_id][kp_id] = []
+
+                query_id_2_keypoints[query_id][kp_id].append({"url": url, "lang": url_lang, "published_date": published_date, "content_lengths": content_lengths})
 
             if query_id not in qrels: qrels[query_id] = {}
-            qrels[query_id][url] = int(check_label) if url not in qrels[query_id] else max(int(check_label), int(qrels[query_id][url]))
+            qrels[query_id][url] = 1 #int(check_label) if url not in qrels[query_id] else max(int(check_label), int(qrels[query_id][url]))
         
-        for query_id, keypoints in query_id_2_keypoints.items():
-            num_keypoints = len(keypoints)
-            if num_keypoints not in qrels_num_citations: continue
-            qrels_num_citations[num_keypoints][query_id] = qrels[query_id]
+        # print(query_id_2_keypoints)
+        attributes = []
+        for i in range(len(queries)):
+            query_id = queries[i]["_id"]
+            num_keypoints = len(query_id_2_keypoints.get(query_id, {}))
+            evidence_langs = []
+            evidence_published_dates = []
+            evidence_content_lengths = []
+            for kp_id in query_id_2_keypoints.get(query_id, {}):
+                evidence_langs_kp_id = []
+                evidence_published_dates_kp_id = []
+                evidence_content_lengths_kp_id = []
+                for evidence in query_id_2_keypoints[query_id][kp_id]:
+                    lang = evidence.get("lang")
+                    published_date = evidence.get("published_date")
+                    content_lengths = evidence.get("content_lengths")
+
+                    if lang and published_date: 
+                        evidence_langs_kp_id.append(lang)
+                        evidence_published_dates_kp_id.append(published_date)
+                        evidence_content_lengths_kp_id.append(content_lengths)
+
+                evidence_langs.append(evidence_langs_kp_id)
+                evidence_published_dates.append(evidence_published_dates_kp_id)
+                evidence_content_lengths.append(evidence_content_lengths_kp_id)
+
+            to_append = {
+                "_id": query_id,
+                "num_keypoints": num_keypoints,
+                "evidence_attr": {
+                    "langs": evidence_langs,
+                    "published_dates": evidence_published_dates,
+                    "num_tokens": evidence_content_lengths
+                }
+            }
+            attributes.append(to_append)
+
+
+        all_queries.extend(queries)
+        all_corpus.extend(corpus)
+        all_answers.extend(answers)
+        all_attributes.extend(attributes)
+        all_qrels.update(qrels)
+
         
-
-            
-
     
-    write_to_jsonl(corpus, os.path.join(output_folder, "corpus.jsonl"))
-    write_to_jsonl(queries, os.path.join(output_folder, "queries.jsonl"))
-    write_to_jsonl(answers, os.path.join(output_folder, "answers.jsonl"))
+    write_to_jsonl(all_corpus, os.path.join(output_folder, "corpus.jsonl"))
+    write_to_jsonl(all_queries, os.path.join(output_folder, "queries.jsonl"))
+    write_to_jsonl(all_answers, os.path.join(output_folder, "answers.jsonl"))
+    write_to_jsonl(all_attributes, os.path.join(output_folder, "attributes.jsonl"))
 
-    df_qrels = process_qrels(qrels)
+    df_qrels = process_qrels(all_qrels)
     maybe_create_folder(os.path.join(output_folder, "qrels"))
     df_qrels.to_csv(os.path.join(output_folder, "qrels", "test.tsv"), sep='\t', index=False)
-
-    # group queries and answers by specific number of documents
-
-    for length in [1,2,3]:
-        group_folder = os.path.join(output_folder, f"{length}_citations")
-        group_qrels_folder = os.path.join(group_folder, "qrels")
-        maybe_create_folder(group_folder)
-        maybe_create_folder(group_qrels_folder)
-        df_qrels = process_qrels(qrels_num_citations[length])
-
-        df_qrels.to_csv(os.path.join(group_qrels_folder, f"test.tsv"), sep='\t', index=False)
-
-        answers_grouped = [line for line in answers if line["_id"] in qrels_num_citations[length]]
-        queries_grouped = [line for line in queries if line["_id"] in qrels_num_citations[length]]
-
-        sampled_queries_grouped, sampled_answers_grouped = sample_qa(queries_grouped, answers_grouped, num_samples = 100, seed = 42)
-
-        assert all([len(line["text"]) == length for line in answers_grouped])
-        write_to_jsonl(sampled_answers_grouped, os.path.join(group_folder, f"answers.jsonl"))
-        write_to_jsonl(sampled_queries_grouped, os.path.join(group_folder, f"queries.jsonl"))
-
-    # group queries and answers by time
-
-    # for year in [2030, 2025, 2020, 2015, 2010]:
-    #     group_folder = os.path.join(output_folder, f"{year-5}_{year}")
-    #     group_qrels_folder = os.path.join(group_folder, "qrels")
-    #     maybe_create_folder(group_folder)
-    #     maybe_create_folder(group_qrels_folder)
-    #     df_qrels = process_qrels(qrels_by_time[year])
-
-    #     df_qrels.to_csv(os.path.join(group_qrels_folder, f"test.tsv"), sep='\t', index=False)
-
-    #     answers_grouped = [line for line in answers if line["_id"] in qrels_by_time[year]]
-    #     queries_grouped = [line for line in queries if line["_id"] in qrels_by_time[year]]
-    #     write_to_jsonl(answers_grouped, os.path.join(group_folder, f"answers.jsonl"))
-    #     write_to_jsonl(queries_grouped, os.path.join(group_folder, f"queries.jsonl"))
         
-
-
 
 if __name__ == "__main__":
     main()

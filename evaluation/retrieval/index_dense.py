@@ -3,30 +3,13 @@ import numpy as np
 from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
-from utils.model_name_2_model_info_dense import model_name_2_model_class, \
-    model_name_2_tokenizer_class, model_name_2_model_path, model_name_2_prefix
+from utils.text_embeddings import model_name_2_model_class, \
+    model_name_2_tokenizer_class, model_name_2_model_path, model_name_2_prefix, text_embedding_batch
 from utils.text_chunking import init_chunker, text_chunking
+from utils.allowed_datasets import ALLOWED_DATASETS
 
 
 DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-
-def text_embedding_batch(batch, model, tokenizer, model_name, prefix = None):
-    if prefix is not None:
-        batch = [prefix + " " + text for text in batch]
-    inputs = tokenizer(batch, padding=True, truncation=True,
-                                   return_tensors="pt", return_token_type_ids=False, max_length=256).to(DEVICE)
-    output = model(**inputs)
-
-    if model_name in ["specter2"]:
-        return output.last_hidden_state[:, 0, :].cpu()
-    
-    elif model_name in ["e5_base"]:
-        attention_mask = inputs["attention_mask"]
-        last_hidden = output.last_hidden_state.masked_fill(~attention_mask[..., None].bool(), 0.0)
-        return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
-    
-    else:
-        raise NotImplementedError
     
 
 def do_indexing(embeddings, 
@@ -86,6 +69,7 @@ def do_indexing(embeddings,
 def main(cfg: DictConfig):
     retrieval_model = cfg.general.retrieval_model
     dataset = cfg.general.dataset
+    dataset_date = cfg.general.dataset_date
     work_dir = cfg.general.work_dir
     index_folder = cfg.general.index_folder
     num_chunks = cfg.retrieval.index.num_chunks
@@ -102,8 +86,8 @@ def main(cfg: DictConfig):
 
 
     dataset_name_2_relative_path = {
-        "irb": "data/irb",
-        "irb_new": "data/irb_new"
+        dn: os.path.join("benchmarks", dataset_date, dn) if dataset_date is not None else os.path.join("data", dn) \
+            for dn in ALLOWED_DATASETS
     }
 
     model = model_name_2_model_class[retrieval_model].from_pretrained(model_name_2_model_path[retrieval_model])
@@ -154,7 +138,7 @@ def main(cfg: DictConfig):
         batch = texts[i:i+batch_size]
         text_batch = [line["text"] for line in batch]
 
-        batch_embeddings = text_embedding_batch(batch = text_batch, model = model, tokenizer = tokenizer, model_name = retrieval_model, prefix = prefix)
+        batch_embeddings = text_embedding_batch(batch = text_batch, model = model, tokenizer = tokenizer, model_name = retrieval_model, prefix = prefix, device = DEVICE)
 
         for line, embedding in zip(batch, batch_embeddings):
             line_id = line.get("_id", line.get("id", None))
