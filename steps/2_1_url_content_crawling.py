@@ -33,20 +33,28 @@ from cleantext import clean
 from utils.generic import read_json_or_jsonl, write_to_json
 from utils.archive_downloader import getArchiveContent, clear_downloads_dir
 from utils.html_extraction import extract_text_from_html, get_publication_date
+from typing import Callable, Any
 # from utils.html2md import extract_markdown_from_html
 
-clean_text_func = lambda text: clean(text,
-    fix_unicode=True,               # fix various unicode errors
-    to_ascii=True,                  # transliterate to closest ASCII representation
-    lang="en",                       # set to 'de' for German special handling,
-    lower = False
-)
+# clean_text_func = lambda text: clean(text,
+#     fix_unicode=True,               # fix various unicode errors
+#     to_ascii=True,                  # transliterate to closest ASCII representation
+#     lang="en",                       # set to 'de' for German special handling,
+#     lower = False
+# )
+def clean_text_func(text: str) -> str:
+    return clean(text,
+        fix_unicode=True,               # fix various unicode errors
+        to_ascii=True,                  # transliterate to closest ASCII representation
+        lang="en",                       # set to 'de' for German special handling,
+        lower = False
+    )
 
 request_counters = {}
 MAX_REQUESTS_PER_MINUTE = 10  # Maximum requests per minute per domain
 
-def rate_limited(func):
-    def wrapper(url, *args, **kwargs):
+def rate_limited(func: Callable) -> Callable:
+    def wrapper(url: str, *args, **kwargs):
         domain = urlparse(url).netloc
         request_counters.setdefault(domain, 0)
 
@@ -71,7 +79,8 @@ def rate_limited(func):
 
     return wrapper
 
-def is_valid_date(published_time_str, start_from):
+def is_valid_date(published_time_str: str, start_from: str) -> bool:
+
     if not start_from:
         return True
     if not published_time_str:
@@ -84,7 +93,7 @@ def is_valid_date(published_time_str, start_from):
         return False
 
 @rate_limited
-def is_url_accessible(url, start_from):
+def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
     time.sleep(0.2)
     # print(f"Processing URL: {url}....")
     headers = {
@@ -150,12 +159,12 @@ def is_url_accessible(url, start_from):
 
 
 
-async def is_url_accessible_async(url, start_from, semaphore):
+async def is_url_accessible_async(url: str, start_from: str, semaphore: asyncio.Semaphore) -> tuple[bool, dict]:
     loop = asyncio.get_event_loop()
     async with semaphore:
         return await loop.run_in_executor(None, is_url_accessible, url, start_from)
 
-async def check_urls_in_parallel(url_list, start_from, max_concurrent=5):
+async def check_urls_in_parallel(url_list: list[str], start_from: str, max_concurrent: int = 5) -> list[tuple[bool, dict]]:
     semaphore = asyncio.Semaphore(max_concurrent)
     tasks = [is_url_accessible_async(url, start_from, semaphore) for url in url_list]
     return await asyncio.gather(*tasks)
@@ -164,7 +173,7 @@ async def check_urls_in_parallel(url_list, start_from, max_concurrent=5):
 
 
 
-def get_content_from_resp(resp, url):
+def get_content_from_resp(resp: tuple[bool, dict], url: str) -> dict:
     accessible, page_data = resp
 
     content = page_data.get("content")
@@ -180,7 +189,7 @@ def get_content_from_resp(resp, url):
     return obj
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
-def main(cfg: DictConfig):
+def main(cfg: DictConfig)-> None:
 
     input_folder = cfg.step1.output_folder
     output_folder = cfg.step2_1.output_folder
