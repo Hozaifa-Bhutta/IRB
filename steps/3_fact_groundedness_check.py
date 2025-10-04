@@ -68,6 +68,7 @@ def groundedness_check_func(raw_facts: List,
     return res
 
 
+
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig):
 

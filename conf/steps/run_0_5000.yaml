@@ -2,7 +2,7 @@ general:
   local_llm_port: null #6868
   local_llm_model: null #"Qwen/Qwen3-8B"
   openai_model_name: "gpt-4o-mini-2024-07-18" #"gpt-4.1-mini" # if use OpenAI models, this will be the name of the one used for running the pipeline
-  start_from: 2023-01-01 # "%Y-%m-%d"
+  start_from: 2025-01-01 # "%Y-%m-%d"
   utilize_fact_groundedness_check: false
 
 step0:

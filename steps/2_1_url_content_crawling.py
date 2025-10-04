@@ -31,7 +31,7 @@ from cleantext import clean
 from fast_langdetect import detect as language_detection_func
 from utils.generic import read_json_or_jsonl, write_to_json
 from utils.archive_downloader import getArchiveContent
-from utils.html_extraction import extract_text_from_html, get_publication_date
+from utils.html_extraction import extract_text_from_html, get_publication_date, classify_fetch
 
 request_counters = {}
 MAX_REQUESTS_PER_MINUTE = 10  # Maximum requests per minute per domain
@@ -125,6 +125,10 @@ def is_url_accessible(url, start_from):
 
         if "application/pdf" in content_type or url.endswith(".pdf"):
             raise NotImplementedError("Pdf files not supported")
+        
+        triage_response = classify_fetch(response, response.text)
+        if not triage_response['ok']:
+            raise Exception(triage_response["reason"])
             
 
         if "text/html" in content_type:
