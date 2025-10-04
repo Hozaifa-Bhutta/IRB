@@ -337,5 +337,5 @@ Example 5:
 
     if isinstance(evaluation_metadata_file, str):
         with open(evaluation_metadata_file, "w") as f:
-            for r,i,w in zip(correct, incorrect, not_attempted):
-                f.write(f"{r},{i},{w}" + "\n")
+            for corr,incorr,not_att in zip(correct, incorrect, not_attempted):
+                f.write(f"{corr},{incorr},{not_att}" + "\n")

@@ -25,13 +25,12 @@
 import os, requests, time, io, asyncio, hydra
 from datetime import datetime
 from omegaconf import DictConfig
-from argparse import ArgumentParser
 from tqdm import tqdm
 from urllib.parse import urlparse
-from PyPDF2 import PdfReader
 from cleantext import clean
+from fast_langdetect import detect as language_detection_func
 from utils.generic import read_json_or_jsonl, write_to_json
-from utils.archive_downloader import getArchiveContent, clear_downloads_dir
+from utils.archive_downloader import getArchiveContent
 from utils.html_extraction import extract_text_from_html, get_publication_date
 from typing import Callable, Any
 # from utils.html2md import extract_markdown_from_html
@@ -126,7 +125,13 @@ def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
         'Accept-Language': 'en-US,en;q=0.9',
     }
     
-    
+    is_accessible = False
+    content_dict = {
+        "content": None,
+        "published_date": None,
+        "lang": None
+    }
+
     try:
         parsed_url = urlparse(url)
         if not parsed_url.scheme or not parsed_url.netloc:
@@ -136,15 +141,24 @@ def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
         if domain == "archive.org" or "internetarchive.org" in domain:
             print("Internet archive request...using library to download items")
             content = getArchiveContent(url)
-            return True, {"content": content, "published_time": None}
+
+            is_accessible = True
+            content_dict["content"] = content
+            return is_accessible, content_dict
 
         
 
         if "music" in domain:
-            return False, {"content": "Music-related domain, not useful for fact extraction", "published_date": None}
+            content_dict["content"] = "Music-related domain, not useful for fact extraction"
+            return is_accessible, content_dict 
 
         if "porn" in domain or "adult" in domain:
-            return False, {"content": "Sensored content in the URL", "published_date": None}
+            content_dict["content"] = "Sensored content in the URL"
+            return is_accessible, content_dict 
+        
+        if ".pdf" in url:
+            content_dict["content"] = "PDF file not supported"
+            return is_accessible, content_dict
 
         response = requests.get(url, timeout=20, headers=headers)
         response.raise_for_status()
@@ -153,34 +167,36 @@ def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
 
         if "application/pdf" in content_type or url.endswith(".pdf"):
             raise NotImplementedError("Pdf files not supported")
-            # content_length = response.headers.get("Content-Length")
-            # if content_length and int(content_length) < 512:  # Minimum size check
-            #     return False, {"content": "Incomplete PDF file", "published_date": None}
-            # try:
-            #     with io.BytesIO(response.content) as open_pdf_file:
-            #         reader = PdfReader(open_pdf_file)
-            #         text = "\n".join(page.extract_text() for page in reader.pages)
-            #         return True, {"content": text, "published_date": None}
-            # except Exception as pdf_error:
-            #     return False, {"content": f"PDF error: {pdf_error}", "published_date": None}
             
 
         if "text/html" in content_type:
-            text = extract_text_from_html(response.text)
+            text = extract_text_from_html(response.content)
             published_date = get_publication_date(response.content)
+            lang = None
             print(f"Published date for {url}: {published_date}. Start from: {start_from}. Valid: {is_valid_date(published_date, start_from)}")
             if not is_valid_date(published_date, start_from):
-                return False, {"content": "Published date is before the start_from date", "published_date": published_date}
+                content_dict["content"] = "Published date is before the start_from date"
+                content_dict["published_date"] = published_date
+                content_dict["lang"] = lang
+                return is_accessible, content_dict
             elif not text:
-                return False, {"content": "Empty HTML content", "published_date": published_date}
+                content_dict["content"] = "Empty HTML content"
+                content_dict["published_date"] = published_date
+                content_dict["lang"] = lang
+                return is_accessible, content_dict
             else:
-                return True, {"content": text, "published_date": published_date}
+                is_accessible = True
+                content_dict["content"] = text
+                content_dict["published_date"] = published_date
+                content_dict["lang"] = language_detection_func(text)[0]["lang"]
+                return is_accessible, content_dict
 
-
-        return False, {"content": f"Content type is {content_type}", "published_date": None}
+        content_dict["content"] = f"Content type is {content_type}"
+        return is_accessible, content_dict
     except Exception as e:
         print(f"Error accessing URL {url}: {e}")
-        return False, {"content": str(e), "published_date": None}
+        content_dict["content"] = str(e)
+        return is_accessible, content_dict
 
 
 
@@ -215,12 +231,14 @@ def get_content_from_resp(resp: tuple[bool, dict], url: str) -> dict:
 
     content = page_data.get("content")
     published_date = page_data.get("published_date", None)
+    lang = page_data.get("lang")
     obj = {
         "url": url,
         "accessible": accessible,
-        "url_content": clean_text_func(content) if accessible else "",
+        "url_content": content if accessible else "",
         "error": "" if accessible else str(content),
-        "published_date": published_date
+        "published_date": published_date,
+        "lang": lang
     }
 
     return obj

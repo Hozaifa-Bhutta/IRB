@@ -8,7 +8,7 @@ from utils.qa_eval_metrics import run_bertscore_evaluation, run_minicheck_based_
 from utils.allowed_datasets import ALLOWED_DATASETS
 from tqdm import tqdm
 
-NUM_SAMPLE = 100
+NUM_SAMPLE = 1000
 
 
 def create_enumerated_list(texts):
@@ -20,7 +20,7 @@ def generate_answer(query,
                     contexts, 
                     use_retrieval_contexts = True,
                     max_num_contexts = 20):
-    time.sleep(0.5)
+    # time.sleep(0.5)
     qa_user_prompt = QA_USER_PROMPT if use_retrieval_contexts else QA_USER_PROMPT_WITHOUT_CONTEXT
     qa_system_prompt = QA_SYSTEM_PROMPT if use_retrieval_contexts else QA_SYSTEM_PROMPT_WITHOUT_CONTEXT
 
@@ -93,11 +93,11 @@ def main(cfg: DictConfig):
     }
 
     if subset:
-        outfile_pred = os.path.join(outfolder, f"{dataset}__{subset}__{retrieval_model}__rc{int(use_retrieval_contexts)}.hyps.txt")
-        outfile_gt = os.path.join(outfolder, f"{dataset}__{subset}__{retrieval_model}__rc{int(use_retrieval_contexts)}.refs.txt")
+        outfile_pred = os.path.join(outfolder, f"{dataset}__{subset}__{retrieval_model}__rc{int(use_retrieval_contexts)}__chunk{use_chunk}.hyps.txt")
+        outfile_gt = os.path.join(outfolder, f"{dataset}__{subset}__{retrieval_model}__rc{int(use_retrieval_contexts)}__chunk{use_chunk}.refs.txt")
     else:
-        outfile_pred = os.path.join(outfolder, f"{dataset}__{retrieval_model}__rc{int(use_retrieval_contexts)}.hyps.txt")
-        outfile_gt = os.path.join(outfolder, f"{dataset}__{retrieval_model}__rc{int(use_retrieval_contexts)}.refs.txt")
+        outfile_pred = os.path.join(outfolder, f"{dataset}__{retrieval_model}__rc{int(use_retrieval_contexts)}__chunk{use_chunk}.hyps.txt")
+        outfile_gt = os.path.join(outfolder, f"{dataset}__{retrieval_model}__rc{int(use_retrieval_contexts)}__chunk{use_chunk}.refs.txt")
 
 
     experiment_name = f"{dataset}__{retrieval_model}"
@@ -234,7 +234,7 @@ def main(cfg: DictConfig):
     # print("====BERTSCORE====")
     # run_bertscore_evaluation(outfile_pred, outfile_gt)
     # print("====MINICHECK====")
-    evaluation_metadata_file = os.path.join(outfolder, f"{dataset}__{retrieval_model}__rc{int(use_retrieval_contexts)}.evaluation_metadata.txt")
+    evaluation_metadata_file = os.path.join(outfolder, f"{dataset}__{retrieval_model}__rc{int(use_retrieval_contexts)}__chunk{use_chunk}.evaluation_metadata.txt")
     # run_minicheck_based_evaluation(outfile_pred, outfile_gt, minicheck_ckpt_path, evaluation_metadata_file)
 
 
