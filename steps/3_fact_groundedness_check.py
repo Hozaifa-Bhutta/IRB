@@ -22,7 +22,16 @@ MINICHECK = {
     "model_name": None
 }
 def init_minicheck(model_name: str = 'flan-t5-large', 
-                   cache_dir:str = './ckpts'):
+                   cache_dir:str = './ckpts') -> None:
+    """
+    Initialize the Minicheck model.
+    Parameters
+    ----------
+        model_name : str, optional
+            The name of the model to use, by default 'flan-t5-large'.
+        cache_dir : str, optional
+            The directory to cache the model, by default './ckpts'.
+    """
     if MINICHECK["model_name"] != model_name:
         print(f"Initializing Minicheck ({model_name})")
         model = MiniCheck(model_name=model_name, cache_dir=cache_dir)
@@ -31,9 +40,25 @@ def init_minicheck(model_name: str = 'flan-t5-large',
 
 
 def groundedness_check_func(raw_facts: List, 
-                       keypoints_mapper: Dict[Union[int, str], str], 
+                       keypoints_mapper: Dict[Union[int, str], List[str]], 
                        url_content_mapper,
-                       max_words: int = 2000):
+                       max_words: int = 2000) -> Dict[str, int]:
+    """Check the groundedness of keypoints against the content of cited URLs.
+    Parameters
+    ----------
+        raw_facts : List
+            List of raw fact dictionaries, each containing 'fact', 'citation_urls', and 'pos'.
+        keypoints_mapper : Dict[Union[int, str], str]
+            A mapping from fact IDs to their corresponding keypoints.
+        url_content_mapper : Dict[str, Dict[str, Union[str, bool]]]
+            A mapping from URLs to their content and error status.
+        max_words : int, optional
+            The maximum number of words to consider from the URL content, by default 2000.
+    Returns
+    -------
+        Dict[str, int]
+            A mapping from "(factid)--__--(url)--__--(keypoint_index)" to groundedness label (0 or 1).
+    """
     
     res = {}
     keypoints_contexts_pairs = []
@@ -69,7 +94,7 @@ def groundedness_check_func(raw_facts: List,
 
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
-def main(cfg: DictConfig):
+def main(cfg: DictConfig)-> None:
 
     extracted_facts_folder = cfg.step1.output_folder
     crawled_url_content_folder = cfg.step2_1.output_folder

@@ -19,7 +19,17 @@ from utils.openai_utils import init_client, OPENAI_CLIENT
 from utils.keypoints_prompt import KEYPOINTS_SYSTEM_PROMPT, KEYPOINTS_USER_PROMPT
 
 
-def get_first_paragraph(extracted_sentences: List[int]):
+def get_first_paragraph(extracted_sentences: List[str]) -> str:
+    """Get the first paragraph from the extracted sentences.
+    Parameters
+    ----------
+        extracted_sentences : List[str]
+            List of sentences extracted from the wiki page.
+    Returns
+    -------
+        str
+            The first paragraph as a string.
+    """
     results = []
     for sent in extracted_sentences:
         if sent.startswith("SECTION:"): break
@@ -28,7 +38,20 @@ def get_first_paragraph(extracted_sentences: List[int]):
     return " ".join(results)
 
 
-def get_section_context(fact: int, extracted_sentences: List[str]):
+def get_section_context(fact: int, extracted_sentences: List[str]) -> str:
+    """Return the section name and the sentences in that section up to the given fact.
+    Parameters
+    ----------
+        fact : int
+            The index of the fact sentence.
+        extracted_sentences : List[str]
+            List of sentences extracted from the wiki page.
+    Returns
+    -------
+        str
+            A formatted string containing the section name and the sentences leading 
+        up to the fact.
+    """
     results = []
     section_name = None
 
@@ -54,6 +77,23 @@ def create_keypoints(fact: int,
                      extracted_sentences: List[str], 
                      context_window_size: int,
                      wiki_title: str = None) -> Union[List[str], None]:
+    """Create keypoints from a fact sentence using OpenAI's GPT model.
+    Parameters
+    ----------
+        fact : int
+            The index of the fact sentence in the marked_sentences list.
+        marked_sentences : List[str]
+            List of sentences with [KP] markers indicating keypoints.
+        extracted_sentences : List[str]
+            List of sentences extracted from the wiki page.
+        context_window_size : int  NOTE: This parameter is currently not used.
+        wiki_title : str, optional
+            The title of the wiki page, by default None.
+    Returns
+    -------
+        Union[List[str], None]
+            A list of keypoints if successful, otherwise None.
+    """
     
     fact_sentence = marked_sentences[fact]
     keypoint_count = fact_sentence.count("[KP]")
@@ -105,7 +145,7 @@ def create_keypoints(fact: int,
 
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
-def main(cfg: DictConfig):
+def main(cfg: DictConfig)-> None:
 
 
     extracted_facts_folder = cfg.step1.output_folder
