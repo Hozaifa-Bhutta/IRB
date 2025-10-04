@@ -22,7 +22,7 @@ MINICHECK = {
     "model_name": None
 }
 def init_minicheck(model_name: str = 'flan-t5-large', 
-                   cache_dir:str = './ckpts'):
+                   cache_dir:str = './ckpts') -> None:
     if MINICHECK["model_name"] != model_name:
         print(f"Initializing Minicheck ({model_name})")
         model = MiniCheck(model_name=model_name, cache_dir=cache_dir)
@@ -33,7 +33,7 @@ def init_minicheck(model_name: str = 'flan-t5-large',
 def groundedness_check_func(raw_facts: List, 
                        keypoints_mapper: Dict[Union[int, str], str], 
                        url_content_mapper,
-                       max_words: int = 2000):
+                       max_words: int = 2000) -> Dict[str, int]:
     
     res = {}
     keypoints_contexts_pairs = []
@@ -69,7 +69,7 @@ def groundedness_check_func(raw_facts: List,
 
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
-def main(cfg: DictConfig):
+def main(cfg: DictConfig)-> None:
 
     extracted_facts_folder = cfg.step1.output_folder
     crawled_url_content_folder = cfg.step2_1.output_folder
