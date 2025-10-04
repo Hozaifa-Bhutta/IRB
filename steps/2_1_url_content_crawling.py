@@ -80,6 +80,18 @@ def rate_limited(func: Callable) -> Callable:
     return wrapper
 
 def is_valid_date(published_time_str: str, start_from: str) -> bool:
+    """Check if the published date is valid based on the start_from date.
+    Parameters
+    ----------
+    published_time_str :str
+        The published date string in "YYYY-MM-DD" format.
+    start_from : str
+        The start_from date string in "YYYY-MM-DD" format.
+    Returns
+    -------
+        bool
+            True if the published date is on or after the start_from date, False otherwise.
+    """
 
     if not start_from:
         return True
@@ -94,6 +106,19 @@ def is_valid_date(published_time_str: str, start_from: str) -> bool:
 
 @rate_limited
 def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
+    """Check if a URL is accessible and retrieve its content.
+    Parameters
+    ----------
+        url : str
+            The URL to check.
+        start_from : str
+            The start_from date string in "YYYY-MM-DD" format to filter published dates.
+    Returns
+    -------
+        tuple[bool, dict]
+            A tuple where the first element is a boolean indicating if the URL is accessible,
+            and the second element is a dictionary containing the content or error message.
+    """
     time.sleep(0.2)
     # print(f"Processing URL: {url}....")
     headers = {
@@ -174,6 +199,18 @@ async def check_urls_in_parallel(url_list: list[str], start_from: str, max_concu
 
 
 def get_content_from_resp(resp: tuple[bool, dict], url: str) -> dict:
+    """Process the response from URL accessibility check and extract content.
+    Parameters
+    ----------
+        resp : tuple[bool, dict]
+            The response tuple from the URL accessibility check.
+        url : str
+            The original URL that was checked.
+    Returns
+    -------
+        dict
+            A dictionary containing the URL, accessibility status, content, error message, and published date.
+    """
     accessible, page_data = resp
 
     content = page_data.get("content")
