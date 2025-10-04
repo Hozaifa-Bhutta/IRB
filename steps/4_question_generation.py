@@ -19,7 +19,7 @@ from utils.openai_utils import init_client, OPENAI_CLIENT
 from utils.question_generation_prompt import QUESTION_GENERATION_SYSTEM_PROMPT, QUESTION_GENERATION_USER_PROMPT
 
 
-def generate_question(keypoints: List[str], wiki_title: str):
+def generate_question(keypoints: List[str], wiki_title: str) -> str:
     system_prompt = QUESTION_GENERATION_SYSTEM_PROMPT
     user_prompt = QUESTION_GENERATION_USER_PROMPT
 
@@ -49,7 +49,7 @@ def generate_question(keypoints: List[str], wiki_title: str):
 
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
-def main(cfg: DictConfig):
+def main(cfg: DictConfig)-> None:
     decontextualized_facts_folder = cfg.step2_2.output_folder
     fact_groundedness_folder = cfg.step3.output_folder
     output_folder = cfg.step4.output_folder
