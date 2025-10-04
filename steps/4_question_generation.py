@@ -20,6 +20,18 @@ from utils.question_generation_prompt import QUESTION_GENERATION_SYSTEM_PROMPT, 
 
 
 def generate_question(keypoints: List[str], wiki_title: str) -> str:
+    """Generate a question based on the provided keypoints and wiki title.
+    Parameters
+    ----------
+        keypoints : List[str]
+            A list of keypoints to base the question on.
+        wiki_title : str
+            The title of the wiki page for context.
+    Returns
+    -------
+        str
+            The generated question.
+    """
     system_prompt = QUESTION_GENERATION_SYSTEM_PROMPT
     user_prompt = QUESTION_GENERATION_USER_PROMPT
 
