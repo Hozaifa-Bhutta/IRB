@@ -19,7 +19,7 @@ from utils.openai_utils import init_client, OPENAI_CLIENT
 from utils.keypoints_prompt import KEYPOINTS_SYSTEM_PROMPT, KEYPOINTS_USER_PROMPT
 
 
-def get_first_paragraph(extracted_sentences: List[int]):
+def get_first_paragraph(extracted_sentences: List[int]) -> str:
     results = []
     for sent in extracted_sentences:
         if sent.startswith("SECTION:"): break
@@ -28,7 +28,7 @@ def get_first_paragraph(extracted_sentences: List[int]):
     return " ".join(results)
 
 
-def get_section_context(fact: int, extracted_sentences: List[str]):
+def get_section_context(fact: int, extracted_sentences: List[str]) -> str:
     results = []
     section_name = None
 
@@ -105,7 +105,7 @@ def create_keypoints(fact: int,
 
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
-def main(cfg: DictConfig):
+def main(cfg: DictConfig)-> None:
 
 
     extracted_facts_folder = cfg.step1.output_folder
