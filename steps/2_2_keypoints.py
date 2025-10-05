@@ -214,6 +214,7 @@ def main(cfg: DictConfig)-> None:
         to_save = {
             "title": ef_data.get("title"),
             "wiki_url": ef_data.get("wiki_url"),
+            "topics": ef_data.get("topics"),
             "keypoints_mapper": keypoints_mapper
         }
 
