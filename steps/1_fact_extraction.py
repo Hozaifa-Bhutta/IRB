@@ -102,6 +102,10 @@ def get_starting_refs(ref_tags: list[str], raw_text: str) -> list[str]:
         List of reference tags (e.g., ['[REF-0]', '[REF-1]', ...]).
     raw_text : str
         The raw sentence from the Wikipedia page.
+    Returns
+    -------
+    list
+        A list of reference tags that appear at the start of the raw_text.
     """
 
     current = 0
@@ -131,7 +135,15 @@ def get_all_refs(text: str) -> list[str]:
 
 def get_info_from_raw_text(raw_text: str) -> str:
     """
-    Cleans up texts
+    Strips MediaWiki markup from the text and performs general cleaning.
+    Parameters
+    ----------
+    raw_text : str
+        The raw text from the Wikipedia page.
+    Returns
+    -------
+    str
+        The cleaned text.
     """
     wikicode = mwparserfromhell.parse(raw_text)
 
@@ -168,7 +180,7 @@ def shift_tags(wiki_info_sentences: list[str]) -> list[str]:
 
 def process_wikilinks_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str], dict[str, str]]:
     """
-    Processes the wikilinks and replaces reference tags with placeholders.
+    Performs a comprehensive cleaning of raw MediaWiki text by removing tables and comments, processing headings, handling templates, replacing reference tags with placeholders, and converting wikilinks to plain text.
     Parameters
     ----------
     raw_text : str
@@ -272,7 +284,7 @@ def process_wikilinks_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str
 
 def _extract_urls_from_text(text: str) -> str | None:
     """
-    Extracts URLs from a text string.
+    The first URL found, with preference given to a 'web.archive.org' URL if multiple are present
     Parameters
     ----------
     text : str
@@ -323,7 +335,7 @@ def extract_urls(tag: mwparserfromhell.nodes.Tag, tag_name_2_url: dict[str, str]
 
 def wikiinfo(cleaned_text: str, pos: list[int], tag_name_2_url: dict[str, str]) -> dict[str, Any]:
     """
-    Returns the full wiki info entry
+    Extracts URLs and their grouped positions from a sentence containing MediaWiki reference tags.
     Parameters
     ----------
     cleaned_text : str
@@ -448,14 +460,18 @@ def put_back_ref(sentence: str, placeholder_mapper: dict[str, str]) -> str:
 
 
 def get_file_paths(cfg:DictConfig) -> tuple[list[str], list[str]]:
-    """Sets up input and output folders
+    """Generates lists of full input and output file paths based on the configuration.
     Parameters
     ----------
     cfg : DictConfig
         The configuration object containing input and output folder paths.
     Returns
     -------
-    tuple[list[str], list[str]]"""
+    tuple[list[str], list[str]]
+        A tuple containing:
+        - A list of input file paths.
+        - A list of output file paths.
+    """
     input_folder = cfg.step0.output_folder
     output_folder = cfg.step1.output_folder
 
@@ -469,7 +485,7 @@ def get_file_paths(cfg:DictConfig) -> tuple[list[str], list[str]]:
 
 def remove_bad_urls(reference_urls: list[str], pos: list[int]) -> tuple[list[str], list[int]]:
     """
-    Removes URLs from bad domains and adjusts positions accordingly.
+    Removes URLs that are from bad domains or point to PDF files and adjusts positions accordingly.
     Parameters
     ----------
     reference_urls : list[str]
