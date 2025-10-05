@@ -238,8 +238,8 @@ def main(cfg: DictConfig)-> None:
         to_save = {
             "title": ef_data.get("title"),
             "wiki_url": ef_data.get("wiki_url"),
-            "keypoints_mapper": keypoints_mapper,
-            "question_mapper": question_mapper
+            "topics": ef_data.get("topics"),
+            "keypoints_mapper": keypoints_mapper
         }
 
         write_to_json(data = to_save, filename = output_file_path)

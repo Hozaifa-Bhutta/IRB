@@ -269,6 +269,7 @@ def main(cfg: DictConfig)-> None:
         to_save = {
             "title": input_data.get("title"),
             "wiki_url": input_data.get("wiki_url"),
+            "topics": input_data.get("topics"),
             "url_content_mapper": url_content_mapper
         }
 
