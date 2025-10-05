@@ -586,6 +586,7 @@ def main(cfg:DictConfig) -> None:
             to_save = {
                 "title": wiki_page_data.get("title"),
                 "wiki_url": wiki_page_data.get("wiki_url"),
+                "topics": wiki_page_data.get("topics"),
                 "marked_sentences": marked_sentences,
                 "extracted_sentences": extracted_sentences,
                 "raw_facts": raw_facts

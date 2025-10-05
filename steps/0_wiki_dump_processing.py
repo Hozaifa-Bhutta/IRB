@@ -12,6 +12,32 @@ from argparse import ArgumentParser
 from tqdm import tqdm
 from utils.generic import maybe_create_folder, write_to_json
 from typing import Optional
+import requests
+
+def predict_outlink_topics(page_title: str, lang: str = "en") -> dict:
+    """Predicts outlink topics for a given Wikipedia page title using the Wikimedia API.
+    Parameters
+    ----------
+        page_title : str
+            The title of the Wikipedia page for which to predict outlink topics.
+        lang : str, optional
+            The language code for the Wikipedia page (default is "en" for English).
+    Returns
+    -------
+        dict
+            A dictionary containing the predicted outlink topics and their scores.
+    """
+
+    url = "https://api.wikimedia.org/service/lw/inference/v1/models/outlink-topic-model:predict"
+    headers = {"Content-Type": "application/json", "User-Agent": "email: lamdo@illnois.edu"}
+    data = {"page_title": page_title, "lang": lang, "debug": True}
+    r = requests.post(url, headers=headers, data=json.dumps(data), timeout=30)
+    r.raise_for_status()
+    js = r.json()
+    results = js["prediction"]["results"]
+    results.sort(key=lambda x: x["score"], reverse=True)
+    results = [result for result in results if result["score"] > 0.5]
+    return results
 
 
 def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int, offset: int = 0, start_from: Optional[str] = None) -> None:
@@ -72,11 +98,16 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
                     # Construct the Wikipedia URL using the page ID for reference
                     url = f"https://en.wikipedia.org/?curid={obj.get('page_id')}"
 
+                    # predict outlink topics using the Wikimedia API whose score is > 0.5
+                    outlink_topics = predict_outlink_topics(title)
+                    topics = [topic['topic'] for topic in outlink_topics]
+
                     to_write = {
                         "title": title, # wiki page title
                         "wiki_url": url, # wiki page url
                         "source": source, # raw text of the wiki page
-                        "create_timestamp": create_timestamp # creation timestamp of the wiki page
+                        "create_timestamp": create_timestamp, # creation timestamp of the wiki page
+                        "topics": topics # predicted outlink topics for the wiki page
                     }
                     try:
                         write_to_json(to_write, os.path.join(output_folder, f"{title}.json")) # write each page to a separate json file
@@ -106,6 +137,7 @@ def main(cfg: DictConfig) -> None:
     offset = cfg.step0.offset
     max_pages = cfg.step0.max_pages
     start_from = cfg.general.start_from
+    print(input_file)
     assert os.path.exists(input_file)
 
     read_wiki_dump_and_write(
