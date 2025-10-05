@@ -31,13 +31,14 @@ from cleantext import clean
 from fast_langdetect import detect as language_detection_func
 from utils.generic import read_json_or_jsonl, write_to_json
 from utils.archive_downloader import getArchiveContent
-from utils.html_extraction import extract_text_from_html, get_publication_date, classify_fetch
+from utils.html_extraction import extract_text_from_html, get_publication_date
+from typing import Callable, Any
 
 request_counters = {}
 MAX_REQUESTS_PER_MINUTE = 10  # Maximum requests per minute per domain
 
-def rate_limited(func):
-    def wrapper(url, *args, **kwargs):
+def rate_limited(func: Callable) -> Callable:
+    def wrapper(url: str, *args, **kwargs):
         domain = urlparse(url).netloc
         request_counters.setdefault(domain, 0)
 
@@ -62,7 +63,20 @@ def rate_limited(func):
 
     return wrapper
 
-def is_valid_date(published_time_str, start_from):
+def is_valid_date(published_time_str: str, start_from: str) -> bool:
+    """Check if the published date is valid based on the start_from date.
+    Parameters
+    ----------
+    published_time_str :str
+        The published date string in "YYYY-MM-DD" format.
+    start_from : str
+        The start_from date string in "YYYY-MM-DD" format.
+    Returns
+    -------
+        bool
+            True if the published date is on or after the start_from date, False otherwise.
+    """
+
     if not start_from:
         return True
     if not published_time_str:
@@ -75,7 +89,20 @@ def is_valid_date(published_time_str, start_from):
         return False
 
 @rate_limited
-def is_url_accessible(url, start_from):
+def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
+    """Check if a URL is accessible and retrieve its content.
+    Parameters
+    ----------
+        url : str
+            The URL to check.
+        start_from : str
+            The start_from date string in "YYYY-MM-DD" format to filter published dates.
+    Returns
+    -------
+        tuple[bool, dict]
+            A tuple where the first element is a boolean indicating if the URL is accessible,
+            and the second element is a dictionary containing the content or error message.
+    """
     time.sleep(0.2)
     # print(f"Processing URL: {url}....")
     headers = {
@@ -126,10 +153,6 @@ def is_url_accessible(url, start_from):
         if "application/pdf" in content_type or url.endswith(".pdf"):
             raise NotImplementedError("Pdf files not supported")
         
-        triage_response = classify_fetch(response, response.text)
-        if not triage_response['ok']:
-            raise Exception(triage_response["reason"])
-            
 
         if "text/html" in content_type:
             text = extract_text_from_html(response.content)
@@ -162,12 +185,12 @@ def is_url_accessible(url, start_from):
 
 
 
-async def is_url_accessible_async(url, start_from, semaphore):
+async def is_url_accessible_async(url: str, start_from: str, semaphore: asyncio.Semaphore) -> tuple[bool, dict]:
     loop = asyncio.get_event_loop()
     async with semaphore:
         return await loop.run_in_executor(None, is_url_accessible, url, start_from)
 
-async def check_urls_in_parallel(url_list, start_from, max_concurrent=5):
+async def check_urls_in_parallel(url_list: list[str], start_from: str, max_concurrent: int = 5) -> list[tuple[bool, dict]]:
     semaphore = asyncio.Semaphore(max_concurrent)
     tasks = [is_url_accessible_async(url, start_from, semaphore) for url in url_list]
     return await asyncio.gather(*tasks)
@@ -176,7 +199,19 @@ async def check_urls_in_parallel(url_list, start_from, max_concurrent=5):
 
 
 
-def get_content_from_resp(resp, url):
+def get_content_from_resp(resp: tuple[bool, dict], url: str) -> dict:
+    """Process the response from URL accessibility check and extract content.
+    Parameters
+    ----------
+        resp : tuple[bool, dict]
+            The response tuple from the URL accessibility check.
+        url : str
+            The original URL that was checked.
+    Returns
+    -------
+        dict
+            A dictionary containing the URL, accessibility status, content, error message, and published date.
+    """
     accessible, page_data = resp
 
     content = page_data.get("content")
@@ -194,7 +229,7 @@ def get_content_from_resp(resp, url):
     return obj
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
-def main(cfg: DictConfig):
+def main(cfg: DictConfig)-> None:
 
     input_folder = cfg.step1.output_folder
     output_folder = cfg.step2_1.output_folder
