@@ -243,6 +243,7 @@ def main(cfg: DictConfig)-> None:
     output_files_full_path = [os.path.join(output_folder, file) for file in files]
 
     for input_file_path, output_file_path in tqdm(zip(input_files_full_path, output_files_full_path), total = len(input_files_full_path)):
+        if os.path.exists(output_file_path): continue
         url_content_mapper = {}
         all_urls = set()
         # read input
@@ -270,6 +271,8 @@ def main(cfg: DictConfig)-> None:
             "title": input_data.get("title"),
             "wiki_url": input_data.get("wiki_url"),
             "topics": input_data.get("topics"),
+            "create_timestamp": input_data.get("create_timestamp"),
+            "timestamp": input_data.get("timestamp"),
             "url_content_mapper": url_content_mapper
         }
 

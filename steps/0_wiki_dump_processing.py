@@ -86,6 +86,7 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
                     title = obj.get("title")
                     source = obj.get("source_text")
                     create_timestamp = obj.get("create_timestamp") # format: "%Y-%m-%dT%H:%M:%SZ"
+                    timestamp = obj.get("timestamp") # format: "%Y-%m-%dT%H:%M:%SZ"
 
                     if not create_timestamp:
                         create_timestamp_obj = datetime(1998, 1, 1)
@@ -107,6 +108,7 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
                         "wiki_url": url, # wiki page url
                         "source": source, # raw text of the wiki page
                         "create_timestamp": create_timestamp, # creation timestamp of the wiki page
+                        "timestamp": timestamp, # last updated timestamp
                         "topics": topics # predicted outlink topics for the wiki page
                     }
                     try:

@@ -271,6 +271,8 @@ def main(cfg: DictConfig)-> None:
             "title": ef_data.get("title"),
             "wiki_url": ef_data.get("wiki_url"),
             "topics": ef_data.get("topics"),
+            "create_timestamp": ef_data.get("create_timestamp"),
+            "timestamp": ef_data.get("timestamp"),
             "groundedness_check": groundedness_check
         }
         write_to_json(data = to_save, filename = output_file_path)

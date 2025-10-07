@@ -1,6 +1,5 @@
 KEYPOINT_EXTRACTION_PROMPT = {
-    "system": """You are an expert at extracting and decontextualizing keypoints from claims in a factual and neutral manner. \
-You are also an expert at generating question whose answer contain exclusive the mentioned keypoints. Follow these steps precisely:
+    "system": """You are an expert at extracting and decontextualizing keypoints from claims in a factual and neutral manner. Follow these steps precisely:
 1. **Extract the keypoints**: Identify and split the claim into individual keypoints based on the [KP] markers. Each segment ending with [KP] is a separate keypoint. \
   Remove the [KP] tokens from the extracted keypoints. If there is only one [KP], treat the entire claim as a single keypoint.
 2. **Decontextualize each keypoint**: For each extracted keypoint, rewrite it to make it standalone and unambiguous by incorporating necessary details from the provided \
@@ -11,14 +10,12 @@ You are also an expert at generating question whose answer contain exclusive the
      - Incomplete information (e.g., ensure the claim uniquely specifies all key elements without multiple interpretations).
      - Use only information from the provided context—do not add external knowledge.
      - Ensure the rewritten keypoint includes all key elements (e.g., who, what, when, where, why/how) to form a complete, interpretable fact without multiple possible meanings.
-3. **Question generation given keypoints**: Based on the decontextualized keypoints, generate a question whose answer exclusively contain the keypoints.
 
 Example 1:
 ##CLAIM##: Ronaldo became United's first Ballon d'Or winner since Best in 1968 [KP] and the first Premier League player to be named the FIFA World Player of the Year [KP]
 ##CONTEXT##: United reached the final against Chelsea in Moscow on 21 May, where, despite his opening goal being negated by an equaliser and his penalty kick being saved in the shoot-out, United emerged victorious, winning 6–5 on penalties after a 1–1 draw at the end of 120 minutes. As the Champions League top scorer, Ronaldo was named the UEFA Club Footballer of the Year.
 ##KEYPOINTS_COUNT##: 2
 ##KEYPOINTS##: ["Cristiano Ronaldo became United's first Ballon d'Or winner since Best in 1968.", "Cristiano Ronaldo was the first Premier League player to be named the FIFA World Player of the Year."]
-##QUESTION##: Who became Manchester United's first Ballon d'Or winner since George Best in 1968 and also made history as the first Premier League player to win the FIFA World Player of the Year award?
 
 Example 2:
 ##CLAIM##: Heyman is the founder of Heyday Films [KP]
@@ -30,19 +27,21 @@ and "Gravity". He was born on July 26, 1961, in London. His family has a backgro
   Award nomination for Best Picture and a BAFTA Award for Best British Film.
 ##KEYPOINTS_COUNT##: 1
 ##KEYPOINTS##: ["David Heyman, the film producer, is the founder of Heyday Films."]
-##QUESTION##: Who founded Heyday Films?
 """,
 
     "user": """User input:
-##ADDITIONAL INFORMATION##: The created date of the ##CLAIM## and ##CONTEXT## is [ADD_CREATED_DATE]. The current \
-date—when the question is asked—is [ADD_QUESTION_DATE]. Use these to improve temporal clarity when needed.
+##ADDITIONAL INFORMATION##: ##CLAIM## and ##CONTEXT## were last updated in [ADD_LAST_UPDATED_DATE] (YYYY-mm-dd). Use this information to improve temporal clarity when needed.
 ##CLAIM##: [ADD_CLAIM_HERE]
 ##CONTEXT##: [ADD_CONTEXT_HERE]
 ##KEYPOINTS_COUNT##: [ADD_KEYPOINTS_COUNT_HERE]"""
 }
 
 QUESTION_GENERATION_PROMPT = {
-    "system": """You are an AI responsible for generating a question given answer keypoints. The following are 5 examples
+    "system": """You are an AI responsible for generating a well formed question given answer keypoints. A well-formed question needs to satisfy the following requirements
++ Fluent, grammatically correct
++ Do not leak the answer in the question
+    
+The following are 5 examples
 
 ### Example 1:
 
@@ -83,7 +82,8 @@ QUESTION_GENERATION_PROMPT = {
 
     "user": """Given the title of the document and a set of answer keypoints, generate a question that covers all keypoints naturally and fluently.
 
-**TITLE**: [ADD_TITLE_HERE]
+##ADDITIONAL INFORMATION##: The information in **ANSWER KEYPOINTS** is last updated in [ADD_LAST_UPDATED_DATE] (YYYY-mm-dd). Use this information to improve temporal clarity when needed. \
+In addition, the title of the document from which the keypoints are extracted is: [ADD_TITLE_HERE]; use this additional information if needed.
 
 **ANSWER KEYPOINTS**:
 [ADD_KEYPOINTS_HERE]

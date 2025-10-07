@@ -14,12 +14,15 @@ from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
 from typing import List
+from datetime import datetime
 from utils.generic import read_json_or_jsonl, write_to_json
 from utils.openai_utils import init_client, OPENAI_CLIENT
 from utils.prompts import QUESTION_GENERATION_PROMPT
 
 
-def generate_question(keypoints: List[str], wiki_title: str) -> str:
+def generate_question(keypoints: List[str], 
+                      wiki_title: str, 
+                      last_updated_date: str) -> str:
     """Generate a question based on the provided keypoints and wiki title.
     Parameters
     ----------
@@ -33,11 +36,12 @@ def generate_question(keypoints: List[str], wiki_title: str) -> str:
             The generated question.
     """
     system_prompt = QUESTION_GENERATION_PROMPT["system"]
-    user_prompt = QUESTION_GENERATION_PROMPT["user"][:]
 
     concatenated_keypoints = "\n".join(["- " + item for item in keypoints])
-    user_prompt = user_prompt.replace("[ADD_KEYPOINTS_HERE]", concatenated_keypoints)
-    user_prompt = user_prompt.replace("[ADD_TITLE_HERE]", wiki_title)
+    user_prompt = QUESTION_GENERATION_PROMPT["user"][:]\
+        .replace("[ADD_KEYPOINTS_HERE]", concatenated_keypoints)\
+        .replace("[ADD_TITLE_HERE]", wiki_title)\
+        .replace("[ADD_LAST_UPDATED_DATE]", last_updated_date)
 
     resp = OPENAI_CLIENT["client"].chat.completions.create(
         model=OPENAI_CLIENT["model"],
@@ -96,6 +100,7 @@ def main(cfg: DictConfig)-> None:
 
         keypoints_mapper = dff_data.get("keypoints_mapper")
         groundedness_check = fgf_data.get("groundedness_check")
+        last_updated_date = dff_data.get("timestamp")
         print(fgf_data)
 
         if not keypoints_mapper or not groundedness_check: continue
@@ -103,7 +108,7 @@ def main(cfg: DictConfig)-> None:
         groundedness_check = {tuple(k.split("--__--")): v for k,v in groundedness_check.items()}
         good_keypoints = set([])
         for k, v in groundedness_check.items():
-            if (utilize_fact_groundedness_check and v == 1) or not utilize_fact_groundedness_check:
+            if (utilize_fact_groundedness_check and v) or not utilize_fact_groundedness_check:
                 good_keypoints.add(f"{k[0]}--__--{k[-1]}")
 
         print(good_keypoints)
@@ -122,7 +127,7 @@ def main(cfg: DictConfig)-> None:
         
         fact_question_mapper = {}
         for fact_id, keypoints in keypoints_mapper.items():
-            question = generate_question(keypoints, wiki_title = dff_data.get("title"))
+            question = generate_question(keypoints, wiki_title = dff_data.get("title"), last_updated_date= last_updated_date)
             fact_question_mapper[fact_id] = question
 
         
@@ -130,6 +135,8 @@ def main(cfg: DictConfig)-> None:
             "title": dff_data.get("title"),
             "wiki_url": dff_data.get("wiki_url"),
             "topics": dff_data.get("topics"),
+            "create_timestamp": dff_data.get("create_timestamp"),
+            "timestamp": dff_data.get("timestamp"),
             "fact_question_mapper": fact_question_mapper
         }
 
