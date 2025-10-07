@@ -587,6 +587,8 @@ def main(cfg:DictConfig) -> None:
                 "title": wiki_page_data.get("title"),
                 "wiki_url": wiki_page_data.get("wiki_url"),
                 "topics": wiki_page_data.get("topics"),
+                "create_timestamp": wiki_page_data.get("create_timestamp"),
+                "timestamp": wiki_page_data.get("timestamp"),
                 "marked_sentences": marked_sentences,
                 "extracted_sentences": extracted_sentences,
                 "raw_facts": raw_facts

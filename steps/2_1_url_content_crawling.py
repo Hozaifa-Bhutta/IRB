@@ -33,21 +33,6 @@ from utils.generic import read_json_or_jsonl, write_to_json
 from utils.archive_downloader import getArchiveContent
 from utils.html_extraction import extract_text_from_html, get_publication_date
 from typing import Callable, Any
-# from utils.html2md import extract_markdown_from_html
-
-# clean_text_func = lambda text: clean(text,
-#     fix_unicode=True,               # fix various unicode errors
-#     to_ascii=True,                  # transliterate to closest ASCII representation
-#     lang="en",                       # set to 'de' for German special handling,
-#     lower = False
-# )
-def clean_text_func(text: str) -> str:
-    return clean(text,
-        fix_unicode=True,               # fix various unicode errors
-        to_ascii=True,                  # transliterate to closest ASCII representation
-        lang="en",                       # set to 'de' for German special handling,
-        lower = False
-    )
 
 request_counters = {}
 MAX_REQUESTS_PER_MINUTE = 10  # Maximum requests per minute per domain
@@ -167,7 +152,7 @@ def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
 
         if "application/pdf" in content_type or url.endswith(".pdf"):
             raise NotImplementedError("Pdf files not supported")
-            
+        
 
         if "text/html" in content_type:
             text = extract_text_from_html(response.content)
@@ -258,6 +243,7 @@ def main(cfg: DictConfig)-> None:
     output_files_full_path = [os.path.join(output_folder, file) for file in files]
 
     for input_file_path, output_file_path in tqdm(zip(input_files_full_path, output_files_full_path), total = len(input_files_full_path)):
+        if os.path.exists(output_file_path): continue
         url_content_mapper = {}
         all_urls = set()
         # read input
@@ -285,6 +271,8 @@ def main(cfg: DictConfig)-> None:
             "title": input_data.get("title"),
             "wiki_url": input_data.get("wiki_url"),
             "topics": input_data.get("topics"),
+            "create_timestamp": input_data.get("create_timestamp"),
+            "timestamp": input_data.get("timestamp"),
             "url_content_mapper": url_content_mapper
         }
 

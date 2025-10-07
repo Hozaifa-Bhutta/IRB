@@ -3,13 +3,13 @@ general:
   local_llm_model: null #"Qwen/Qwen3-8B"
   openai_model_name: "gpt-4o-mini-2024-07-18" #"gpt-4.1-mini" # if use OpenAI models, this will be the name of the one used for running the pipeline
   start_from: 2023-01-01 # "%Y-%m-%d"
-  utilize_fact_groundedness_check: false
+  utilize_fact_groundedness_check: true
 
 step0:
   input_file: null
   output_folder: null
   offset: 0
-  max_pages: 5000
+  max_pages: 1000
 
 
 step1:
@@ -23,12 +23,11 @@ step2_1:
 
 step2_2:
   output_folder: null
-  context_window_size: 10
 
 step3:
   output_folder: null
   minicheck_ckpt_path: "/scratch/lamdo/minicheck_ckpts"
-  max_words: 2000
+  max_tokens: 20000
 
 step4:
   output_folder: null

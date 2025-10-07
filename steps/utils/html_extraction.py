@@ -54,3 +54,4 @@ def get_publication_date(response):
 
     except Exception:
         return None
+    

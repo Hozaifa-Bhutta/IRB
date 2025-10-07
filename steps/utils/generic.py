@@ -63,29 +63,29 @@ def split_sentence_with_newlines(sentences: List[str]) -> List[str]:
     return results
 
 
-def is_proper_sentence(text):
+def is_proper_sentence(text: str):
     """
-    Checks if a sentence is "proper" by looking for a noun/pronoun (subject)
-    and a verb (the root of the dependency tree).
+    Heuristically checks whether `text` looks like a proper sentence by requiring:
+      - a subject (nsubj/csubj/nsubjpass/csubjpass; optionally allow imperatives without an explicit subject)
+      - a predicate: either a verbal root (VERB/AUX) or a copular construction
     """
-    if not text:
+    if not text or not text.strip():
         return False
 
     doc = nlp(text)
 
-    has_subject = False
-    has_predicate = False
+    subject_labels = {"nsubj", "csubj", "nsubjpass", "csubjpass"}
+    has_subject = any(tok.dep_ in subject_labels for tok in doc)
 
-    # Spacy's dependency parser automatically identifies the root and subject.
-    for token in doc:
-        # Check for a nominal or clausal subject
-        if token.dep_ in ("nsubj", "csubj"):
-            has_subject = True
-        
-        # Check for the main verb of the sentence, which is the root
-        if token.dep_ == "ROOT" and token.pos_ == "VERB":
-            has_predicate = True
-    
+    root = next((t for t in doc if t.dep_ == "ROOT"), None)
+    if not root:
+        return False
+
+    has_predicate = root.pos_ in {"VERB", "AUX"}
+
+    if not has_predicate and root.pos_ in {"ADJ", "NOUN", "PROPN"}:
+        has_predicate = any(child.dep_ == "cop" and child.pos_ in {"AUX", "VERB"} for child in root.children)
+
     return has_subject and has_predicate
 
 

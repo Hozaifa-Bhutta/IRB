@@ -10,13 +10,14 @@
 # }
 
 import os, json, hydra, time
+from datetime import datetime
 from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
 from typing import List, Union
 from utils.generic import read_json_or_jsonl, write_to_json
 from utils.openai_utils import init_client, OPENAI_CLIENT
-from utils.keypoints_prompt import KEYPOINTS_SYSTEM_PROMPT, KEYPOINTS_USER_PROMPT
+from utils.prompts import KEYPOINT_EXTRACTION_PROMPT
 
 
 def get_first_paragraph(extracted_sentences: List[str]) -> str:
@@ -75,8 +76,8 @@ def get_section_context(fact: int, extracted_sentences: List[str]) -> str:
 def create_keypoints(fact: int, 
                      marked_sentences: List[str],
                      extracted_sentences: List[str], 
-                     context_window_size: int,
-                     wiki_title: str = None) -> Union[List[str], None]:
+                     wiki_title: str = None,
+                     last_updated_date: str = None) -> Union[List[str], None]:
     """Create keypoints from a fact sentence using OpenAI's GPT model.
     Parameters
     ----------
@@ -98,6 +99,9 @@ def create_keypoints(fact: int,
     fact_sentence = marked_sentences[fact]
     keypoint_count = fact_sentence.count("[KP]")
 
+    if not keypoint_count:
+        return None
+
     # surrounding context include: Title of the wiki page + The first paragraph (abstract) of the wiki page
     # + the previous context within the section the fact belongs to
     first_paragraph = get_first_paragraph(extracted_sentences)
@@ -107,9 +111,11 @@ def create_keypoints(fact: int,
     if wiki_title:
         surrounding_context = f"Document Title: {wiki_title}\n\n" + surrounding_context
 
-    user_prompt = KEYPOINTS_USER_PROMPT.replace("[ADD_CLAIM_HERE]", fact_sentence)
-    user_prompt = user_prompt.replace("[ADD_CONTEXT_HERE]", surrounding_context)
-    user_prompt = user_prompt.replace("[ADD_KEYPOINTS_COUNT_HERE]", str(keypoint_count))
+    user_prompt = KEYPOINT_EXTRACTION_PROMPT["user"][:]\
+        .replace("[ADD_CLAIM_HERE]", fact_sentence)\
+        .replace("[ADD_CONTEXT_HERE]", surrounding_context)\
+        .replace("[ADD_KEYPOINTS_COUNT_HERE]", str(keypoint_count))\
+        .replace("[ADD_LAST_UPDATED_DATE]", last_updated_date)
 
     try:
         resp = OPENAI_CLIENT["client"].chat.completions.create(
@@ -117,16 +123,14 @@ def create_keypoints(fact: int,
             messages=[
                 {
                     "role": "system",
-                    "content": KEYPOINTS_SYSTEM_PROMPT
+                    "content": KEYPOINT_EXTRACTION_PROMPT["system"]
                 },
                 {
                     "role": "user",
                     "content": user_prompt
                 }
             ],
-            # temperature=0.1,
-            max_tokens = 512,
-            # extra_body={"chat_template_kwargs": {"enable_thinking": False}},
+            max_tokens = 1024,
         )
     except Exception: return None
 
@@ -146,12 +150,9 @@ def create_keypoints(fact: int,
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig)-> None:
-
-
     extracted_facts_folder = cfg.step1.output_folder
     crawled_url_content_folder = cfg.step2_1.output_folder
     output_folder = cfg.step2_2.output_folder
-    context_window_size = cfg.step2_2.context_window_size
     local_llm_port = cfg.general.local_llm_port
     local_llm_model = cfg.general.local_llm_model
     openai_model_name = cfg.general.openai_model_name
@@ -180,8 +181,12 @@ def main(cfg: DictConfig)-> None:
             cuc_data = read_json_or_jsonl(cuc_file_path)
         except FileNotFoundError: continue
 
+        assert ef_data.get("title") == cuc_data.get("title")
+
         raw_facts = ef_data.get("raw_facts")
         url_content_mapper = cuc_data.get("url_content_mapper")
+        wiki_page_last_updated_date = ef_data.get("timestamp").split("T")[0]
+
         if not raw_facts or not url_content_mapper: continue
 
         url_content_mapper = {k: v for k,v in url_content_mapper.items() if v.get("accessible") is True and v.get("url_content")}
@@ -201,8 +206,8 @@ def main(cfg: DictConfig)-> None:
                 fact["fact"], 
                 marked_sentences = marked_sentences,
                 extracted_sentences=extracted_sentences, 
-                context_window_size=context_window_size,
-                wiki_title = ef_data.get("title")
+                wiki_title = ef_data.get("title"),
+                last_updated_date = wiki_page_last_updated_date
             )
 
             if not keypoints_from_fact: continue
@@ -215,6 +220,8 @@ def main(cfg: DictConfig)-> None:
             "title": ef_data.get("title"),
             "wiki_url": ef_data.get("wiki_url"),
             "topics": ef_data.get("topics"),
+            "create_timestamp": ef_data.get("create_timestamp"),
+            "timestamp": ef_data.get("timestamp"),
             "keypoints_mapper": keypoints_mapper
         }
 
