@@ -6,6 +6,7 @@ import pandas as pd
 from datetime import datetime
 from omegaconf import DictConfig
 from tqdm import tqdm
+from typing import List
 from utils.generic import read_json_or_jsonl, write_to_jsonl, write_to_json, maybe_create_folder
 from utils.token_counting import token_count_tiktoken
 
@@ -35,6 +36,14 @@ def sample_qa(queries, answers, num_samples, seed=42):
     return sampled_queries, sampled_answers
 
 
+def wiki_topics_processing(topics: List[str]):
+    # https://www.mediawiki.org/wiki/ORES/Articletopic
+
+    res = set()
+    for top in topics:
+        res.add(top.split(".")[0])
+
+    return list(res)
 
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
@@ -81,6 +90,9 @@ def main(cfg: DictConfig):
         fact_question_mapper = qg_data.get("fact_question_mapper")
 
         wiki_title = ef_data.get("title")
+        create_timestamp = ef_data.get("create_timestamp")
+        timestamp = ef_data.get("timestamp")
+        topics = wiki_topics_processing(ef_data.get("topics"))
 
         queries = []
         corpus = []
@@ -195,6 +207,8 @@ def main(cfg: DictConfig):
             to_append = {
                 "_id": query_id,
                 "num_keypoints": num_keypoints,
+                "topics": topics,
+                "wiki_create_timestamp": create_timestamp,
                 "evidence_attr": {
                     "langs": evidence_langs,
                     "published_dates": evidence_published_dates,
