@@ -5,39 +5,37 @@
 #     "wiki_url": "...", # wiki page url
 #     "source": "wikitext...", # raw text of the wiki page
 # }
-import json, gzip, os, hydra
+import json, gzip, os, hydra, re
 from datetime import datetime
 from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
 from utils.generic import maybe_create_folder, write_to_json
-from typing import Optional
+from typing import Optional, List, Dict, Any
 import requests
 
-def predict_outlink_topics(page_title: str, lang: str = "en") -> dict:
-    """Predicts outlink topics for a given Wikipedia page title using the Wikimedia API.
-    Parameters
-    ----------
-        page_title : str
-            The title of the Wikipedia page for which to predict outlink topics.
-        lang : str, optional
-            The language code for the Wikipedia page (default is "en" for English).
-    Returns
-    -------
-        dict
-            A dictionary containing the predicted outlink topics and their scores.
-    """
+def get_articletopics_with_scores(weighted_tags: List[str]) -> List[Dict[str, Any]]:
+    topic_list = []
+    
+    topic_pattern = re.compile(r'classification\.prediction\.articletopic/(.*?)\|(\d+)$')
 
-    url = "https://api.wikimedia.org/service/lw/inference/v1/models/outlink-topic-model:predict"
-    headers = {"Content-Type": "application/json", "User-Agent": "email: lamdo@illnois.edu"}
-    data = {"page_title": page_title, "lang": lang, "debug": True}
-    r = requests.post(url, headers=headers, data=json.dumps(data), timeout=30)
-    r.raise_for_status()
-    js = r.json()
-    results = js["prediction"]["results"]
-    results.sort(key=lambda x: x["score"], reverse=True)
-    results = [result for result in results if result["score"] > 0.5]
-    return results
+    for tag in weighted_tags:
+        match = topic_pattern.search(tag)
+        if match:
+            topic_path = match.group(1)
+            raw_score = match.group(2)
+            
+            try:
+                score = int(raw_score) / 1000.0
+            except ValueError:
+                continue
+            
+            topic_list.append({
+                'topic': topic_path,
+                'score': score
+            })
+
+    return topic_list
 
 
 def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int, offset: int = 0, start_from: Optional[str] = None) -> None:
@@ -87,6 +85,7 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
                     source = obj.get("source_text")
                     create_timestamp = obj.get("create_timestamp") # format: "%Y-%m-%dT%H:%M:%SZ"
                     timestamp = obj.get("timestamp") # format: "%Y-%m-%dT%H:%M:%SZ"
+                    weighted_tags = obj.get("weighted_tags")
 
                     if not create_timestamp:
                         create_timestamp_obj = datetime(1998, 1, 1)
@@ -100,7 +99,7 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
                     url = f"https://en.wikipedia.org/?curid={obj.get('page_id')}"
 
                     # predict outlink topics using the Wikimedia API whose score is > 0.5
-                    outlink_topics = predict_outlink_topics(title)
+                    outlink_topics = get_articletopics_with_scores(weighted_tags)
                     topics = [topic['topic'] for topic in outlink_topics]
 
                     to_write = {
@@ -121,18 +120,10 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
             
                 count += 1
             # stop if we have written 'max_pages' pages
-            if length_data == max_pages: break
+            if max_pages and length_data == max_pages: break
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig) -> None:
-    # parser = ArgumentParser()
-
-    # parser.add_argument("--input_file", type = str, required = True)
-    # parser.add_argument("--step0_output_folder", type = str, required = True)
-    # parser.add_argument("--offset", type = int, default = cfg.step0.offset)
-    # parser.add_argument("--max_pages", type = int, default = cfg.step0.max_pages)
-
-    # args = parser.parse_args()
 
     input_file = cfg.step0.input_file #args.input_file
     output_folder = cfg.step0.output_folder #args.step0_output_folder

@@ -41,7 +41,7 @@ def wiki_topics_processing(topics: List[str]):
 
     res = set()
     for top in topics:
-        res.add(top.split(".")[0])
+        res.add(top)
 
     return list(res)
 
