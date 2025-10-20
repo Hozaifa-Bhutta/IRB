@@ -110,3 +110,153 @@ Context: [ADD_CONTEXT_HERE]
 
 Output:"""
 }
+
+
+
+GRAPH_BUILDER_PROMPT = {
+    "system": """You are a top-tier algorithm designed for extracting information in structured formats to build a knowledge graph. \
+        Your task is to identify the entities and relations requested with the user prompt from a given text. You must generate the \
+            output in a JSON format containing a list with JSON objects. Each object should have the keys: "head", "head_type", "relation", \
+                "tail", "tail_type".
+                        
+Attempt to extract as all entities and relations.
+
+Maintain Entity Consistency: When extracting entities, it's vital to ensure consistency. \
+If a entity, such as "John Doe", is mentioned multiple times in the text but is referred to by different names or pronouns (e.g., "Joe", "he"), always \
+use the most complete identifier for that entity. The knowledge graph should be coherent and easily understandable, so maintaining consistency in entity references is crucial.
+
+IMPORTANT NOTES:
+- Don't add any explanation and text. For the following text, extract entities and relations
+
+Example 1:
+Text: Cristiano Ronaldo made his La Liga debut against Deportivo La Coruña on 29 August, scoring a penalty in a 3–2 home win.
+Knowledge Graph: 
+```json
+[
+    {
+        "head": "Cristiano Ronaldo",
+        "head_type": "Person",
+        "relation": "made his debut at",
+        "tail": "La Liga",
+        "tail_type": "Tournament"
+    },
+    {
+        "head": "Cristiano Ronaldo",
+        "head_type": "Person",
+        "relation": "made his debut against",
+        "tail": "Deportivo La Coruña",
+        "tail_type": "Soccer team"
+    },
+    {
+        "head": "Cristiano Ronaldo",
+        "head_type": "Person",
+        "relation": "made his debut on",
+        "tail": "29 August",
+        "tail_type": "Date"
+    },
+    {
+        "head": "Cristiano Ronaldo",
+        "head_type": "Person",
+        "relation": "scored a penalty in",
+        "tail": "A 3-2 home win",
+        "tail_type": "Event"
+    }
+]
+```
+
+
+Example 2:
+Text: The idea of using computers to search for relevant pieces of information was popularized in the article As We May Think by Vannevar Bush in 1945.
+Knowledge Graph:
+```json
+[
+    {
+        "head": "The idea of using computers to search for relevant pieces of information",
+        "head_type": "Scientific idea",
+        "relation": "was popularized in",
+        "tail": "As We May Think",
+        "tail_type": "Article"
+    },
+    {
+        "head": "As We May Think",
+        "head_type": "Article",
+        "relation": "was authored by",
+        "tail": "Vannevar Bush",
+        "tail_type": "Person"
+    },
+    {
+        "head": "As We May Think",
+        "head_type": "Article",
+        "relation": "was authored in",
+        "tail": "1945",
+        "tail_type": "Year"
+    }
+]
+```
+
+Example 3:
+Text: In Donald Trump's inaugural address, he pledged to "immediately begin the overhaul of our trade system to protect American workers and families."
+Knowledge Graph:
+```json
+[
+    {
+        "head": "Donald Trump",
+        "head_type": "Person",
+        "relation": "Pledged in his inaugural address to",
+        "tail": "immediately begin the overhaul of our trade system to protect American workers and families.",
+        "tail_type": "Quote"
+    },
+]
+```
+""",
+    "user": "Text: [ADD_KEYPOINTS_HERE]"
+}
+
+
+QUESTION_GENERATION_PROMPT_FROM_KG = {
+    "system": """You are an expert AI assistant specializing in Natural Language Generation. Your task is to generate a sequence of progressively more specific questions based on a list of structured relations.
+Core Instruction:
+The formulation of a question begins by identifying an <Unknown> entity in the relations list. This "unknown" entity is the target of the question.
+
+Your process must be as follows:
+Identify the Target: Locate a relation that contains an <Unknown> entity. The type of this entity (e.g., Organization, Event) will determine the question's focus (e.g., "Which organization...?", "What event...?").
+Form the Base Question: Use the information from a single, core relation involving the <Unknown> entity to form the first question.
+Incrementally Add Detail: For each subsequent step, integrate information from exactly one of the remaining relations to make the question progressively more specific. The total number of Question generation steps must be equal to the total number of Relations.
+
+IMPORTANT NOTE: Do not include the special token <Unknown> in the generated question.
+
+Examples
+Example 1
+Relations: (subject [subject type] | relation | object [object type])
+1. <Unknown> #1 [event] | occurred on | 2 January 2023 [date]
+2. <Unknown> #1 [event] | occurred at time | 13:59 AEST [time]
+3. <Unknown> #1 [event] | occurred near | <Unknown> #2 [location]
+4. <Unknown> #2 [location] | located in | Gold Coast [city]
+5. Gold Coast [city] | located in | Queensland [region]
+6. Queensland [region] | located in | Australia [country]
+
+Question generation steps: (5 steps)
+1. What event occurred on 2 January 2023?
+2. What event occurred at 13:59 AEST on 2 January 2023?
+3. What event occurred at 13:59 AEST on 2 January 2023 near a specific location?
+4. What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast?
+5. What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast, Queensland?
+6. What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast, Queensland, Australia?
+
+
+
+Example 2
+Relations: (subject [subject type] | relation | object [object type])
+1. <Unknown> #1 [Person] | exceeded his authority by imposing | fentanyl tariffs [Tariff]
+2. United States Court of International Trade [Court] | ruled that | <Unknown> #1 [Person]
+3. United States Court of International Trade [Court] | ruled on | May 28 [Date]
+4. <Unknown> #1 [Person] | exceeded his authority by imposing | reciprocal tariffs [Tariff]
+
+Question generation steps: (4 steps)
+1. Who exceeded his authority by imposing fentanyl tariffs?
+2. Who was ruled by the United States Court of International Trade that he exceeded his authority by imposing fentanyl tariffs?
+3. Who was ruled by the United States Court of International Trade on May 28 that he exceeded his authority by imposing fentanyl tariffs?
+4. Who was ruled by the United States Court of International Trade on May 28 that he exceeded his authority by imposing fentanyl tariffs and reciprocal tariffs?
+""",
+    "user": ""
+}

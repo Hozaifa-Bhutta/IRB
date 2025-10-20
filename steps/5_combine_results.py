@@ -55,8 +55,6 @@ def main(cfg: DictConfig):
     question_generation_folder = cfg.step4.output_folder
     output_folder = cfg.step5.output_folder
 
-    utilize_fact_groundedness_check = cfg.general.utilize_fact_groundedness_check
-
     files = os.listdir(extracted_facts_folder)
     files = [file for file in files if file.endswith('.json')]
     extracted_facts_files_full_path = [os.path.join(extracted_facts_folder, file) for file in files]
@@ -105,16 +103,18 @@ def main(cfg: DictConfig):
         fact_ids_to_include = set([int(fact_id) for fact_id in fact_ids_to_include])
 
         # queries
+        query_id_2_num_hops = {}
         for fact_id, query in fact_question_mapper.items():
             fact_id = int(fact_id)
             if fact_id not in fact_ids_to_include: continue
-            queries.append({"_id": f"{wiki_title}--{fact_id}", "text": query})
+            queries.append({"_id": f"{wiki_title}--{fact_id}", "text": query["question"]})
+            query_id_2_num_hops[f"{wiki_title}--{fact_id}"] = query["num_hops"]
 
 
         # answer
         good_keypoints = {}
         for fact_url_kp_id, check_label in groundedness_check.items():
-            if utilize_fact_groundedness_check and not check_label: continue
+            if not check_label: continue
             fact_id, url, kp_id = fact_url_kp_id.split("--__--")
             fact_id = int(fact_id)
             kp_id = int(kp_id)
@@ -163,7 +163,7 @@ def main(cfg: DictConfig):
 
             if query_id not in query_id_2_keypoints: query_id_2_keypoints[query_id] = {}
 
-            if (utilize_fact_groundedness_check and check_label) or not utilize_fact_groundedness_check: 
+            if check_label: 
                 url_lang = url_content_mapper.get(url, {}).get("lang")
                 published_date = url_content_mapper.get(url, {}).get("published_date")
                 content = url_content_mapper.get(url).get("url_content")
@@ -183,6 +183,7 @@ def main(cfg: DictConfig):
         for i in range(len(queries)):
             query_id = queries[i]["_id"]
             num_keypoints = len(query_id_2_keypoints.get(query_id, {}))
+            num_hops = query_id_2_num_hops[query_id]
             evidence_langs = []
             evidence_published_dates = []
             evidence_content_lengths = []
@@ -207,6 +208,7 @@ def main(cfg: DictConfig):
             to_append = {
                 "_id": query_id,
                 "num_keypoints": num_keypoints,
+                "num_hops": num_hops,
                 "topics": topics,
                 "wiki_create_timestamp": create_timestamp,
                 "evidence_attr": {

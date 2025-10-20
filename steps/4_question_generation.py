@@ -70,7 +70,6 @@ def main(cfg: DictConfig)-> None:
     fact_groundedness_folder = cfg.step3.output_folder
     output_folder = cfg.step4.output_folder
 
-    utilize_fact_groundedness_check = cfg.general.utilize_fact_groundedness_check
     local_llm_port = cfg.general.local_llm_port
     local_llm_model = cfg.general.local_llm_model
     openai_model_name = cfg.general.openai_model_name
@@ -108,7 +107,7 @@ def main(cfg: DictConfig)-> None:
         groundedness_check = {tuple(k.split("--__--")): v for k,v in groundedness_check.items()}
         good_keypoints = set([])
         for k, v in groundedness_check.items():
-            if (utilize_fact_groundedness_check and v) or not utilize_fact_groundedness_check:
+            if v:
                 good_keypoints.add(f"{k[0]}--__--{k[-1]}")
 
         print(good_keypoints)

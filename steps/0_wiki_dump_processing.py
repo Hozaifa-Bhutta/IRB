@@ -16,6 +16,7 @@ import requests
 
 def get_articletopics_with_scores(weighted_tags: List[str]) -> List[Dict[str, Any]]:
     topic_list = []
+    if not weighted_tags: return topic_list
     
     topic_pattern = re.compile(r'classification\.prediction\.articletopic/(.*?)\|(\d+)$')
 
