@@ -1,21 +1,27 @@
 import json, os, string, nltk, sys
 import numpy as np
 import networkx as nx
-from collections import defaultdict, deque
+from collections import Counter
 from typing import List, Dict, Tuple, Set, Union, Optional
+from sentence_transformers import SentenceTransformer
+from utils.prompts import QUESTION_ANSWERABILITY_CHECK_PROMPT
 
 
 ENGLISH_STOPWORDS = set(nltk.corpus.stopwords.words('english'))
 PORTER_STEMMER = nltk.stem.PorterStemmer()
 
 
+
+
 class KGBasedQGUtils:
     def __init__(self, openai_client,
-                 question_generation_prompt,
-                 graph_builder_prompt):
+                 question_generation_prompt = None,
+                 graph_builder_prompt = None,
+                 question_refinement_prompt = None):
         self.openai_client = openai_client
         self.question_generation_prompt = question_generation_prompt
         self.graph_builder_prompt = graph_builder_prompt
+        self.question_refinement_prompt = question_refinement_prompt
 
 
     def _convert_kg_to_nx_graph(self, knowledge_graph: List[Dict[str, str]]) -> Tuple[nx.DiGraph, Set[str]]:
@@ -28,7 +34,7 @@ class KGBasedQGUtils:
                 heads.add(head)
         return graph, heads
     
-    def _get_overlapping_nodes(self, all_nodes: List[str]):
+    def _get_bad_nodes(self, all_nodes: List[str]):
         overlapping_nodes = set()
         for node1 in all_nodes:
             for node2 in all_nodes:
@@ -36,20 +42,20 @@ class KGBasedQGUtils:
                     overlapping_nodes.add(node1)
                     overlapping_nodes.add(node2)
 
-        return overlapping_nodes
+        non_capitalized_nodes = {node for node in all_nodes if not any([word.istitle() for word in node.split()])}
+        single_word_nodes = {node for node in all_nodes if len(node.split()) == 1}
+        bad_nodes = overlapping_nodes | non_capitalized_nodes | single_word_nodes
+
+        return bad_nodes
 
     def _find_starting_node(self, graph: nx.DiGraph, heads: Set[str]) -> Optional[str]:
         degrees = graph.degree
         all_nodes = list(graph.nodes())
 
-        # Candidates cannot include overlapping nodes
-        overlapping_nodes = self._get_overlapping_nodes(all_nodes)
-
-        # Find nodes that are not capitalized (using .istitle() as in the original).
-        non_capitalized_nodes = {node for node in graph.nodes() if not any([word.istitle() for word in node.split()])}
+        bad_nodes = self._get_bad_nodes(all_nodes)
 
         # Candidates are the original head nodes, excluding the filtered sets.
-        candidates = heads - non_capitalized_nodes - overlapping_nodes
+        candidates = heads - bad_nodes
         
         if not candidates:
             return None
@@ -59,7 +65,29 @@ class KGBasedQGUtils:
         highest_degree_node = max(candidates, key=lambda node: degrees[node])
         return highest_degree_node
 
+    def _get_semantic_based_traversal_order(self, knowledge_graph: List[Dict[str, str]], keypoints: List[str]) -> List[int]:
+        if not knowledge_graph:
+            return []
+        
+        if not hasattr(self, "text_embedding"):
+            self.text_embedding = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
+        keypoints_str = "\n".join(keypoints)
+        relations = [f"{rel['head']} {rel['relation']} {rel['tail']}" for rel in knowledge_graph]
+
+        embeddings = self.text_embedding.encode([keypoints_str] + relations, normalize_embeddings=True)
+
+        keypoints_embeddings = embeddings[0:1]
+        relations_embeddings = embeddings[1:]
+
+        keypoints_relations_scores = keypoints_embeddings.dot(relations_embeddings.T)[0]
+        traversal_order = np.argsort(-1 * keypoints_relations_scores).tolist()
+
+        return traversal_order
+
+
+
+        
 
     def _get_traversal_order(self, knowledge_graph: List[Dict[str, str]]) -> List[int]:
         if not knowledge_graph:
@@ -127,11 +155,13 @@ class KGBasedQGUtils:
         return ranked_order
     
 
-    def _knowledge_graph_masking(self, knowledge_graph: List[Dict[str, str]], traversal_order: List[int], max_nodes_to_mask: int) -> List[Dict[str, str]]:
+    def _knowledge_graph_masking(self, 
+                                 knowledge_graph: List[Dict[str, str]], 
+                                 traversal_order: List[int], 
+                                 max_nodes_to_mask: int):
         graph, heads = self._convert_kg_to_nx_graph(knowledge_graph)
-        overlapping_nodes = self._get_overlapping_nodes(list(graph.nodes()))
 
-        max_nodes_to_mask = min(len(graph.nodes()) - 1, max_nodes_to_mask)
+        bad_nodes = self._get_bad_nodes(list(graph.nodes()))
 
         first_edge = knowledge_graph[traversal_order[0]]
 
@@ -142,37 +172,46 @@ class KGBasedQGUtils:
         for j in range(1, len(traversal_order)):
             i = traversal_order[j]
             relation = knowledge_graph[i]
-            is_jump = not graph.has_edge(knowledge_graph[j-1]["tail"], relation["head"])
+            is_jump = all([knowledge_graph[j-k]["tail"] != relation["head"] for k in range(1, j + 1)])
 
             if all([
                 len(masked_entities_names) < max_nodes_to_mask, # number of masked nodes has not exceed limit
                 not is_jump, # current head is the tail of the previous relation
                 all([masked_entities_info[k][1] != relation["head_type"] for k in range(len(masked_entities_info))]), # a node with the same type as head has not been masked
-                not relation["head"] in masked_entities_names, # the head itself has not been masked
-                not relation["head"] in overlapping_nodes, # the head is not a node that overlap with other nodes
+                relation["head"] not in masked_entities_names, # the head itself has not been masked
+                relation["head"] not in bad_nodes, # self explanatory
             ]):
                 # do the masking of the current head
                 masked_entities_info.append([relation["head"], relation["head_type"]])
                 masked_entities_names.append(relation["head"])
         
-        masked_kg = []
-        for i in traversal_order:
-            relation = knowledge_graph[i]
-            masked_kg.append({
-                "head": relation["head"] if relation["head"] not in masked_entities_names else f"<Unknown> #{masked_entities_names.index(relation['head']) + 1}",
-                "head_unmasked": relation["head"],
-                "head_type": relation["head_type"],
-                "relation": relation["relation"],
-                "tail": relation["tail"] if relation["tail"] not in masked_entities_names else f"<Unknown> #{masked_entities_names.index(relation['tail']) + 1}",
-                "tail_unmasked": relation["tail"],
-                "tail_type": relation["tail_type"]
-            })
+        res = []
+        for j in range(len(masked_entities_names)):
+            num_hops = len(masked_entities_names[:j + 1])
+            masked_kg = []
+            for i in traversal_order:
+                relation = knowledge_graph[i]
+                masked_kg.append({
+                    "head": relation["head"] if relation["head"] not in masked_entities_names[:j + 1] else f"<Unknown> #{masked_entities_names.index(relation['head']) + 1}",
+                    "head_unmasked": relation["head"],
+                    "head_type": relation["head_type"],
+                    "relation": relation["relation"],
+                    "tail": relation["tail"] if relation["tail"] not in masked_entities_names[:j + 1] else f"<Unknown> #{masked_entities_names.index(relation['tail']) + 1}",
+                    "tail_unmasked": relation["tail"],
+                    "tail_type": relation["tail_type"]
+                })
 
-        return masked_kg, len(masked_entities_names)
+            res.append({"masked_kg": masked_kg, "num_hops": num_hops})
+
+        return res
     
 
-    def _build_user_prompt_from_masked_kg(self, masked_kg: List[Dict[str, str]]) -> str:
+    def _build_user_prompt_from_masked_kg(self, masked_kg: List[Dict[str, str]], masked_keypoints_str: Optional[str] = None) -> str:
         prompt = "Relations: (subject [subject type] | relation | object [object type])" # f"""**Full text:**\n{text}\n\n**Relations:**"""
+        if masked_keypoints_str:
+            prompt = f"Text: {masked_keypoints_str}\n" + prompt
+
+
         for i, rel in enumerate(masked_kg):
 
             head_str = rel["head"]
@@ -214,34 +253,71 @@ class KGBasedQGUtils:
             return json.loads(_result)
         except Exception as e:
             return {"error": str(e)}
+    
+
+    def generate_question_from_masked_kg_step_by_step(self, masked_kg: List[Dict[str, str]], masked_keypoints_str: Optional[str] = None) -> List[str]:
+        generated_questions = [""]
+        for i, rel in enumerate(masked_kg):
+
+            head_str = rel["head"]
+            tail_str = rel["tail"]
+            relation_text = f"{head_str} [{rel['head_type']}] | {rel['relation']} | {tail_str} [{rel['tail_type']}]"
+
+            current_question = generated_questions[-1]
+
+            user_prompt = f"Relation: {relation_text}"
+            if current_question: user_prompt += f"\nExisting question: {current_question}"
+
+            resp = self.openai_client["client"].chat.completions.create(
+                model=self.openai_client["model"],
+                messages=[
+                    {
+                        "role": "system",
+                        "content": self.question_generation_prompt["system"]
+                    },
+                    {
+                        "role": "user",
+                        "content": user_prompt
+                    }
+                ],
+                prediction={
+                    "type": "content",
+                    "content": current_question
+                },
+                max_tokens = 128,
+            )
+
+            question = resp.choices[0].message.content.strip()
+
+            generated_questions.append(question)
+
+        return generated_questions[1:]
+    
+
+    def question_refinement(self, generated_question: str, keypoints: List[str]):
+        keypoints_str = "\n".join(keypoints)
+
+        user_prompt = self.question_refinement_prompt["user"][:]\
+        .replace("[ADD_KEYPOINTS_HERE]", keypoints_str)\
+        .replace("[ADD_QUESTION_HERE]", generated_question)
         
-
-    def generate_question_from_masked_kg(self, masked_kg: List[Dict[str, str]]) -> List[str]:
-        user_prompt = self._build_user_prompt_from_masked_kg(masked_kg)
-
         resp = self.openai_client["client"].chat.completions.create(
             model=self.openai_client["model"],
             messages=[
                 {
                     "role": "system",
-                    "content": self.question_generation_prompt["system"]
+                    "content": self.question_refinement_prompt["system"]
                 },
                 {
                     "role": "user",
                     "content": user_prompt
                 }
             ],
-            max_tokens = 1024,
+            max_tokens = 128,
         )
 
-        _generated_questions = resp.choices[0].message.content.strip()
+        return resp.choices[0].message.content.strip()
 
-        if "<Unknown>" in _generated_questions: return []
-
-        generated_questions = [question[3:] for question in _generated_questions.split("\n")]
-
-        return generated_questions
-    
 
 
 
@@ -336,17 +412,20 @@ class KGBasedQGChecker:
 
             relations.append(to_append)
 
+        error_counter = Counter()
         for i in range(len(generated_questions)):
             question = generated_questions[i]
             relations_to_check = relations[:i + 1]
             relations_to_check = [rel for rel in relations_to_check if rel]
             if not relations_to_check: continue
 
-            pred_label, _, _, _ = self.minicheck_scorer.score(docs=[question] * len(relations_to_check), claims=relations_to_check)
+            pred_label, raw_probs, _, _ = self.minicheck_scorer.score(docs=[question] * len(relations_to_check), claims=relations_to_check)
 
-            if not all(pred_label): return False
-
-        return True
+            for i, l in enumerate(pred_label):
+                if not l:
+                    error_counter[i] += 1
+            
+        return all([v <= 1 for v in error_counter.values()])
                 
 
             
@@ -359,17 +438,18 @@ class KGBasedQGChecker:
 
     def check_question_answerability(self, question: str):
 
+        user_prompt = QUESTION_ANSWERABILITY_CHECK_PROMPT["user"][:]\
+        .replace("[ADD_QUESTION_HERE]", question)
         resp = self.openai_client["client"].chat.completions.create(
             model=self.openai_client["model"],
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a helpful AI assistant"
+                    "content": QUESTION_ANSWERABILITY_CHECK_PROMPT["system"]
                 },
                 {
                     "role": "user",
-                    "content": f"Will this question have multiple or a single answer (How many entity/object can be used to answer the question). \
-                        Answer without explaining further\nQuestion: '{question}'\nA. Multiple\nB. Single"
+                    "content": user_prompt
                 }
             ],
             # temperature=0.1,
@@ -382,3 +462,4 @@ class KGBasedQGChecker:
         res = resp.choices[0].message.content.strip()
 
         return "B." in res
+    

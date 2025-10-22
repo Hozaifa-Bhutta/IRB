@@ -213,50 +213,144 @@ Knowledge Graph:
 }
 
 
-QUESTION_GENERATION_PROMPT_FROM_KG = {
-    "system": """You are an expert AI assistant specializing in Natural Language Generation. Your task is to generate a sequence of progressively more specific questions based on a list of structured relations.
-Core Instruction:
-The formulation of a question begins by identifying an <Unknown> entity in the relations list. This "unknown" entity is the target of the question.
+# QUESTION_GENERATION_PROMPT_FROM_KG = {
+#     "system": """You are an expert AI assistant specializing in Natural Language Generation. Your task is to generate a sequence of progressively more specific questions based on a list of structured relations.
+# Core Instruction:
+# The formulation of a question begins by identifying an <Unknown> entity in the relations list. This "unknown" entity is the target of the question.
 
-Your process must be as follows:
-Identify the Target: Locate a relation that contains an <Unknown> entity. The type of this entity (e.g., Organization, Event) will determine the question's focus (e.g., "Which organization...?", "What event...?").
-Form the Base Question: Use the information from a single, core relation involving the <Unknown> entity to form the first question.
-Incrementally Add Detail: For each subsequent step, integrate information from exactly one of the remaining relations to make the question progressively more specific. The total number of Question generation steps must be equal to the total number of Relations.
+# Your process must be as follows:
+# Identify the Target: Locate a relation that contains an <Unknown> entity. The type of this entity (e.g., Organization, Event) will determine the question's focus (e.g., "Which organization...?", "What event...?").
+# Form the Base Question: Use the information from a single, core relation involving the <Unknown> entity to form the first question.
+# Incrementally Add Detail: For each subsequent step, integrate information from exactly one of the remaining relations to make the question progressively more specific. The total number of Question generation steps must be equal to the total number of Relations.
 
-IMPORTANT NOTE: Do not include the special token <Unknown> in the generated question.
+# IMPORTANT NOTE: Do not include the special token <Unknown> in the generated question.
 
-Examples
-Example 1
-Relations: (subject [subject type] | relation | object [object type])
-1. <Unknown> #1 [event] | occurred on | 2 January 2023 [date]
-2. <Unknown> #1 [event] | occurred at time | 13:59 AEST [time]
-3. <Unknown> #1 [event] | occurred near | <Unknown> #2 [location]
-4. <Unknown> #2 [location] | located in | Gold Coast [city]
-5. Gold Coast [city] | located in | Queensland [region]
-6. Queensland [region] | located in | Australia [country]
+# Examples
+# Example 1
+# Relations: (subject [subject type] | relation | object [object type])
+# 1. <Unknown> #1 [event] | occurred on | 2 January 2023 [date]
+# 2. <Unknown> #1 [event] | occurred at time | 13:59 AEST [time]
+# 3. <Unknown> #1 [event] | occurred near | <Unknown> #2 [location]
+# 4. <Unknown> #2 [location] | located in | Gold Coast [city]
+# 5. Gold Coast [city] | located in | Queensland [region]
+# 6. Queensland [region] | located in | Australia [country]
 
-Question generation steps: (5 steps)
-1. What event occurred on 2 January 2023?
-2. What event occurred at 13:59 AEST on 2 January 2023?
-3. What event occurred at 13:59 AEST on 2 January 2023 near a specific location?
-4. What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast?
-5. What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast, Queensland?
-6. What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast, Queensland, Australia?
+# Question generation steps: (5 steps)
+# 1. What event occurred on 2 January 2023?
+# 2. What event occurred at 13:59 AEST on 2 January 2023?
+# 3. What event occurred at 13:59 AEST on 2 January 2023 near a specific location?
+# 4. What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast?
+# 5. What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast, Queensland?
+# 6. What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast, Queensland, Australia?
 
 
 
-Example 2
-Relations: (subject [subject type] | relation | object [object type])
-1. <Unknown> #1 [Person] | exceeded his authority by imposing | fentanyl tariffs [Tariff]
-2. United States Court of International Trade [Court] | ruled that | <Unknown> #1 [Person]
-3. United States Court of International Trade [Court] | ruled on | May 28 [Date]
-4. <Unknown> #1 [Person] | exceeded his authority by imposing | reciprocal tariffs [Tariff]
+# Example 2
+# Relations: (subject [subject type] | relation | object [object type])
+# 1. <Unknown> #1 [Person] | exceeded his authority by imposing | fentanyl tariffs [Tariff]
+# 2. United States Court of International Trade [Court] | ruled that | <Unknown> #1 [Person]
+# 3. United States Court of International Trade [Court] | ruled on | May 28 [Date]
+# 4. <Unknown> #1 [Person] | exceeded his authority by imposing | reciprocal tariffs [Tariff]
 
-Question generation steps: (4 steps)
-1. Who exceeded his authority by imposing fentanyl tariffs?
-2. Who was ruled by the United States Court of International Trade that he exceeded his authority by imposing fentanyl tariffs?
-3. Who was ruled by the United States Court of International Trade on May 28 that he exceeded his authority by imposing fentanyl tariffs?
-4. Who was ruled by the United States Court of International Trade on May 28 that he exceeded his authority by imposing fentanyl tariffs and reciprocal tariffs?
-""",
-    "user": ""
+# Question generation steps: (4 steps)
+# 1. Who exceeded his authority by imposing fentanyl tariffs?
+# 2. Who was ruled by the United States Court of International Trade that he exceeded his authority by imposing fentanyl tariffs?
+# 3. Who was ruled by the United States Court of International Trade on May 28 that he exceeded his authority by imposing fentanyl tariffs?
+# 4. Who was ruled by the United States Court of International Trade on May 28 that he exceeded his authority by imposing fentanyl tariffs and reciprocal tariffs?
+# """,
+#     "user": ""
+# }
+
+
+QUESTION_GENERATION_PROMPT_FROM_KG_SINGLE_STEP = {
+    "system": """You are an expert AI assistant specializing in Natural Language Generation. Your task is to take as input a new relation (head [head type] | relation | tail [tail type]) and optionally an existing question, and 
+    output a new question by incorporating information of the two inputs. The newly generated question must fully capture the information of the given question and the new relation. In the case you are not provided
+    an input question, just base your question generation on the new relation. 
+    
+    Some relation may have <Unknown> entity has head or tail or both. This "unknown" entity is the target of the question that we are generating.
+    
+    Example 1:
+    Relation: <Unknown> #1 [event] | occurred on | 2 January 2023 [date]
+
+    Generated question: What event occurred on 2 January 2023?
+
+
+    Example 2: 
+    Relation: <Unknown> #1 [event] | occurred near | <Unknown> #2 [location]
+    Existing question: What event occurred at 13:59 AEST on 2 January 2023?
+
+    Generated question: What event occurred at 13:59 AEST on 2 January 2023 near a specific location?
+
+    
+    Example 3:
+    Relation: Gold Coast [city] | located in | Queensland [region]
+    Existing question: What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast?
+
+    Generated question: What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast, Queensland?
+
+    
+    Example 4:
+    Relation: <Unknown> #1 [Person] | exceeded his authority by imposing | fentanyl tariffs [Tariff]
+
+    Generated question: Who exceeded his authority by imposing fentanyl tariffs?
+
+
+    Example 5:
+    Relation: United States Court of International Trade [Court] | ruled on | May 28 [Date]
+    Existing question: Who was ruled by the United States Court of International Trade that he exceeded his authority by imposing fentanyl tariffs?
+
+    Generated question: Who was ruled by the United States Court of International Trade on May 28 that he exceeded his authority by imposing fentanyl tariffs?
+
+
+    Example 6: 
+    Relation: <Unknown> #1 [Person] | exceeded his authority by imposing | reciprocal tariffs [Tariff]
+    Existing question: Who was ruled by the United States Court of International Trade on May 28 that he exceeded his authority by imposing fentanyl tariffs?
+
+    Generated question: Who was ruled by the United States Court of International Trade on May 28 that he exceeded his authority by imposing fentanyl tariffs and reciprocal tariffs?
+    """,
+
+    "user": """Relation: [ADD_RELATION_HERE]\nExisting question: [ADD_EXISTING_QUESTION_HERE]\n\nGenerated question:"""
+}
+
+QUESTION_REFINEMENT_PROMPT = {
+    "system": "Given a question answer pair, improve the question since it may be awkwardly worded. Response without further explanations",
+    "user": "Answer: [ADD_KEYPOINTS_HERE]\nQuestion: [ADD_QUESTION_HERE]\n\nImproved question:" 
+}
+
+
+QUESTION_ANSWERABILITY_CHECK_PROMPT = {
+    "system": """You are a reliable AI assistant. Your task is to assess if a question will result in multiple different answers or not.
+    In other words, how many entity/object can be used to answer the given question? Choose from the following options
+    A. Multiple
+    B. Single
+
+    Following are a few examples. In these examples, there will be rationale for the answer. However, for the user input, you do not need
+    to provide rationale.
+
+    Example 1:
+    Question: Who participated in a specific tournament held in Birmingham, England and finished in eighth place?
+    Rationale: There can be more than one person that fits the description of the question
+    Answer: A. Multiple
+
+
+    Example 2:
+    Question: What specimen did Lemierre et al. describe that is from the lowest Oligocene epoch, was found in Chartres-de-Bretagne, western France, and is one of the oldest occurrences of the genus reported to date?
+    Rationale: It is likely that there is only one specimen that fits the description. Therefore B. is chosen
+    Answer: B. Single
+    
+    Example 3:
+    Question: What person graduated with a Doctorate in Biblical Theology from Albert-Ludwigs-Universität Freiburg in Germany after studying there from 1999 until 2005?
+    Rationale: Although the description is detailed, there can still be multiple people that fits this description
+    Answer: A. Multiple
+    
+    Example 4:
+    Question: What book was published by Dayna Bowen Matthew in 2015 that examined how implicit bias affects health outcomes?
+    Rationale: It is likely that there is only one book that fits this description
+    Answer: B. Single""",
+
+    "user": """Now let's assess if the user provided question has single or multiple answers. Remember that for this input, you do not need to 
+    provide rationale
+    
+    Question: [ADD_QUESTION_HERE]
+    Answer: """
 }

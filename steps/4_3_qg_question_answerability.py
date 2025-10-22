@@ -3,7 +3,6 @@ import numpy as np
 from collections import defaultdict
 from omegaconf import DictConfig
 from utils.openai_utils import init_client, OPENAI_CLIENT
-from utils.prompts import QUESTION_GENERATION_PROMPT_FROM_KG
 from utils.kg_based_qg import KGBasedQGChecker
 from utils.generic import read_json_or_jsonl, write_to_json, maybe_create_folder
 from tqdm import tqdm
@@ -15,7 +14,7 @@ def main(cfg: DictConfig)-> None:
     fact_groundedness_folder = cfg.step3.output_folder
     extracted_kg_folder = cfg.step4.output_folder + "_extracted_kg"
     generated_question_folder = cfg.step4.output_folder + "_generated_question"
-    output_folder = cfg.step4.output_folder
+    output_folder = cfg.step4.output_folder + "_question_answerability"
 
     local_llm_port = cfg.general.local_llm_port
     local_llm_model = cfg.general.local_llm_model
@@ -93,10 +92,17 @@ def main(cfg: DictConfig)-> None:
         filtered_fact_question_mapper = {}
         for fact_id, keypoints in keypoints_mapper.items():
             if fact_id not in fact_question_mapper: continue
-            question = fact_question_mapper.get(fact_id)["question"]
-            answerability = kg_based_qg_checker.check_question_answerability(question)
-            if answerability:
-                filtered_fact_question_mapper[fact_id] = fact_question_mapper.get(fact_id)
+
+            all_questions = fact_question_mapper.get(fact_id)
+            all_questions_filtered = []
+            for line in all_questions:
+                question = line["question"]
+                answerability = kg_based_qg_checker.check_question_answerability(question)
+                if answerability:
+                    all_questions_filtered.append(line)
+
+            if all_questions_filtered:
+                filtered_fact_question_mapper[fact_id] = all_questions_filtered
 
         if filtered_fact_question_mapper:
             to_save = {

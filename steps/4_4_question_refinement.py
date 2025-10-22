@@ -3,20 +3,18 @@ import numpy as np
 from collections import defaultdict
 from omegaconf import DictConfig
 from utils.openai_utils import init_client, OPENAI_CLIENT
-from utils.prompts import QUESTION_GENERATION_PROMPT_FROM_KG_SINGLE_STEP
-from utils.kg_based_qg import KGBasedQGUtils, KGBasedQGChecker
+from utils.kg_based_qg import KGBasedQGUtils
 from utils.generic import read_json_or_jsonl, write_to_json, maybe_create_folder
+from utils.prompts import QUESTION_REFINEMENT_PROMPT
 from tqdm import tqdm
 from typing import List, Dict
-
-
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig)-> None:
     decontextualized_facts_folder = cfg.step2_2.output_folder
     fact_groundedness_folder = cfg.step3.output_folder
-    extracted_kg_folder = cfg.step4.output_folder + "_extracted_kg"
-    output_folder = cfg.step4.output_folder + "_generated_question"
+    question_answerability_folder = cfg.step4.output_folder + "_question_answerability"
+    output_folder = cfg.step4.output_folder
 
     local_llm_port = cfg.general.local_llm_port
     local_llm_model = cfg.general.local_llm_model
@@ -34,37 +32,33 @@ def main(cfg: DictConfig)-> None:
     
     kg_based_qg_utils = KGBasedQGUtils(
         openai_client = OPENAI_CLIENT,
-        question_generation_prompt = QUESTION_GENERATION_PROMPT_FROM_KG_SINGLE_STEP, 
-        graph_builder_prompt = None
+        question_refinement_prompt = QUESTION_REFINEMENT_PROMPT
     )
-    kg_based_qg_checker = KGBasedQGChecker(
-        minicheck_model_name = "flan-t5-large",
-        minicheck_cache_dir = '/scratch/lamdo/minicheck_ckpts/'
-    )
+
     
     files = os.listdir(decontextualized_facts_folder)
     files = [file for file in files if file.endswith('.json')]
     decontextualized_facts_files_full_path = [os.path.join(decontextualized_facts_folder, file) for file in files]
     fact_groundedness_files_full_path = [os.path.join(fact_groundedness_folder, file) for file in files]
-    extracted_kg_files_full_path = [os.path.join(extracted_kg_folder, file) for file in files]
+    question_answerability_files_full_path = [os.path.join(question_answerability_folder, file) for file in files]
     output_files_full_path = [os.path.join(output_folder, file) for file in files]
 
 
-    for dff_file_path, fgf_file_path, extracted_kg_path, output_file_path in tqdm(zip(decontextualized_facts_files_full_path, 
-                                                                                    fact_groundedness_files_full_path, 
-                                                                                    extracted_kg_files_full_path,
-                                                                                    output_files_full_path), total = len(files)):
+    for dff_file_path, fgf_file_path, qa_path, output_file_path in tqdm(zip(decontextualized_facts_files_full_path, 
+                                                                                                        fact_groundedness_files_full_path, 
+                                                                                                        question_answerability_files_full_path,
+                                                                                                        output_files_full_path), total = len(files)):
+
         try:
             dff_data = read_json_or_jsonl(dff_file_path)
             fgf_data = read_json_or_jsonl(fgf_file_path)
-            ekg_data = read_json_or_jsonl(extracted_kg_path)
+            qa_data = read_json_or_jsonl(qa_path)
         except FileNotFoundError:
             continue
 
-
         keypoints_mapper = dff_data.get("keypoints_mapper")
         groundedness_check = fgf_data.get("groundedness_check")
-        fact_kg_mapper = ekg_data.get("fact_kg_mapper")
+        fact_question_mapper = qa_data.get("fact_question_mapper")
 
         if not keypoints_mapper or not groundedness_check: continue
 
@@ -76,7 +70,7 @@ def main(cfg: DictConfig)-> None:
                 good_keypoints.add(f"{k[0]}--__--{k[-1]}")
 
         keypoints_mapper = {int(k): v for k,v in keypoints_mapper.items()}
-        fact_kg_mapper = {int(k): v for k,v in fact_kg_mapper.items()}
+        fact_question_mapper = {int(k): v for k,v in fact_question_mapper.items()}
         keypoints_mapper_filtered = {}
 
         for fact_id, keypoints in keypoints_mapper.items():
@@ -89,47 +83,31 @@ def main(cfg: DictConfig)-> None:
         
         keypoints_mapper = keypoints_mapper_filtered
 
-        fact_question_mapper = {}
+        refined_fact_question_mapper = {}
         for fact_id, keypoints in keypoints_mapper.items():
-            graph_data = fact_kg_mapper.get(fact_id)
-            if not graph_data: continue
+            if fact_id not in fact_question_mapper: continue
 
-            this_fact_questions = []
-            
-            traversal_order = range(len(graph_data))#kg_based_qg_utils._get_traversal_order(graph_data)
-            all_masked_knowledge_graphs = kg_based_qg_utils._knowledge_graph_masking(
-                knowledge_graph = graph_data,
-                traversal_order = traversal_order,
-                max_nodes_to_mask = 3
-            )
+            all_questions = fact_question_mapper.get(fact_id)
+            all_questions_refined = []
+            for line in all_questions:
+                question = line["question"]
 
-            for line in all_masked_knowledge_graphs:
-                masked_kg = line["masked_kg"]
-                num_hops = line["num_hops"]
-                questions = kg_based_qg_utils.generate_question_from_masked_kg_step_by_step(masked_kg)
+                refined_question = kg_based_qg_utils.question_refinement(question, keypoints)
+                to_append = dict(line)
+                to_append["question"] = refined_question
 
-                question_progression_check = kg_based_qg_checker.check_correctness_of_question_progression(
-                    generated_questions = questions, masked_knowledge_graph = masked_kg)
-                if question_progression_check:
-                    this_fact_questions.append(
-                        {
-                            "question": questions[-1],
-                            "num_hops": num_hops
-                        }
-                    )
+                all_questions_refined.append(to_append)
 
+            refined_fact_question_mapper[fact_id] = all_questions_refined
 
-            # if good_question:
-            fact_question_mapper[fact_id] = this_fact_questions
-
-        if fact_question_mapper:
+        if refined_fact_question_mapper:
             to_save = {
                 "title": dff_data.get("title"),
                 "wiki_url": dff_data.get("wiki_url"),
                 "topics": dff_data.get("topics"),
                 "create_timestamp": dff_data.get("create_timestamp"),
                 "timestamp": dff_data.get("timestamp"),
-                "fact_question_mapper": fact_question_mapper
+                "fact_question_mapper": refined_fact_question_mapper
             }
 
             write_to_json(data = to_save, filename = output_file_path)

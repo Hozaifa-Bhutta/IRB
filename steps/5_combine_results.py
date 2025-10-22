@@ -99,19 +99,12 @@ def main(cfg: DictConfig):
 
         if any([item is None for item in [raw_facts, url_content_mapper, keypoints_mapper, fact_question_mapper]]): continue
 
+        keypoints_mapper = {int(k): v for k,v in keypoints_mapper.items()}
+        fact_question_mapper = {int(k): v for k,v in fact_question_mapper.items()}
+
         fact_ids_to_include = set(fact_question_mapper.keys()).intersection(set(keypoints_mapper.keys()))
         fact_ids_to_include = set([int(fact_id) for fact_id in fact_ids_to_include])
 
-        # queries
-        query_id_2_num_hops = {}
-        for fact_id, query in fact_question_mapper.items():
-            fact_id = int(fact_id)
-            if fact_id not in fact_ids_to_include: continue
-            queries.append({"_id": f"{wiki_title}--{fact_id}", "text": query["question"]})
-            query_id_2_num_hops[f"{wiki_title}--{fact_id}"] = query["num_hops"]
-
-
-        # answer
         good_keypoints = {}
         for fact_url_kp_id, check_label in groundedness_check.items():
             if not check_label: continue
@@ -122,13 +115,19 @@ def main(cfg: DictConfig):
             if fact_id not in good_keypoints: good_keypoints[fact_id] = set()
             good_keypoints[fact_id].add(kp_id)
 
-        for fact_id, keypoints in keypoints_mapper.items():
-            fact_id = int(fact_id)
-            query_id = f"{wiki_title}--{fact_id}"
+        # queries and answers
+        for fact_id in keypoints_mapper:
+            if int(fact_id) not in fact_ids_to_include: continue
+            keypoints = keypoints_mapper[fact_id]
+            fact_queries = fact_question_mapper[fact_id]
 
-            if fact_id not in fact_ids_to_include: continue
+            for line in fact_queries:
+                query_text = line["question"]
+                num_hops = line["num_hops"]
+                query_id = f"{wiki_title}--{fact_id}--{num_hops}"
+                queries.append({"_id": query_id, "text": query_text})
+                answers.append({"_id": query_id, "text": [kp for kp_index, kp in enumerate(keypoints) if kp_index in good_keypoints[fact_id]]})
 
-            answers.append({"_id": query_id, "text": [kp for kp_index, kp in enumerate(keypoints) if kp_index in good_keypoints[fact_id]]})
 
         # filter queries and answers based on if the answer contain any keypoints (if not then remove the id)
         good_qids = set([])
@@ -183,7 +182,7 @@ def main(cfg: DictConfig):
         for i in range(len(queries)):
             query_id = queries[i]["_id"]
             num_keypoints = len(query_id_2_keypoints.get(query_id, {}))
-            num_hops = query_id_2_num_hops[query_id]
+            num_hops = query_id.split("--")[-1]
             evidence_langs = []
             evidence_published_dates = []
             evidence_content_lengths = []
