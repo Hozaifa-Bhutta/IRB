@@ -5,10 +5,21 @@ from collections import Counter
 from typing import List, Dict, Tuple, Set, Union, Optional
 from sentence_transformers import SentenceTransformer
 from utils.prompts import QUESTION_ANSWERABILITY_CHECK_PROMPT
+from pydantic import BaseModel
 
 
 ENGLISH_STOPWORDS = set(nltk.corpus.stopwords.words('english'))
 PORTER_STEMMER = nltk.stem.PorterStemmer()
+
+class RelationFormat(BaseModel):
+    head: str
+    head_type: str
+    relation: str
+    tail: str
+    tail_type: str
+
+class KnowledgeGraphFormat(BaseModel):
+    relations: list[RelationFormat]
 
 
 
@@ -34,7 +45,7 @@ class KGBasedQGUtils:
                 heads.add(head)
         return graph, heads
     
-    def _get_bad_nodes(self, all_nodes: List[str]):
+    def _get_bad_nodes(self, all_nodes: List[str], keypoints: Optional[List[str]] = None):
         overlapping_nodes = set()
         for node1 in all_nodes:
             for node2 in all_nodes:
@@ -46,24 +57,13 @@ class KGBasedQGUtils:
         single_word_nodes = {node for node in all_nodes if len(node.split()) == 1}
         bad_nodes = overlapping_nodes | non_capitalized_nodes | single_word_nodes
 
+        if keypoints:
+            keypoints_str = "\n".join(keypoints)
+            nodes_not_found_in_keypoints = {node for node in all_nodes if node not in keypoints_str}
+            bad_nodes = bad_nodes | nodes_not_found_in_keypoints
+
         return bad_nodes
 
-    def _find_starting_node(self, graph: nx.DiGraph, heads: Set[str]) -> Optional[str]:
-        degrees = graph.degree
-        all_nodes = list(graph.nodes())
-
-        bad_nodes = self._get_bad_nodes(all_nodes)
-
-        # Candidates are the original head nodes, excluding the filtered sets.
-        candidates = heads - bad_nodes
-        
-        if not candidates:
-            return None
-        
-        # Find the candidate with the highest degree. The key function looks up the
-        # degree of each candidate node in the `degrees` view object.
-        highest_degree_node = max(candidates, key=lambda node: degrees[node])
-        return highest_degree_node
 
     def _get_semantic_based_traversal_order(self, knowledge_graph: List[Dict[str, str]], keypoints: List[str]) -> List[int]:
         if not knowledge_graph:
@@ -84,84 +84,19 @@ class KGBasedQGUtils:
         traversal_order = np.argsort(-1 * keypoints_relations_scores).tolist()
 
         return traversal_order
-
-
-
-        
-
-    def _get_traversal_order(self, knowledge_graph: List[Dict[str, str]]) -> List[int]:
-        if not knowledge_graph:
-            return []
-
-        graph, heads = self._convert_kg_to_nx_graph(knowledge_graph)
-        start_node = self._find_starting_node(graph, heads)
-
-        if start_node is None:
-            return []
-
-        # Pre-calculate all-pairs shortest path lengths for efficient lookups.
-        distances = {source: targets for source, targets in nx.all_pairs_shortest_path_length(graph)}
-
-        # Find the first edge that originates from our chosen start_node.
-        try:
-            start_edge_index = next(
-                i for i, edge in enumerate(knowledge_graph) if edge.get("head") == start_node
-            )
-        except StopIteration:
-            # Fallback for rare cases where the start_node has no outgoing edges.
-            return []
-
-        ranked_order = []
-        unvisited_indices = set(range(len(knowledge_graph)))
-        
-        # Initialize the traversal with the starting edge.
-        current_edge_index = start_edge_index
-        ranked_order.append(current_edge_index)
-        unvisited_indices.remove(current_edge_index)
-
-        # Iteratively find the next closest edge until all have been visited.
-        while unvisited_indices:
-            current_tail = knowledge_graph[current_edge_index]['tail']
-            current_head = knowledge_graph[current_edge_index]['head']
-            
-            min_dist = float('inf')
-            next_edge_index = -1
-
-            # Find the unvisited edge whose head is closest to the current edge's tail.
-            for candidate_index in unvisited_indices:
-                candidate_head = knowledge_graph[candidate_index]['head']
-                candidate_tail = knowledge_graph[candidate_index]["tail"]
-                
-                # Look up the path distance; default to infinity if no path exists.
-                dist = min(distances.get(current_tail, {}).get(candidate_head, float('inf')),
-                           distances.get(current_head, {}).get(candidate_head, float('inf')),
-                           distances.get(current_tail, {}).get(candidate_tail, float('inf')),
-                           distances.get(current_head, {}).get(candidate_tail, float('inf')),)
-
-                if dist < min_dist:
-                    min_dist = dist
-                    next_edge_index = candidate_index
-            
-            # If the remaining edges are in a disconnected component of the graph.
-            if next_edge_index == -1:
-                # Fallback: simply pick an arbitrary unvisited edge to continue.
-                next_edge_index = unvisited_indices.pop()
-            else:
-                unvisited_indices.remove(next_edge_index)
-            
-            ranked_order.append(next_edge_index)
-            current_edge_index = next_edge_index
-
-        return ranked_order
     
 
     def _knowledge_graph_masking(self, 
                                  knowledge_graph: List[Dict[str, str]], 
                                  traversal_order: List[int], 
-                                 max_nodes_to_mask: int):
+                                 max_nodes_to_mask: int,
+                                 keypoints: Optional[List[str]] = None):
         graph, heads = self._convert_kg_to_nx_graph(knowledge_graph)
 
-        bad_nodes = self._get_bad_nodes(list(graph.nodes()))
+        bad_nodes = self._get_bad_nodes(list(graph.nodes()), keypoints)
+
+        if keypoints: keypoints_str = "\n".join(keypoints)
+        else: keypoints_str = ""
 
         first_edge = knowledge_graph[traversal_order[0]]
 
@@ -201,7 +136,11 @@ class KGBasedQGUtils:
                     "tail_type": relation["tail_type"]
                 })
 
-            res.append({"masked_kg": masked_kg, "num_hops": num_hops})
+            masked_keypoints_str = keypoints_str[:]
+            for ent_name, ent_type in masked_entities_info[:j + 1]:
+                masked_keypoints_str = masked_keypoints_str.replace(ent_name, f"<Unknown #{masked_entities_names.index(ent_name) + 1} ({ent_type})>")
+
+            res.append({"masked_kg": masked_kg, "num_hops": num_hops, "masked_keypoints_str": masked_keypoints_str})
 
         return res
     

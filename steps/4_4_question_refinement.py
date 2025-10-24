@@ -91,8 +91,9 @@ def main(cfg: DictConfig)-> None:
             all_questions_refined = []
             for line in all_questions:
                 question = line["question"]
+                masked_keypoints_str = line["masked_keypoints_str"]
 
-                refined_question = kg_based_qg_utils.question_refinement(question, keypoints)
+                refined_question = kg_based_qg_utils.question_refinement(question, [masked_keypoints_str])
                 to_append = dict(line)
                 to_append["question"] = refined_question
 

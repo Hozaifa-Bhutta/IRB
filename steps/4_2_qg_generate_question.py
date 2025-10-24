@@ -100,12 +100,15 @@ def main(cfg: DictConfig)-> None:
             all_masked_knowledge_graphs = kg_based_qg_utils._knowledge_graph_masking(
                 knowledge_graph = graph_data,
                 traversal_order = traversal_order,
-                max_nodes_to_mask = 3
+                max_nodes_to_mask = 3,
+                keypoints = keypoints
             )
 
             for line in all_masked_knowledge_graphs:
                 masked_kg = line["masked_kg"]
                 num_hops = line["num_hops"]
+                masked_keypoints_str = line["masked_keypoints_str"]
+
                 questions = kg_based_qg_utils.generate_question_from_masked_kg_step_by_step(masked_kg)
 
                 question_progression_check = kg_based_qg_checker.check_correctness_of_question_progression(
@@ -114,7 +117,9 @@ def main(cfg: DictConfig)-> None:
                     this_fact_questions.append(
                         {
                             "question": questions[-1],
-                            "num_hops": num_hops
+                            "num_hops": num_hops,
+                            "masked_kg": masked_kg,
+                            "masked_keypoints_str": masked_keypoints_str
                         }
                     )
 
