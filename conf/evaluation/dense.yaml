@@ -34,3 +34,23 @@ qa:
   eval_local_llm_port:  null #6868
   eval_local_llm_model: null #"Qwen/Qwen3-8B"
   eval_openai_model_name: "gpt-4o-mini-2024-07-18"
+
+
+view:
+  configurations: 
+    # - {keypoints: single}
+    # - {keypoints: multi}
+    # - {language: english_only}
+    # - {language: multilingual}
+    # - {freshness: 2023}
+    # - {freshness: 2024}
+    # - {freshness: 2025}
+    # - {topic: Culture}
+    # - {topic: Geography}
+    # - {topic: History_and_Society}
+    # - {topic: STEM}
+    # - {freshness: 2025, topic: Culture}
+    # - {freshness: 2025, topic: Geography}
+    # - {freshness: 2025, topic: History_and_Society}
+    # - {freshness: 2025, topic: STEM}
+    # - {topic: Culture, language: multilingual}

@@ -16,7 +16,7 @@ from utils.generic import read_json_or_jsonl, write_to_json
 from utils.prompts import GROUNDEDNESS_CHECK_PROMPT
 from utils.openai_utils import init_client, OPENAI_CLIENT
 from utils.token_counting import init_enc as init_tiktoken_enc, TIKTOKEN_ENC
-# from minicheck.minicheck import MiniCheck
+from minicheck.minicheck import MiniCheck
 from tqdm import tqdm
 from typing import List, Dict, Union, Optional
 
