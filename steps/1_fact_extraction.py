@@ -112,7 +112,7 @@ def extract_citation_info(citation: str) -> tuple[str, str, str]:
         return volume, reporter, first_page
     else:
         return "", "", ""
-def process_citations_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str], dict[str, str]]:
+def process_citations_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str], dict[str, str], dict[str, str]]:
     """
     Performs a comprehensive cleaning of raw source text by removing most tags replacing <em> tags with placeholders
     Parameters
@@ -126,6 +126,7 @@ def process_citations_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str
         - The processed text with citation tags replaced by placeholders.
         - A dictionary mapping placeholders to their original citation content (e.g., [REF-0] -> "<em>Cook v. Boorstin,</em> 763 F.2d 1462").
         - A dictionary mapping citation tag names to their triplet (e.g., "Cook v. Boorstin" -> volume, reporter, first page).
+        - A dictionary mapping placeholders to their case name (e.g., [REF-0] -> "Cook v. Boorstin,")
     """
     # citation is defined as <em>...</em> followed by a number (volume num) a short string (reporter) and a number (first page)
     # example:  "<em>\n   Cook v. Boorstin,\n  </em>\n  763 F.2d 1462 "
@@ -136,10 +137,10 @@ def process_citations_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str
 
     # regex matches <em>...</em> followed by volume, reporter, first page
     citation_regex = re.compile(
-    r"<em>\s*([^\n<>]+?)\s*</em>\s*"  # case name inside <em>, no tags or newlines inside
-    r"(\d+)\s*"                        # volume number
-    r"([A-Za-z0-9\.]+)\s*"             # reporter (single word, no spaces)
-    r"(\d+)"                            # first page number
+    r"<em>\s*([^\n<>]+?)\s*</em>\s*"  # case name inside <em>, no tags or newlines inside (GROUP 1)
+    r"(\d+)\s*"                        # volume number (GROUP 2)
+    r"([A-Za-z0-9\.]+)\s*"             # reporter (single word, no spaces) (GROUP 3)
+    r"(\d+)"                            # first page number (GROUP 4)
     , re.DOTALL
     )
 
@@ -147,17 +148,25 @@ def process_citations_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str
 
     placeholder_mapper = {}
     citation_triplet_mapper = {}
+    placeholder_to_case_name = {} # <-- NEW: Store case names
 
     # counter for placeholder index
     placeholder_index = 0
 
     def replace_match(m):
         nonlocal placeholder_index
-        citation = m.group(0)
+        citation = m.group(0) # The full match
+        case_name = m.group(1).strip() # <-- NEW: Get case name from group 1
+        
+        # Original logic
         volume, reporter, first_page = extract_citation_info(citation)
         placeholder = f"[REF-{placeholder_index}]"
         placeholder_mapper[placeholder] = citation
         citation_triplet_mapper[citation] = (volume, reporter, first_page)
+        
+        # <-- NEW: Store the mapping from placeholder to case name
+        placeholder_to_case_name[placeholder] = case_name
+        
         placeholder_index += 1
         return placeholder
 
@@ -175,7 +184,7 @@ def process_citations_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str
     # collapse multiple spaces/newlines into one space
     processed_text = re.sub(r"\s+", " ", processed_text).strip()
 
-    return processed_text, placeholder_mapper, citation_triplet_mapper
+    return processed_text, placeholder_mapper, citation_triplet_mapper, placeholder_to_case_name
 
 
 def find_pos(raw_text: str) -> list[int]:
@@ -278,7 +287,8 @@ def get_sentence_info(
     sentence_with_placeholders: str, 
     pos: list[int], 
     placeholder_mapper: dict[str, str], 
-    citation_triplet_mapper: dict[str, tuple[str, str, str]]
+    citation_triplet_mapper: dict[str, tuple[str, str, str]],
+    placeholder_to_case_name: dict[str, str] # <-- NEW: Pass in the case name mapper
 ) -> dict[str, Any]:
     """
     Extracts clean text, citation triplets, and positions from a sentence.
@@ -294,18 +304,27 @@ def get_sentence_info(
         Maps placeholders [REF-X] to full <em> citation strings.
     citation_triplet_mapper : dict
         Maps full <em> citation strings to (vol, rep, page) triplets.
+    placeholder_to_case_name : dict
+        Maps placeholders [REF-X] to the case name string (e.g., "Cook v. Boorstin,").
 
     Returns
     -------
     dict
         A dictionary containing:
-        - "text": The cleaned sentence text (no placeholders).
+        - "text": The cleaned sentence text (with placeholders replaced by case names).
         - "citations": A list of (vol, rep, page) triplets.
         - "pos": The filtered list of positions (matching valid citations).
     """
     
     # 1. Get the final clean text
-    cleaned_text = re.sub(r"\[REF-\d+\]", "", sentence_with_placeholders)
+    # <-- MODIFIED: Use a lambda function with re.sub to replace each placeholder
+    # with its corresponding case name. Use .get() for safety, defaulting to ""
+    # if a placeholder is somehow not in the map (shouldn't happen).
+    def replace_func(match):
+        placeholder = match.group(0)
+        return placeholder_to_case_name.get(placeholder, "")
+
+    cleaned_text = re.sub(r"\[REF-\d+\]", replace_func, sentence_with_placeholders)
     cleaned_text = re.sub(r"\s+", " ", cleaned_text).strip()
     
     # 2. Find all placeholders
@@ -315,6 +334,7 @@ def get_sentence_info(
     valid_pos = []
     
     # 3. Iterate over placeholders and positions *simultaneously*
+    # (This logic remains unchanged as it correctly builds the raw_facts)
     for placeholder, position in zip(placeholders, pos):
         if placeholder in placeholder_mapper:
             citation_key = placeholder_mapper[placeholder]
@@ -326,7 +346,7 @@ def get_sentence_info(
                     valid_pos.append(position)
 
     return {
-        "text": cleaned_text,
+        "text": cleaned_text, # This text now contains case names
         "citations": valid_triplets, # This will be used for raw_facts
         "pos": valid_pos
     }
@@ -343,7 +363,8 @@ def main(cfg:DictConfig) -> None:
         page_data = read_json_or_jsonl(input_file_path)
 
         raw_text = page_data.get("source")
-        processed_text, placeholder_mapper, tag_name_2_triplet = process_citations_and_replace_ref(raw_text)
+        # <-- MODIFIED: Unpack the new placeholder_to_case_name dictionary
+        processed_text, placeholder_mapper, tag_name_2_triplet, placeholder_to_case_name = process_citations_and_replace_ref(raw_text)
 
 
         # placeholder_mapper is of the format {"[REF-I]": "<em>...</em> 123 ABC 456"}
@@ -366,12 +387,14 @@ def main(cfg:DictConfig) -> None:
                 sent, 
                 positions[i], 
                 placeholder_mapper, 
-                tag_name_2_triplet
+                tag_name_2_triplet,
+                placeholder_to_case_name # <-- MODIFIED: Pass the new dict here
             ) 
             for i, sent in enumerate(processed_text_sentences)
         ]
 
        # Extracts the sentences into a list
+       # This list will now contain sentences with case names instead of empty strings
         extracted_sentences = [item["text"] for item in wiki_info_sentences]
 
         # Sentence filtering based on length
@@ -380,13 +403,13 @@ def main(cfg:DictConfig) -> None:
             if i not in good_sentence_indices:
                 marked_sentences[i] = ""
 
-        for sentence in marked_sentences:
-            print("Sentence:", sentence)
+
 
         raw_facts = []
 
         # For each sentence, clean up the reference urls and remove fact if no urls
         # also adjust the positions accordingly
+        # (This logic is unchanged and correct)
         for i in range(0, len(wiki_info_sentences)):
             
             # Skip sentences that were filtered out
@@ -412,8 +435,7 @@ def main(cfg:DictConfig) -> None:
                 "title": page_data.get("title"),
                 "create_timestamp": page_data.get("create_timestamp"),
                 # Fixed NameError: wiki_page_data -> page_data
-                "timestamp": page_data.get("timestamp"), 
-                "extracted_sentences": extracted_sentences,
+                "extracted_sentences": extracted_sentences, # This list is now populated as requested
                 "raw_facts": raw_facts
             }
         else: to_save = {}
