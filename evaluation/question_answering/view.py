@@ -2,7 +2,7 @@ import json, hydra, os, itertools
 import numpy as np
 from omegaconf import DictConfig
 from utils.allowed_datasets import ALLOWED_DATASETS
-from typing import List
+from typing import List, Dict
 
 
 def data_relative_path(dataset_name, dataset_date = None, subset = None):
@@ -31,6 +31,61 @@ def get_average_performance(eval_res_list: List[List[float]]):
     return formatted_output
 
 
+def filter_by_num_keypoints(att: Dict, choice: str = "single"):
+    assert choice in ["single", "multi"]
+    nkp = "single" if att.get("num_keypoints") == 1 else "multi"
+
+    return nkp == choice
+
+
+def filter_by_language(att: Dict, choice: str = "english_only"):
+    assert choice in ["english_only", "multilingual"]
+
+    langs = (att.get("evidence_attr").get("langs"))
+    langs = list(itertools.chain.from_iterable(langs))
+
+    _type = None
+    if any([l != "en" for l in langs]):
+        _type = "multilingual"
+    else: _type = "english_only"
+
+    return _type == choice
+
+
+def filter_by_freshness(att: Dict, choice: int = 2024):
+    create_timestamp = att.get("wiki_create_timestamp")
+    published_dates = att.get("evidence_attr", {}).get("published_dates")
+
+    create_timestamp = int(create_timestamp[:4])
+    published_dates = [int(item[:4]) for item in list(itertools.chain.from_iterable(published_dates))]
+
+    all_years = published_dates + [create_timestamp]
+
+    min_year = min(all_years)
+
+    return min_year == choice
+
+
+def filter_by_topic(att: Dict, choice: str = "History_and_Society"):
+    topics = att.get("topics")
+
+    return any([choice in top for top in topics])
+
+
+def general_filter_func(att: Dict, choice_dict: Dict[str, str]):
+    # the keys are 'language', 'freshness', 'topic', 'keypoints'
+
+    filter_mapper = {
+        "language": filter_by_language,
+        "freshness": filter_by_freshness,
+        "topic": filter_by_topic,
+        "keypoints": filter_by_num_keypoints
+    }
+
+    return all([filter_mapper[k](att, v) for k, v in choice_dict.items()])
+
+
+
 @hydra.main(version_base=None, config_path="../../conf/evaluation", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig):
     retrieval_model = cfg.general.retrieval_model
@@ -42,6 +97,8 @@ def main(cfg: DictConfig):
     outfolder = cfg.qa.outfolder
     use_retrieval_contexts = cfg.qa.use_retrieval_contexts
     use_chunk = cfg.qa.use_chunk
+
+    configurations = cfg.view.configurations
 
     # open attributes, queries, and evaluation_metadata file
 
@@ -76,34 +133,14 @@ def main(cfg: DictConfig):
             corr, incorr, not_att = [float(item) for item in line.split(",")]
             evaluation_metadata.append([corr, incorr, not_att])
 
-    
 
-    # next, view evaluation results based on different attributes
-    # performance by number of keypoints
-    _subset = {}
-    for att, eval_res in zip(attributes, evaluation_metadata):
-        if att.get("num_keypoints") not in _subset: _subset[att.get("num_keypoints")] = []
-        _subset[att.get("num_keypoints")].append(eval_res)
+    for config_dict in configurations:
+        temp = []
+        for att, eval_res in zip(attributes, evaluation_metadata):
+            if general_filter_func(att, config_dict): temp.append(eval_res)
 
-    for nkp in sorted(_subset.keys()):
-        eval_res_list = _subset[nkp]
-        print(f"Num keypoints: {nkp}. Performance:", get_average_performance(eval_res_list))
-
-    # performance on multi-lingual vs only english
-    _subset = {"multilingual": [], "english_only": []}
-    for att, eval_res in zip(attributes, evaluation_metadata):
-        langs = (att.get("evidence_attr").get("langs"))
-        langs = list(itertools.chain.from_iterable(langs))
-
-        if any([l != "en" for l in langs]):
-            _subset["multilingual"].append(eval_res)
-        else:
-            _subset["english_only"].append(eval_res)
-
-    for lang_mode in sorted(_subset.keys()):
-        eval_res_list = _subset[lang_mode]
-        print(f"Language mode: {lang_mode}. Performance:", get_average_performance(eval_res_list))
-
+        formatted_output = get_average_performance(temp)
+        print(config_dict, f"Support: {len(temp)}", formatted_output)
 
 if __name__ == "__main__":
     main()

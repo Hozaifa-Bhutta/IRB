@@ -6,6 +6,7 @@ import pandas as pd
 from datetime import datetime
 from omegaconf import DictConfig
 from tqdm import tqdm
+from typing import List
 from utils.generic import read_json_or_jsonl, write_to_jsonl, write_to_json, maybe_create_folder
 from utils.token_counting import token_count_tiktoken
 
@@ -35,6 +36,14 @@ def sample_qa(queries, answers, num_samples, seed=42):
     return sampled_queries, sampled_answers
 
 
+def wiki_topics_processing(topics: List[str]):
+    # https://www.mediawiki.org/wiki/ORES/Articletopic
+
+    res = set()
+    for top in topics:
+        res.add(top)
+
+    return list(res)
 
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
@@ -45,8 +54,6 @@ def main(cfg: DictConfig):
     fact_groundedness_folder = cfg.step3.output_folder
     question_generation_folder = cfg.step4.output_folder
     output_folder = cfg.step5.output_folder
-
-    utilize_fact_groundedness_check = cfg.general.utilize_fact_groundedness_check
 
     files = os.listdir(extracted_facts_folder)
     files = [file for file in files if file.endswith('.json')]
@@ -81,6 +88,9 @@ def main(cfg: DictConfig):
         fact_question_mapper = qg_data.get("fact_question_mapper")
 
         wiki_title = ef_data.get("title")
+        create_timestamp = ef_data.get("create_timestamp")
+        timestamp = ef_data.get("timestamp")
+        topics = wiki_topics_processing(ef_data.get("topics"))
 
         queries = []
         corpus = []
@@ -89,20 +99,15 @@ def main(cfg: DictConfig):
 
         if any([item is None for item in [raw_facts, url_content_mapper, keypoints_mapper, fact_question_mapper]]): continue
 
+        keypoints_mapper = {int(k): v for k,v in keypoints_mapper.items()}
+        fact_question_mapper = {int(k): v for k,v in fact_question_mapper.items()}
+
         fact_ids_to_include = set(fact_question_mapper.keys()).intersection(set(keypoints_mapper.keys()))
         fact_ids_to_include = set([int(fact_id) for fact_id in fact_ids_to_include])
 
-        # queries
-        for fact_id, query in fact_question_mapper.items():
-            fact_id = int(fact_id)
-            if fact_id not in fact_ids_to_include: continue
-            queries.append({"_id": f"{wiki_title}--{fact_id}", "text": query})
-
-
-        # answer
         good_keypoints = {}
         for fact_url_kp_id, check_label in groundedness_check.items():
-            if utilize_fact_groundedness_check and not check_label: continue
+            if not check_label: continue
             fact_id, url, kp_id = fact_url_kp_id.split("--__--")
             fact_id = int(fact_id)
             kp_id = int(kp_id)
@@ -110,13 +115,19 @@ def main(cfg: DictConfig):
             if fact_id not in good_keypoints: good_keypoints[fact_id] = set()
             good_keypoints[fact_id].add(kp_id)
 
-        for fact_id, keypoints in keypoints_mapper.items():
-            fact_id = int(fact_id)
-            query_id = f"{wiki_title}--{fact_id}"
+        # queries and answers
+        for fact_id in keypoints_mapper:
+            if int(fact_id) not in fact_ids_to_include: continue
+            keypoints = keypoints_mapper[fact_id]
+            fact_queries = fact_question_mapper[fact_id]
 
-            if fact_id not in fact_ids_to_include: continue
+            for line in fact_queries:
+                query_text = line["question"]
+                num_hops = line["num_hops"]
+                query_id = f"{wiki_title}--{fact_id}--{num_hops}"
+                queries.append({"_id": query_id, "text": query_text})
+                answers.append({"_id": query_id, "text": [kp for kp_index, kp in enumerate(keypoints) if kp_index in good_keypoints[fact_id]]})
 
-            answers.append({"_id": query_id, "text": [kp for kp_index, kp in enumerate(keypoints) if kp_index in good_keypoints[fact_id]]})
 
         # filter queries and answers based on if the answer contain any keypoints (if not then remove the id)
         good_qids = set([])
@@ -151,7 +162,7 @@ def main(cfg: DictConfig):
 
             if query_id not in query_id_2_keypoints: query_id_2_keypoints[query_id] = {}
 
-            if (utilize_fact_groundedness_check and check_label) or not utilize_fact_groundedness_check: 
+            if check_label: 
                 url_lang = url_content_mapper.get(url, {}).get("lang")
                 published_date = url_content_mapper.get(url, {}).get("published_date")
                 content = url_content_mapper.get(url).get("url_content")
@@ -171,6 +182,7 @@ def main(cfg: DictConfig):
         for i in range(len(queries)):
             query_id = queries[i]["_id"]
             num_keypoints = len(query_id_2_keypoints.get(query_id, {}))
+            num_hops = query_id.split("--")[-1]
             evidence_langs = []
             evidence_published_dates = []
             evidence_content_lengths = []
@@ -195,6 +207,9 @@ def main(cfg: DictConfig):
             to_append = {
                 "_id": query_id,
                 "num_keypoints": num_keypoints,
+                "num_hops": num_hops,
+                "topics": topics,
+                "wiki_create_timestamp": create_timestamp,
                 "evidence_attr": {
                     "langs": evidence_langs,
                     "published_dates": evidence_published_dates,

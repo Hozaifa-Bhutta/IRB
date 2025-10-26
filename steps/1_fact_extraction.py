@@ -1,14 +1,13 @@
-# script to extract fact sentences from the processed wikidump (output of step 0)
-# the output of this script will be a json file for each wikipedia page with names formatted like "{wiki page title}.json"
+# script to extract fact sentences from the processed opinions (output of step 0)
+# the output of this script will be a json file for each opinion  with names formatted like "{opinion_id}.json"
 # Each file will contain
 # {
 #     "title": "...",
-#     "wiki_url": "...",
 #     "extracted_sentences": ["sent1", "sent2"],
 #     "raw_facts": [
 #         {
 #             "fact": "the sentence id",
-#             "citation_urls": ["url1", "url2"],
+#             "citation_triplet": [(<volume>, <reporter>, <first_page>), (volume2, reporter2, first_page2)],
 #             "pos": [0, 1]
 #         }
 #     ]
@@ -56,68 +55,7 @@ def clean_text_func(text: str) -> str:
     )
 
 
-def is_pdf(url: str) -> bool:
-    """Checks if a URL points to a PDF document.
-    
-    Parameters
-    ----------
-    url : str
-        The URL to be checked.
-        
-    Returns
-    -------
-    bool
-        True if the URL points to a PDF document, False otherwise.
 
-    """
-    if not url: return False
-    if url.endswith(".pdf") or "/pdf/" in url or "/pdfs/" in url: return True
-    return False
-
-
-def slight_text_processing(wiki_raw_text: str) -> str:
-    """Removes period after 'et al.' in the text.
-
-    Parameters
-    ----------
-    wiki_raw_text : str
-        The raw text of the Wikipedia page.
-
-    Returns
-    -------
-    str
-        The processed text with the period removed after all instances of 'et al.'.
-
-    """
-
-    res = wiki_raw_text.replace("et al.", "et al")
-
-    return res
-
-def get_starting_refs(ref_tags: list[str], raw_text: str) -> list[str]:
-    """ Returns a list of consecutive reference tags that appear at the start of raw_text.
-    Parameters
-    ----------
-    ref_tags : list
-        List of reference tags (e.g., ['[REF-0]', '[REF-1]', ...]).
-    raw_text : str
-        The raw sentence from the Wikipedia page.
-    Returns
-    -------
-    list
-        A list of reference tags that appear at the start of the raw_text.
-    """
-
-    current = 0
-    res = []
-    for tag in ref_tags:
-        pos = raw_text.index(str(tag))
-        if 5 > pos - current >= 0: 
-            res.append(tag)
-            current = pos + len(tag)
-        else: break
-
-    return res
 
 def get_all_refs(text: str) -> list[str]:
     """Returns a list of all reference tags in the text.
@@ -153,34 +91,30 @@ def get_info_from_raw_text(raw_text: str) -> str:
 
     return cleaned_text
 
-
-def shift_tags(wiki_info_sentences: list[str]) -> list[str]:
+def extract_citation_info(citation: str) -> tuple[str, str, str]:
     """
-    For each reference that starts the sentence, shift it to the previous sentence
+    Extracts volume number, reporter, and first page from a citation string.
     Parameters
     ----------
-    wiki_info_sentences : list
-        List of sentences from the Wikipedia page.
+    citation : str
+        The citation string containing the legal reference.
     Returns
     -------
-    list
-        The modified list of sentences with starting reference tags shifted to the previous sentence.
+    tuple
+        A tuple containing volume number, reporter, and first page.
     """
-    for i, sent in enumerate(wiki_info_sentences):
-        tags = get_all_refs(sent)
-        starting_tags = get_starting_refs(tags, sent)
-        if starting_tags:
-            wiki_info_sentences[i-1] = wiki_info_sentences[i-1][:-1] + " " + " ".join([str(tag) for tag in starting_tags]) + wiki_info_sentences[i-1][-1]
-            # now we need to remove the tags from the current one
-            for tag in starting_tags:
-                wiki_info_sentences[i] = wiki_info_sentences[i].replace(str(tag), "")
-
-    return wiki_info_sentences
-    
-
-def process_wikilinks_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str], dict[str, str]]:
+    # Regex to match volume number, reporter, and first page
+    match = re.search(r"<em>.*?</em>\s*(\d+)\s+([a-zA-Z0-9\.]+)\s+(\d+)", citation, re.DOTALL)
+    if match:
+        volume = match.group(1)
+        reporter = match.group(2)
+        first_page = match.group(3)
+        return volume, reporter, first_page
+    else:
+        return "", "", ""
+def process_citations_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str], dict[str, str], dict[str, str]]:
     """
-    Performs a comprehensive cleaning of raw MediaWiki text by removing tables and comments, processing headings, handling templates, replacing reference tags with placeholders, and converting wikilinks to plain text.
+    Performs a comprehensive cleaning of raw source text by removing most tags replacing <em> tags with placeholders
     Parameters
     ----------
     raw_text : str
@@ -189,200 +123,69 @@ def process_wikilinks_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str
     -------
     tuple
         A tuple containing:
-        - The processed text with reference tags replaced by placeholders.
-        - A dictionary mapping placeholders to their original reference tags.
-        - A dictionary mapping reference tag names to their associated URLs.
+        - The processed text with citation tags replaced by placeholders.
+        - A dictionary mapping placeholders to their original citation content (e.g., [REF-0] -> "<em>Cook v. Boorstin,</em> 763 F.2d 1462").
+        - A dictionary mapping citation tag names to their triplet (e.g., "Cook v. Boorstin" -> volume, reporter, first page).
+        - A dictionary mapping placeholders to their case name (e.g., [REF-0] -> "Cook v. Boorstin,")
     """
-    wikicode = mwparserfromhell.parse(raw_text)
+    # citation is defined as <em>...</em> followed by a number (volume num) a short string (reporter) and a number (first page)
+    # example:  "<em>\n   Cook v. Boorstin,\n  </em>\n  763 F.2d 1462 "
+    # not a valid example: "<em>\n   Nuesse\n  </em>\n  even addressed the issue of standing."
 
-    # STEP: remove comments
-    for comment in wikicode.filter_comments():
-        try:
-            wikicode.remove(comment)
-        except Exception as e:
-            continue
+   # normalize spaces/newlines inside <em> tags and around citation
+    normalized_text = re.sub(r"\s+", " ", raw_text)
 
-    # STEP: remove tables:
-    for table in wikicode.filter_tags(matches=lambda node: node.tag == "table"):
-        try:
-            wikicode.remove(table)
-        except ValueError: continue
+    # regex matches <em>...</em> followed by volume, reporter, first page
+    citation_regex = re.compile(
+    r"<em>\s*([^\n<>]+?)\s*</em>\s*"  # case name inside <em>, no tags or newlines inside (GROUP 1)
+    r"(\d+)\s*"                        # volume number (GROUP 2)
+    r"([A-Za-z0-9\.]+)\s*"             # reporter (single word, no spaces) (GROUP 3)
+    r"(\d+)"                            # first page number (GROUP 4)
+    , re.DOTALL
+    )
 
-    # STEP: replace ref
-    tag_name_2_url = {}
+
+
     placeholder_mapper = {}
-    for i, node in enumerate(wikicode.filter_tags(matches=lambda node: node.tag == 'ref')):
-        ref_string = str(node)
-        to_replace = f"[REF-{i}]"
-        placeholder_mapper[to_replace] = ref_string
-        wikicode.replace(node, to_replace)
+    citation_triplet_mapper = {}
+    placeholder_to_case_name = {} # <-- NEW: Store case names
 
-        try:
-            tag_name = node.get("name")
-            urls = _extract_urls_from_text(str(node.contents))
-            if urls:
-                tag_name_2_url[str(tag_name)] = urls
-        except ValueError:
-            pass
+    # counter for placeholder index
+    placeholder_index = 0
 
+    def replace_match(m):
+        nonlocal placeholder_index
+        citation = m.group(0) # The full match
+        case_name = m.group(1).strip() # <-- NEW: Get case name from group 1
+        
+        # Original logic
+        volume, reporter, first_page = extract_citation_info(citation)
+        placeholder = f"[REF-{placeholder_index}]"
+        placeholder_mapper[placeholder] = citation
+        citation_triplet_mapper[citation] = (volume, reporter, first_page)
+        
+        # <-- NEW: Store the mapping from placeholder to case name
+        placeholder_to_case_name[placeholder] = case_name
+        
+        placeholder_index += 1
+        return placeholder
 
-    # STEP: processing the templates
-    templates_to_replace = {}
-    for template in wikicode.ifilter_templates():
-        template_name = template.name.lower()
-        display_text = None
+    processed_text = citation_regex.sub(replace_match, normalized_text)
 
-        if not any([desirable in template_name for desirable in ["cite"]]):
-            display_text = ""
+    # now remove all other tags, extra spaces, etc.
+    # code = mwparserfromhell.parse(processed_text)
+    # processed_text = code.strip_code()
+    # processed_text = clean_text_func(str(processed_text))
+    processed_text = get_info_from_raw_text(processed_text)
 
-        if isinstance(display_text, str):
-            try:
-                wikicode.replace(template, display_text)
-            except ValueError:
-                templates_to_replace[str(template)] = display_text
+    # remove all remaining tags but keep placeholders
+    processed_text = re.sub(r"<[^>]+>", "", processed_text)
 
-    # STEP: process the headings
-    path_list = []
-    for heading in wikicode.filter_headings():
-        # Get the heading's level (e.g., ==Title== is level 2)
-        level = heading.level
-        title = heading.title.strip()
+    # collapse multiple spaces/newlines into one space
+    processed_text = re.sub(r"\s+", " ", processed_text).strip()
 
-        path_list = path_list[:level - 2]
+    return processed_text, placeholder_mapper, citation_triplet_mapper, placeholder_to_case_name
 
-        # Now, append the current heading's title
-        path_list.append(title)
-
-        # Print the full, correct path
-        to_replace = "SECTION: " + " > ".join(path_list)
-
-        wikicode.replace(heading, to_replace)
-
-
-
-    # STEP: wiki internal link processing. Basically replace them with ordinary text
-    for node in wikicode.filter_wikilinks(recursive=True):
-        # node.text is the visible part; if not present, use the title
-        try:
-            visible = str(node.text) if node.text else str(node.title)
-            wikicode.replace(node, visible)
-        except ValueError:
-            templates_to_replace[str(node)] = visible
-
-
-    # STEP: remove references section:
-    sections = wikicode.get_sections(matches="References")  # returns list of sections with that heading
-    for section in sections:
-        wikicode.remove(section)
-
-    str_wikicode = str(wikicode)
-    for k, v in templates_to_replace.items():
-        str_wikicode = str_wikicode.replace(k, v)
-
-    return str_wikicode, placeholder_mapper, tag_name_2_url
-
-
-def _extract_urls_from_text(text: str) -> str | None:
-    """
-    The first URL found, with preference given to a 'web.archive.org' URL if multiple are present
-    Parameters
-    ----------
-    text : str
-        The text from which to extract URLs.
-    Returns
-    -------
-    str | None
-        The first URL found in the text, or None if no URLs are found.
-    """
-    if not text: return None
-    url_pattern = r'https?://[\w\-.]+(?:\.[a-z]{2,})+(?:/[\w\-.~:/?#[\]@!$&\'()*+,;=%]*)?'
-    urls = re.findall(url_pattern, text)
-    # If more than one URL and one is from web.archive.org, return that one
-    if len(urls) > 1:
-        for url in urls:
-            if 'web.archive.org' in url:
-                return url
-            
-    return urls[0] if urls else None
-
-
-def extract_urls(tag: mwparserfromhell.nodes.Tag, tag_name_2_url: dict[str, str]) -> str | None:
-    """
-    Extracts URLs from a MediaWiki tag.
-    Parameters
-    ----------
-    tag : mwparserfromhell.nodes.Tag
-        The MediaWiki tag from which to extract URLs.
-    tag_name_2_url : dict[str, str]
-        A dictionary mapping tag names to their associated URLs.
-    Returns
-    -------
-    str | None
-        The extracted URL, or None if no URL is found.
-    """
-    text = str(tag.contents)
-    res = _extract_urls_from_text(text)
-
-    if res: return res
-
-    if tag_name_2_url:
-        try: 
-            tag_name = str(tag.get("name"))
-            return tag_name_2_url.get(tag_name)
-        except ValueError: return None
-    else: return None
-
-
-def wikiinfo(cleaned_text: str, pos: list[int], tag_name_2_url: dict[str, str]) -> dict[str, Any]:
-    """
-    Extracts URLs and their grouped positions from a sentence containing MediaWiki reference tags.
-    Parameters
-    ----------
-    cleaned_text : str
-        The cleaned text from the Wikipedia page.
-    pos : list[int]
-        List of positions for each reference tag in the text.
-    tag_name_2_url : dict[str, str]
-        A dictionary mapping tag names to their associated URLs.
-    Returns
-    -------
-    dict
-        A dictionary containing the cleaned text, list of extracted URLs, and their positions.
-
-    """
-    # gets all urls from text and strips code
-    wikicode = mwparserfromhell.parse(cleaned_text)
-    ref_tags = [tag for tag in wikicode.filter_tags(matches=lambda node: node.tag == 'ref')]
-
-    processed_text = wikicode
-    for tag in wikicode.ifilter_tags(matches='ref'):
-        try:
-            processed_text.replace(tag, "")
-        except ValueError as e: continue
-    processed_text = processed_text.strip_code()
-    
-    external_urls = [extract_urls(tag, tag_name_2_url) for tag in ref_tags] 
-
-    # remove all of the non exisitent urls and adjusts positions accordingly
-    res_urls = []
-    res_pos = []
-    prev = None
-    count = 0
-    for i, url in enumerate(external_urls):
-        if url:
-            res_urls.append(url)
-            if (prev is not None and pos[i] != prev):
-                count += 1
-            res_pos.append(count)
-
-            prev = pos[i]
-
-
-    return {
-        "text": processed_text,
-        "urls": res_urls,
-        "pos": res_pos
-    }
 
 def find_pos(raw_text: str) -> list[int]:
     """
@@ -407,7 +210,6 @@ def find_pos(raw_text: str) -> list[int]:
         prev_pos = pos + len(tag)
 
     return res
-
 
 def fact_marking(raw_text: str) -> str:
     """
@@ -435,7 +237,6 @@ def fact_marking(raw_text: str) -> str:
         prev_pos = pos + len(tag)
 
     return res
-
 
 def put_back_ref(sentence: str, placeholder_mapper: dict[str, str]) -> str:
     """
@@ -482,36 +283,73 @@ def get_file_paths(cfg:DictConfig) -> tuple[list[str], list[str]]:
 
     return input_files_full_path, output_files_full_path
 
-
-def remove_bad_urls(reference_urls: list[str], pos: list[int]) -> tuple[list[str], list[int]]:
+def get_sentence_info(
+    sentence_with_placeholders: str, 
+    pos: list[int], 
+    placeholder_mapper: dict[str, str], 
+    citation_triplet_mapper: dict[str, tuple[str, str, str]],
+    placeholder_to_case_name: dict[str, str] # <-- NEW: Pass in the case name mapper
+) -> dict[str, Any]:
     """
-    Removes URLs that are from bad domains or point to PDF files and adjusts positions accordingly.
+    Extracts clean text, citation triplets, and positions from a sentence.
+    This replaces the old `wikiinfo` function.
+
     Parameters
     ----------
-    reference_urls : list[str]
-        List of reference URLs.
+    sentence_with_placeholders : str
+        The sentence with [REF-...] placeholders.
     pos : list[int]
-        List of positions for each reference URL.
+        List of grouped positions for citations (matches the placeholders).
+    placeholder_mapper : dict
+        Maps placeholders [REF-X] to full <em> citation strings.
+    citation_triplet_mapper : dict
+        Maps full <em> citation strings to (vol, rep, page) triplets.
+    placeholder_to_case_name : dict
+        Maps placeholders [REF-X] to the case name string (e.g., "Cook v. Boorstin,").
+
     Returns
     -------
-    tuple[list[str], list[int]]
-        A tuple containing:
-        - A list of cleaned URLs (excluding those from bad domains).
-        - A list of adjusted positions corresponding to the cleaned URLs.
+    dict
+        A dictionary containing:
+        - "text": The cleaned sentence text (with placeholders replaced by case names).
+        - "citations": A list of (vol, rep, page) triplets.
+        - "pos": The filtered list of positions (matching valid citations).
     """
-    cleaned_urls = []
-    cleaned_pos = []
-    count = 0
-    prev = None
-    for j, item in enumerate(reference_urls):
-        if not any([bad_domain in item for bad_domain in BAD_DOMAINS]) and not is_pdf(item):
-            cleaned_urls.append(item)
-            if (prev is not None and pos[j] != prev):
-                count += 1
-            cleaned_pos.append(count)
-            prev = pos[j]
+    
+    # 1. Get the final clean text
+    # <-- MODIFIED: Use a lambda function with re.sub to replace each placeholder
+    # with its corresponding case name. Use .get() for safety, defaulting to ""
+    # if a placeholder is somehow not in the map (shouldn't happen).
+    def replace_func(match):
+        placeholder = match.group(0)
+        return placeholder_to_case_name.get(placeholder, "")
 
-    return cleaned_urls, cleaned_pos
+    cleaned_text = re.sub(r"\[REF-\d+\]", replace_func, sentence_with_placeholders)
+    cleaned_text = re.sub(r"\s+", " ", cleaned_text).strip()
+    
+    # 2. Find all placeholders
+    placeholders = get_all_refs(sentence_with_placeholders) # e.g., ["[REF-0]", "[REF-1]"]
+
+    valid_triplets = []
+    valid_pos = []
+    
+    # 3. Iterate over placeholders and positions *simultaneously*
+    # (This logic remains unchanged as it correctly builds the raw_facts)
+    for placeholder, position in zip(placeholders, pos):
+        if placeholder in placeholder_mapper:
+            citation_key = placeholder_mapper[placeholder]
+            if citation_key in citation_triplet_mapper:
+                triplet = citation_triplet_mapper[citation_key]
+                # 4. Filter out empty triplets (e.g., from extract_citation_info failing)
+                if all(triplet): # (vol, rep, page) must all be non-empty
+                    valid_triplets.append(triplet)
+                    valid_pos.append(position)
+
+    return {
+        "text": cleaned_text, # This text now contains case names
+        "citations": valid_triplets, # This will be used for raw_facts
+        "pos": valid_pos
+    }
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg:DictConfig) -> None:
@@ -520,39 +358,43 @@ def main(cfg:DictConfig) -> None:
 
     for input_file_path, output_file_path in tqdm(zip(input_files_full_path, output_files_full_path), total = len(input_files_full_path)):
         # Read and process each wiki page
-        wiki_page_data = read_json_or_jsonl(input_file_path)
-        wiki_raw_text = slight_text_processing(wiki_page_data.get("source"))
-        wiki_raw_text, placeholder_mapper, tag_name_2_url = process_wikilinks_and_replace_ref(wiki_raw_text)
-        # placeholder_mapper is of the format {"[REF_I]": url_i}
+        if not input_file_path.endswith('185205.json'):
+            continue
+        page_data = read_json_or_jsonl(input_file_path)
 
+        raw_text = page_data.get("source")
+        # <-- MODIFIED: Unpack the new placeholder_to_case_name dictionary
+        processed_text, placeholder_mapper, tag_name_2_triplet, placeholder_to_case_name = process_citations_and_replace_ref(raw_text)
+
+
+        # placeholder_mapper is of the format {"[REF-I]": "<em>...</em> 123 ABC 456"}
         # Tokenizes the sentences
-        wiki_raw_text_sentences = sent_tokenize(wiki_raw_text)
+        processed_text_sentences = sent_tokenize(processed_text)
         # output is each sentence (with placeholder referenes)
 
-        
-        # Clean sentences, strips code (keeps placeholders)
-        cleaned_sentences = [get_info_from_raw_text(raw) for raw in wiki_raw_text_sentences]
-        cleaned_sentences = [sent for sent in cleaned_sentences if sent]
-        # output is each sentence cleaned up with reference tags
-
-        # shift references back when needed
-        fixed_sentences = shift_tags(cleaned_sentences)
-        fixed_sentences = split_sentence_with_newlines(fixed_sentences)
-
         # get marked facts
-        marked_sentences = [fact_marking(sent) for sent in fixed_sentences]
+        marked_sentences = [fact_marking(sent) for sent in processed_text_sentences]
 
         # gets relative positions of each reference
-        positions = [find_pos(sent) for sent in fixed_sentences]
+        positions = [find_pos(sent) for sent in processed_text_sentences]
 
         # replaces the reg tags with original references
-        replaced_sentences =  [put_back_ref(sent, placeholder_mapper) for sent in fixed_sentences]
+        replaced_sentences =  [put_back_ref(sent, placeholder_mapper) for sent in processed_text_sentences]
 
         # put the cleaned text, url, and positions together
-        wiki_info_sentences = [wikiinfo(sent, positions[i],tag_name_2_url) for i,sent in enumerate(replaced_sentences)]
+        wiki_info_sentences = [
+            get_sentence_info(
+                sent, 
+                positions[i], 
+                placeholder_mapper, 
+                tag_name_2_triplet,
+                placeholder_to_case_name # <-- MODIFIED: Pass the new dict here
+            ) 
+            for i, sent in enumerate(processed_text_sentences)
+        ]
 
-
-        # Extracts the sentences into a list
+       # Extracts the sentences into a list
+       # This list will now contain sentences with case names instead of empty strings
         extracted_sentences = [item["text"] for item in wiki_info_sentences]
 
         # Sentence filtering based on length
@@ -561,36 +403,39 @@ def main(cfg:DictConfig) -> None:
             if i not in good_sentence_indices:
                 marked_sentences[i] = ""
 
+
+
         raw_facts = []
 
         # For each sentence, clean up the reference urls and remove fact if no urls
         # also adjust the positions accordingly
+        # (This logic is unchanged and correct)
         for i in range(0, len(wiki_info_sentences)):
             
-            reference_urls = wiki_info_sentences[i]["urls"]
+            # Skip sentences that were filtered out
+            if i not in good_sentence_indices:
+                continue
+
+            sentence_citations = wiki_info_sentences[i]["citations"]
             pos = wiki_info_sentences[i]["pos"]
 
-
-            # remove urls in bad domain, and adjust positons accordingly
-            cleaned_urls, cleaned_pos = remove_bad_urls(reference_urls, pos)
-
-            if not cleaned_urls: continue
+            # The 'get_sentence_info' function already filtered for valid, non-empty triplets
+            # We just need to check if any remain.
+            if not sentence_citations: 
+                continue
 
             raw_facts.append({
                 "fact": i,
-                "citation_urls": cleaned_urls,
-                "pos": cleaned_pos
+                "citation_triplets": sentence_citations, # Using name from spec, but value is list of triplets
+                "pos": pos
             })
 
         if raw_facts:
             to_save = {
-                "title": wiki_page_data.get("title"),
-                "wiki_url": wiki_page_data.get("wiki_url"),
-                "topics": wiki_page_data.get("topics"),
-                "create_timestamp": wiki_page_data.get("create_timestamp"),
-                "timestamp": wiki_page_data.get("timestamp"),
-                "marked_sentences": marked_sentences,
-                "extracted_sentences": extracted_sentences,
+                "title": page_data.get("title"),
+                "create_timestamp": page_data.get("create_timestamp"),
+                # Fixed NameError: wiki_page_data -> page_data
+                "extracted_sentences": extracted_sentences, # This list is now populated as requested
                 "raw_facts": raw_facts
             }
         else: to_save = {}

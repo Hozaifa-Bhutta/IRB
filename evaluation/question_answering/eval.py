@@ -8,7 +8,8 @@ from utils.qa_eval_metrics import run_bertscore_evaluation, run_minicheck_based_
 from utils.allowed_datasets import ALLOWED_DATASETS
 from tqdm import tqdm
 
-NUM_SAMPLE = 1000
+# maximum number of samples to run evaluation
+NUM_SAMPLE = 1000**2
 
 
 def create_enumerated_list(texts):
