@@ -1,145 +1,177 @@
-# script to process wiki dump zip file. The output would be a folder, with json files, names formatted like "{wiki page title}.json"
-# Each file will contain
-# {
-#     "title": "...", # wiki page title
-#     "wiki_url": "...", # wiki page url
-#     "source": "wikitext...", # raw text of the wiki page
-# }
-import json, gzip, os, hydra, re
+"""
+Script to process the full-opinions.csv.bz2 file.
+The output will be a folder with JSON files, one for each CAP opinion.
+Each file will be named "{opinion_id}.json"
+"""
+import json
+import bz2  # Changed from gzip
+import csv  # Changed from json lines
+import os
+import hydra
+import sys
+import time
 from datetime import datetime
 from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
-from utils.generic import maybe_create_folder, write_to_json
-from typing import Optional, List, Dict, Any
-import requests
+from typing import Optional
 
-def get_articletopics_with_scores(weighted_tags: List[str]) -> List[Dict[str, Any]]:
-    topic_list = []
-    if not weighted_tags: return topic_list
-    
-    topic_pattern = re.compile(r'classification\.prediction\.articletopic/(.*?)\|(\d+)$')
-
-    for tag in weighted_tags:
-        match = topic_pattern.search(tag)
-        if match:
-            topic_path = match.group(1)
-            raw_score = match.group(2)
-            
-            try:
-                score = int(raw_score) / 1000.0
-            except ValueError:
-                continue
-            
-            topic_list.append({
-                'topic': topic_path,
-                'score': score
-            })
-
-    return topic_list
+# --- Set CSV field size limit ---
+# This is critical for reading the 'xml_harvard' field
+try:
+    max_int = sys.maxsize
+    while True:
+        try:
+            csv.field_size_limit(max_int)
+            break
+        except OverflowError:
+            max_int = int(max_int / 10)
+    print(f"Set CSV field size limit to: {max_int}")
+except Exception as e:
+    print(f"Warning: Could not set CSV field size limit. {e}")
+# --------------------------------
 
 
-def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int, offset: int = 0, start_from: Optional[str] = None) -> None:
-    """Reads a gzipped Wikipedia dump file and writes each page to a separate JSON file in the specified output folder.
+def write_to_json(data: dict, filepath: str):
+    """Simple replacement for the custom utils.generic.write_to_json"""
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=4)
+
+
+def process_opinions_and_write(input_file: str, output_folder: str, max_pages: int, offset: int = 0, start_from: Optional[str] = None) -> None:
+    """
+    Reads a bzipped CourtListener opinions CSV file and writes each CAP case
+    to a separate JSON file in the specified output folder.
 
     Parameters
     ----------
         input_file : str
-            Path to the gzipped Wikipedia dump file (ends in .gz).
+            Path to the bzipped opinions CSV file (ends in .csv.bz2).
         output_folder : str
             Path to the folder where the output JSON files will be saved.
         max_pages : int
-            Maximum number of wikipedia pages to process from the dump file.
+            Maximum number of opinion pages to process from the dump file.
         offset : int, optional
             Number of pages to skip from the start of the dump file. Defaults to 0.
         start_from : str, optional
-            Timestamp string in the format "%Y-%m-%d" to filter to only pages created after this date. Defaults to None (all pages are included).
-
+            Timestamp string (e.g., "%Y-%m-%d"). Not currently used for this CSV.
     """
     
-    assert input_file.endswith(".gz")
+    assert input_file.endswith(".csv.bz2"), "Input file must be a .csv.bz2 file"
 
-    # If 'start_from' is not provided, we assume all pages are included. 
-    # So we set it to a date before Wikipedia was created to include all pages.
-    if start_from is not None:
-        start_from_date_obj = datetime.strptime(start_from, "%Y-%m-%d") 
-    else:
-        print("'start_from' not provided, default to 1990-01-01")
-        start_from_date_obj = datetime(1990, 1, 1) 
-
-    
+    # Create the output folder if it doesn't exist
+    os.makedirs(output_folder, exist_ok=True)
 
     length_data = 0 # number of pages written
     count = 0 # number of pages iterated (including those not written due to offset or date filter)
-    # unzip and read line by line
-    with gzip.open(input_file, 'rt', encoding='utf-8') as f:
-        pbar = tqdm(total = max_pages)
-        for idx, line in enumerate(f):
-            if (idx + 1) % 10000 == 0: print(f"{idx + 1} pages iterated")
-            obj = json.loads(line) 
-            # wikipage format: {"title": "...", "source_text": "...", "create_timestamp": "...", "page_id": ...}
-            # some json objects are not wiki pages which is why we check for the "source_text" field
-            if isinstance(obj, dict) and obj.get("source_text") is not None:
+
+    print("Starting file processing...")
+    
+    # Open the bz2-compressed file for reading in text mode ("rt")
+    with bz2.open(input_file, 'rt', encoding='utf-8') as f:
+        
+        # Use the CSV module, specifying the quote char and the escape char
+        csv_reader = csv.reader(f, quotechar='"', escapechar='\\')
+        
+        try:
+            # Read the header row
+            header = next(csv_reader)
+            
+            # Find the indices of the columns we need
+            id_index = header.index("id")
+            xml_harvard_index = header.index("xml_harvard")
+            date_created_index = header.index("date_created")
+
+        except (StopIteration, ValueError) as e:
+            print(f"Error reading header: {e}")
+            return
+
+        pbar = tqdm(total=max_pages, desc="Processing opinions")
+        
+        for idx, row in enumerate(csv_reader):
+            if (idx + 1) % 100000 == 0:
+                print(f"  ...{idx + 1} rows iterated")
+
+            try:
                 # only start writing after 'offset' pages
                 if count >= offset:
-                    title = obj.get("title")
-                    source = obj.get("source_text")
-                    create_timestamp = obj.get("create_timestamp") # format: "%Y-%m-%dT%H:%M:%SZ"
-                    timestamp = obj.get("timestamp") # format: "%Y-%m-%dT%H:%M:%SZ"
-                    weighted_tags = obj.get("weighted_tags")
-
-                    if not create_timestamp:
-                        create_timestamp_obj = datetime(1998, 1, 1)
-                    else: create_timestamp_obj = datetime.strptime(create_timestamp, "%Y-%m-%dT%H:%M:%SZ")
-
-                    if create_timestamp_obj < start_from_date_obj: 
-                        # skip pages created before the 'start_from' date to filter only relevant pages for IRB New
+                    
+                    # Get the raw text
+                    source = row[xml_harvard_index]
+                    
+                    # --- This is the main filter ---
+                    # If 'xml_harvard' is empty, skip this row
+                    if not source:
+                        count += 1
                         continue
-
-                    # Construct the Wikipedia URL using the page ID for reference
-                    url = f"https://en.wikipedia.org/?curid={obj.get('page_id')}"
-
-                    # predict outlink topics using the Wikimedia API whose score is > 0.5
-                    outlink_topics = get_articletopics_with_scores(weighted_tags)
-                    topics = [topic['topic'] for topic in outlink_topics]
+                    
+                    # Extract the rest of the data
+                    opinion_id = row[id_index]
+                    create_timestamp = row[date_created_index]
 
                     to_write = {
-                        "title": title, # wiki page title
-                        "wiki_url": url, # wiki page url
-                        "source": source, # raw text of the wiki page
-                        "create_timestamp": create_timestamp, # creation timestamp of the wiki page
-                        "timestamp": timestamp, # last updated timestamp
-                        "topics": topics # predicted outlink topics for the wiki page
+                        "title": opinion_id, # wiki page title (using ID)
+                        "source": source, # raw xml text of the opinion
+                        "create_timestamp": create_timestamp, # creation timestamp in CourtListener db
                     }
+                    
                     try:
-                        write_to_json(to_write, os.path.join(output_folder, f"{title}.json")) # write each page to a separate json file
-                    except FileNotFoundError:
+                        # write each page to a separate json file, named by its ID
+                        filename = f"{opinion_id}.json"
+                        output_path = os.path.join(output_folder, filename)
+                        write_to_json(to_write, output_path)
+                    except FileNotFoundError as e:
+                        print(f"Skipping file with invalid name: {opinion_id}. Error: {e}")
+                        continue
+                    except IOError as e:
+                        print(f"Error writing file {opinion_id}.json: {e}")
                         continue
                     
                     length_data += 1
                     pbar.update(1)
             
                 count += 1
+            except IndexError:
+                # This can happen if a row is malformed and shorter than the header
+                print(f"Warning: Skipping malformed row {idx + 1}")
+                continue
+            except Exception as e:
+                print(f"Error processing row {idx + 1}: {e}")
+                continue
+
             # stop if we have written 'max_pages' pages
-            if max_pages and length_data == max_pages: break
+            if length_data == max_pages:
+                print(f"Reached max_pages limit of {max_pages}.")
+                break
+    
+    pbar.close()
+    print(f"Processing complete. Wrote {length_data} files.")
+
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig) -> None:
 
-    input_file = cfg.step0.input_file #args.input_file
-    output_folder = cfg.step0.output_folder #args.step0_output_folder
+    input_file = cfg.step0.input_file
+    output_folder = cfg.step0.output_folder
     offset = cfg.step0.offset
     max_pages = cfg.step0.max_pages
-    start_from = cfg.general.start_from
-    print(input_file)
-    assert os.path.exists(input_file)
+    # 'start_from' is part of the original config but not used in this version
+    # start_from = cfg.general.start_from 
+    
+    print(f"Input file: {input_file}")
+    print(f"Output folder: {output_folder}")
+    print(f"Max pages: {max_pages}")
+    print(f"Offset: {offset}")
+    
+    assert os.path.exists(input_file), f"Input file not found: {input_file}"
 
-    read_wiki_dump_and_write(
+    process_opinions_and_write(
         input_file = input_file,
         output_folder=output_folder,
         max_pages=max_pages,
-        offset=offset,
-        start_from=start_from
+        offset=offset
+        # start_from=start_from # Not used
     )
 
 
