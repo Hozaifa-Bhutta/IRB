@@ -39,7 +39,7 @@ def get_articletopics_with_scores(weighted_tags: List[str]) -> List[Dict[str, An
     return topic_list
 
 
-def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int, offset: int = 0, start_from: Optional[str] = None) -> None:
+def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int, offset: int = 0, target_year: str = "2025") -> None:
     """Reads a gzipped Wikipedia dump file and writes each page to a separate JSON file in the specified output folder.
 
     Parameters
@@ -52,21 +52,12 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
             Maximum number of wikipedia pages to process from the dump file.
         offset : int, optional
             Number of pages to skip from the start of the dump file. Defaults to 0.
-        start_from : str, optional
-            Timestamp string in the format "%Y-%m-%d" to filter to only pages created after this date. Defaults to None (all pages are included).
-
+        target_year : str, optional
+            year string in the format "YYYY" to filter to only pages created in this year. Defaults to None (all pages are included).
     """
     
     assert input_file.endswith(".gz")
-
-    # If 'start_from' is not provided, we assume all pages are included. 
-    # So we set it to a date before Wikipedia was created to include all pages.
-    if start_from is not None:
-        start_from_date_obj = datetime.strptime(start_from, "%Y-%m-%d") 
-    else:
-        print("'start_from' not provided, default to 1990-01-01")
-        start_from_date_obj = datetime(1990, 1, 1) 
-
+    assert target_year is not None
     
 
     length_data = 0 # number of pages written
@@ -88,12 +79,8 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
                     timestamp = obj.get("timestamp") # format: "%Y-%m-%dT%H:%M:%SZ"
                     weighted_tags = obj.get("weighted_tags")
 
-                    if not create_timestamp:
-                        create_timestamp_obj = datetime(1998, 1, 1)
-                    else: create_timestamp_obj = datetime.strptime(create_timestamp, "%Y-%m-%dT%H:%M:%SZ")
-
-                    if create_timestamp_obj < start_from_date_obj: 
-                        # skip pages created before the 'start_from' date to filter only relevant pages for IRB New
+                    create_year = create_timestamp[:4]
+                    if create_year != target_year:
                         continue
 
                     # Construct the Wikipedia URL using the page ID for reference
@@ -113,7 +100,7 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
                     }
                     try:
                         write_to_json(to_write, os.path.join(output_folder, f"{title}.json")) # write each page to a separate json file
-                    except FileNotFoundError:
+                    except Exception as e:
                         continue
                     
                     length_data += 1
@@ -130,7 +117,7 @@ def main(cfg: DictConfig) -> None:
     output_folder = cfg.step0.output_folder #args.step0_output_folder
     offset = cfg.step0.offset
     max_pages = cfg.step0.max_pages
-    start_from = cfg.general.start_from
+    target_year = str(cfg.general.target_year)
     print(input_file)
     assert os.path.exists(input_file)
 
@@ -139,7 +126,7 @@ def main(cfg: DictConfig) -> None:
         output_folder=output_folder,
         max_pages=max_pages,
         offset=offset,
-        start_from=start_from
+        target_year=target_year
     )
 
 
