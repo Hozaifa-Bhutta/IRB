@@ -5,42 +5,41 @@
 #     "wiki_url": "...", # wiki page url
 #     "source": "wikitext...", # raw text of the wiki page
 # }
-import json, gzip, os, hydra
+import json, gzip, os, hydra, re
 from datetime import datetime
 from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
 from utils.generic import maybe_create_folder, write_to_json
-from typing import Optional
+from typing import Optional, List, Dict, Any
 import requests
 
-def predict_outlink_topics(page_title: str, lang: str = "en") -> dict:
-    """Predicts outlink topics for a given Wikipedia page title using the Wikimedia API.
-    Parameters
-    ----------
-        page_title : str
-            The title of the Wikipedia page for which to predict outlink topics.
-        lang : str, optional
-            The language code for the Wikipedia page (default is "en" for English).
-    Returns
-    -------
-        dict
-            A dictionary containing the predicted outlink topics and their scores.
-    """
+def get_articletopics_with_scores(weighted_tags: List[str]) -> List[Dict[str, Any]]:
+    topic_list = []
+    if not weighted_tags: return topic_list
+    
+    topic_pattern = re.compile(r'classification\.prediction\.articletopic/(.*?)\|(\d+)$')
 
-    url = "https://api.wikimedia.org/service/lw/inference/v1/models/outlink-topic-model:predict"
-    headers = {"Content-Type": "application/json", "User-Agent": "email: lamdo@illnois.edu"}
-    data = {"page_title": page_title, "lang": lang, "debug": True}
-    r = requests.post(url, headers=headers, data=json.dumps(data), timeout=30)
-    r.raise_for_status()
-    js = r.json()
-    results = js["prediction"]["results"]
-    results.sort(key=lambda x: x["score"], reverse=True)
-    results = [result for result in results if result["score"] > 0.5]
-    return results
+    for tag in weighted_tags:
+        match = topic_pattern.search(tag)
+        if match:
+            topic_path = match.group(1)
+            raw_score = match.group(2)
+            
+            try:
+                score = int(raw_score) / 1000.0
+            except ValueError:
+                continue
+            
+            topic_list.append({
+                'topic': topic_path,
+                'score': score
+            })
+
+    return topic_list
 
 
-def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int, offset: int = 0, start_from: Optional[str] = None) -> None:
+def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int, offset: int = 0, target_year: str = "2025") -> None:
     """Reads a gzipped Wikipedia dump file and writes each page to a separate JSON file in the specified output folder.
 
     Parameters
@@ -53,21 +52,12 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
             Maximum number of wikipedia pages to process from the dump file.
         offset : int, optional
             Number of pages to skip from the start of the dump file. Defaults to 0.
-        start_from : str, optional
-            Timestamp string in the format "%Y-%m-%d" to filter to only pages created after this date. Defaults to None (all pages are included).
-
+        target_year : str, optional
+            year string in the format "YYYY" to filter to only pages created in this year. Defaults to None (all pages are included).
     """
     
     assert input_file.endswith(".gz")
-
-    # If 'start_from' is not provided, we assume all pages are included. 
-    # So we set it to a date before Wikipedia was created to include all pages.
-    if start_from is not None:
-        start_from_date_obj = datetime.strptime(start_from, "%Y-%m-%d") 
-    else:
-        print("'start_from' not provided, default to 1990-01-01")
-        start_from_date_obj = datetime(1990, 1, 1) 
-
+    assert target_year is not None
     
 
     length_data = 0 # number of pages written
@@ -87,20 +77,17 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
                     source = obj.get("source_text")
                     create_timestamp = obj.get("create_timestamp") # format: "%Y-%m-%dT%H:%M:%SZ"
                     timestamp = obj.get("timestamp") # format: "%Y-%m-%dT%H:%M:%SZ"
+                    weighted_tags = obj.get("weighted_tags")
 
-                    if not create_timestamp:
-                        create_timestamp_obj = datetime(1998, 1, 1)
-                    else: create_timestamp_obj = datetime.strptime(create_timestamp, "%Y-%m-%dT%H:%M:%SZ")
-
-                    if create_timestamp_obj < start_from_date_obj: 
-                        # skip pages created before the 'start_from' date to filter only relevant pages for IRB New
+                    create_year = create_timestamp[:4]
+                    if create_year != target_year:
                         continue
 
                     # Construct the Wikipedia URL using the page ID for reference
                     url = f"https://en.wikipedia.org/?curid={obj.get('page_id')}"
 
                     # predict outlink topics using the Wikimedia API whose score is > 0.5
-                    outlink_topics = predict_outlink_topics(title)
+                    outlink_topics = get_articletopics_with_scores(weighted_tags)
                     topics = [topic['topic'] for topic in outlink_topics]
 
                     to_write = {
@@ -113,7 +100,7 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
                     }
                     try:
                         write_to_json(to_write, os.path.join(output_folder, f"{title}.json")) # write each page to a separate json file
-                    except FileNotFoundError:
+                    except Exception as e:
                         continue
                     
                     length_data += 1
@@ -121,24 +108,16 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
             
                 count += 1
             # stop if we have written 'max_pages' pages
-            if length_data == max_pages: break
+            if max_pages and length_data == max_pages: break
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig) -> None:
-    # parser = ArgumentParser()
-
-    # parser.add_argument("--input_file", type = str, required = True)
-    # parser.add_argument("--step0_output_folder", type = str, required = True)
-    # parser.add_argument("--offset", type = int, default = cfg.step0.offset)
-    # parser.add_argument("--max_pages", type = int, default = cfg.step0.max_pages)
-
-    # args = parser.parse_args()
 
     input_file = cfg.step0.input_file #args.input_file
     output_folder = cfg.step0.output_folder #args.step0_output_folder
     offset = cfg.step0.offset
     max_pages = cfg.step0.max_pages
-    start_from = cfg.general.start_from
+    target_year = str(cfg.general.target_year)
     print(input_file)
     assert os.path.exists(input_file)
 
@@ -147,7 +126,7 @@ def main(cfg: DictConfig) -> None:
         output_folder=output_folder,
         max_pages=max_pages,
         offset=offset,
-        start_from=start_from
+        target_year=target_year
     )
 
 
