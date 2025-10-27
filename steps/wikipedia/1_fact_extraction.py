@@ -21,8 +21,8 @@ from argparse import ArgumentParser
 from tqdm import tqdm
 from cleantext import clean
 from nltk.tokenize import sent_tokenize
-from utils.generic import read_json_or_jsonl, write_to_json, split_sentence_with_newlines, sentence_filtering
-from utils.bad_domains import BAD_DOMAINS
+from steps.utils.generic import read_json_or_jsonl, write_to_json, split_sentence_with_newlines, sentence_filtering
+from steps.utils.bad_domains import BAD_DOMAINS
 
 
 # this function cleans up text 
@@ -513,7 +513,7 @@ def remove_bad_urls(reference_urls: list[str], pos: list[int]) -> tuple[list[str
 
     return cleaned_urls, cleaned_pos
 
-@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
+@hydra.main(version_base=None, config_path="../../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg:DictConfig) -> None:
     input_files_full_path, output_files_full_path = get_file_paths(cfg)
 

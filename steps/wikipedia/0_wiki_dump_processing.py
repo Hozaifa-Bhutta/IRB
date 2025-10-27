@@ -10,7 +10,7 @@ from datetime import datetime
 from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
-from utils.generic import maybe_create_folder, write_to_json
+from steps.utils.generic import maybe_create_folder, write_to_json
 from typing import Optional, List, Dict, Any
 import requests
 
@@ -110,7 +110,7 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
             # stop if we have written 'max_pages' pages
             if max_pages and length_data == max_pages: break
 
-@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
+@hydra.main(version_base=None, config_path="../../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig) -> None:
 
     input_file = cfg.step0.input_file #args.input_file

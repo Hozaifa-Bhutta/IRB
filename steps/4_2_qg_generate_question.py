@@ -39,7 +39,7 @@ def main(cfg: DictConfig)-> None:
     )
     kg_based_qg_checker = KGBasedQGChecker(
         minicheck_model_name = "flan-t5-large",
-        minicheck_cache_dir = '/scratch/lamdo/minicheck_ckpts/'
+        minicheck_cache_dir = '/mnt/nvme4/caselaw_data/minicheck_ckpt'
     )
     
     files = os.listdir(decontextualized_facts_folder)

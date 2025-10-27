@@ -82,6 +82,7 @@ def process_opinions_and_write(input_file: str, output_folder: str, max_pages: i
             id_index = header.index("id")
             xml_harvard_index = header.index("xml_harvard")
             date_created_index = header.index("date_created")
+            date_modified_index = header.index("date_modified")
 
         except (StopIteration, ValueError) as e:
             print(f"Error reading header: {e}")
@@ -109,11 +110,13 @@ def process_opinions_and_write(input_file: str, output_folder: str, max_pages: i
                     # Extract the rest of the data
                     opinion_id = row[id_index]
                     create_timestamp = row[date_created_index]
+                    timestamp = row[date_modified_index]
 
                     to_write = {
                         "title": opinion_id, # wiki page title (using ID)
                         "source": source, # raw xml text of the opinion
-                        "create_timestamp": create_timestamp, # creation timestamp in CourtListener db
+                        "create_timestamp": create_timestamp.replace(" ", "T"), # creation timestamp in CourtListener db
+                        "timestamp": timestamp.replace(" ", "T")
                     }
                     
                     try:
@@ -149,7 +152,7 @@ def process_opinions_and_write(input_file: str, output_folder: str, max_pages: i
     print(f"Processing complete. Wrote {length_data} files.")
 
 
-@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
+@hydra.main(version_base=None, config_path="../../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig) -> None:
 
     input_file = cfg.step0.input_file

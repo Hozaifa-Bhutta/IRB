@@ -20,8 +20,8 @@ from argparse import ArgumentParser
 from tqdm import tqdm
 from cleantext import clean
 from nltk.tokenize import sent_tokenize
-from utils.generic import read_json_or_jsonl, write_to_json, split_sentence_with_newlines, sentence_filtering
-from utils.bad_domains import BAD_DOMAINS
+from steps.utils.generic import read_json_or_jsonl, write_to_json, split_sentence_with_newlines, sentence_filtering
+from steps.utils.bad_domains import BAD_DOMAINS
 
 
 # this function cleans up text 
@@ -223,20 +223,9 @@ def fact_marking(raw_text: str) -> str:
     str
         The marked text with [KP] appended to each fact.
     """
-    prev_pos = float('-inf')
-    cur_ind = 0
-
-    res = ""
-
-    for tag in get_all_refs(raw_text):
-        pos = raw_text.index(str(tag))
-        if abs(pos - prev_pos) >= 5: # distance threshold is 5
-            _keypoint = re.sub(r"\[REF-\d+\]", "", raw_text[cur_ind: pos + len(tag)]).strip() + " [KP] "
-            cur_ind = pos + len(tag)
-            res = res + _keypoint
-        prev_pos = pos + len(tag)
-
-    return res
+    
+    if not re.search(r"\[REF-\d+\]", raw_text): return ""
+    return re.sub(r"\[REF-\d+\]", " [KP] ", raw_text)
 
 def put_back_ref(sentence: str, placeholder_mapper: dict[str, str]) -> str:
     """
@@ -351,15 +340,14 @@ def get_sentence_info(
         "pos": valid_pos
     }
 
-@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
+@hydra.main(version_base=None, config_path="../../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg:DictConfig) -> None:
     input_files_full_path, output_files_full_path = get_file_paths(cfg)
 
-
+    count = 0
     for input_file_path, output_file_path in tqdm(zip(input_files_full_path, output_files_full_path), total = len(input_files_full_path)):
         # Read and process each wiki page
-        if not input_file_path.endswith('185205.json'):
-            continue
+        if count == 50: break
         page_data = read_json_or_jsonl(input_file_path)
 
         raw_text = page_data.get("source")
@@ -434,12 +422,15 @@ def main(cfg:DictConfig) -> None:
             to_save = {
                 "title": page_data.get("title"),
                 "create_timestamp": page_data.get("create_timestamp"),
+                "timestamp": page_data.get("timestamp"),
                 # Fixed NameError: wiki_page_data -> page_data
                 "extracted_sentences": extracted_sentences, # This list is now populated as requested
+                "marked_sentences": marked_sentences,
                 "raw_facts": raw_facts
             }
         else: to_save = {}
         write_to_json(data = to_save, filename = output_file_path)
+        count += 1
 
 
 if __name__ == "__main__":

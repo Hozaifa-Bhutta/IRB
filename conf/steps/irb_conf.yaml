@@ -26,7 +26,7 @@ step2_2:
 
 step3:
   output_folder: null
-  minicheck_ckpt_path: "/scratch/lamdo/minicheck_ckpts"
+  minicheck_ckpt_path: "/mnt/nvme4/caselaw_data/minicheck_ckpt"
   max_tokens: 20000
 
 step4:
