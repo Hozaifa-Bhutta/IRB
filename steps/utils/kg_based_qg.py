@@ -100,6 +100,10 @@ class KGBasedQGUtils:
 
         first_edge = knowledge_graph[traversal_order[0]]
 
+        if first_edge["head"] in bad_nodes:
+            return []
+        
+
         masked_entities_info = [[first_edge["head"], first_edge["head_type"]]]
         masked_entities_names = [first_edge["head"]]
 
@@ -278,12 +282,15 @@ class KGBasedQGChecker:
         self.text_splitter = lambda text: [item.strip(string.punctuation).lower() for item in text.replace("_", " ").replace("-", " ").split()]
 
     def _check_groundedness_of_relations(self, base_doc: str, relations: List[str], verbose: bool = False) -> bool:
-        pred_label, _, _, _ = self.minicheck_scorer.score(docs=[base_doc] * len(relations), claims=relations)
+        if self.minicheck_scorer:
+            pred_label, _, _, _ = self.minicheck_scorer.score(docs=[base_doc] * len(relations), claims=relations)
+        else:
+            pred_label = [1] * len(relations)
 
         if verbose: print(pred_label)
         return all(pred_label)
     
-    def _check_word_based_completeness(self, base_doc: str, relations: List[str]) -> bool:
+    def _check_word_based_completeness(self, base_doc: str, relations: List[str], threshold: float = 0.75) -> bool:
         base_doc_words = set([self.stemmer.stem(w) for w in self.text_splitter(base_doc) if w not in ENGLISH_STOPWORDS])
 
         relations_words = set([])
@@ -292,25 +299,27 @@ class KGBasedQGChecker:
             relations_words.update(rel_words)
 
         check = len(relations_words.intersection(base_doc_words)) / len(base_doc_words)
-        return check >= 0.75
+        return check >= threshold
 
     def _check_graph_connectedness(self, knowledge_graph):
         graph = nx.DiGraph()
+        if not graph: return False
+        
         for edge in knowledge_graph:
             head, tail = edge.get("head"), edge.get("tail")
             if head and tail:
                 graph.add_edge(head, tail)
         return nx.is_weakly_connected(graph)
 
-    def check_completeness_of_extracted_kg(self, knowledge_graph: List[Dict[str, str]], keypoints: List[str], verbose: bool = False) -> bool:
-        connectedness_check = self._check_graph_connectedness(knowledge_graph)
-        if not connectedness_check: return False
+    def check_completeness_of_extracted_kg(self, knowledge_graph: List[Dict[str, str]], keypoints: List[str], word_check_threshold: float = 0.75, verbose: bool = False) -> bool:
+        # connectedness_check = self._check_graph_connectedness(knowledge_graph)
+        # if not connectedness_check: return False
 
         keypoints_str = "\n".join(keypoints)
 
         relations = [f"{rel['head']} {rel['relation']} {rel['tail']}" for rel in knowledge_graph]
 
-        word_based_completeness = self._check_word_based_completeness(base_doc = keypoints_str, relations = relations)
+        word_based_completeness = self._check_word_based_completeness(base_doc = keypoints_str, relations = relations, threshold = word_check_threshold)
         if not word_based_completeness: 
             if verbose:
                 print("Failed word-based completeness check:", word_based_completeness)
@@ -331,7 +340,10 @@ class KGBasedQGChecker:
 
             pairs.append([current_question, previous_question])
 
-        pred_label, _, _, _ = self.minicheck_scorer.score(docs=[p[0] for p in pairs], claims=[p[1] for p in pairs])
+        if self.minicheck_scorer:
+            pred_label, _, _, _ = self.minicheck_scorer.score(docs=[p[0] for p in pairs], claims=[p[1] for p in pairs])
+        else:
+            pred_label = [1] * len(pairs)
 
         return pred_label
 
@@ -358,7 +370,10 @@ class KGBasedQGChecker:
             relations_to_check = [rel for rel in relations_to_check if rel]
             if not relations_to_check: continue
 
-            pred_label, raw_probs, _, _ = self.minicheck_scorer.score(docs=[question] * len(relations_to_check), claims=relations_to_check)
+            if self.minicheck_scorer:
+                pred_label, _, _, _ = self.minicheck_scorer.score(docs=[question] * len(relations_to_check), claims=relations_to_check)
+            else:
+                pred_label = [1] * len(relations_to_check)
 
             for i, l in enumerate(pred_label):
                 if not l:
@@ -366,16 +381,33 @@ class KGBasedQGChecker:
             
         return all([v <= 1 for v in error_counter.values()])
                 
+    def _check_question_progression_via_word_counting(self, generated_questions: List[str], threshold: float = 0.8):
+        generated_questions_words = [set(self.text_splitter(q)) for q in generated_questions]
+
+        for i in range(1, len(generated_questions_words)):
+            current = generated_questions_words[i]
+            previous = generated_questions_words[i-1]
+
+            intersection = current.intersection(previous)
+            percentage = len(intersection)/ len(previous)
+
+            if percentage < threshold: return False
+
+        return True
 
             
 
-    def check_correctness_of_question_progression(self, generated_questions: List[str], masked_knowledge_graph: List[Dict[str, str]]) -> bool:
+    def check_correctness_of_question_progression(self, generated_questions: List[str], masked_knowledge_graph: List[Dict[str, str]], word_counting_check_threshold: float = 0.8) -> bool:
         if not len(generated_questions) == len(masked_knowledge_graph): return False
 
-        return self._check_relation_question_correspondence(generated_questions, masked_knowledge_graph) # length
+        check_word_counting_based = self._check_question_progression_via_word_counting(generated_questions, threshold = word_counting_check_threshold)
+        if not check_word_counting_based: return False
+
+        relation_question_correspondence_nli = self._check_relation_question_correspondence(generated_questions, masked_knowledge_graph) # length
+        return relation_question_correspondence_nli
     
 
-    def check_question_answerability(self, question: str):
+    def check_question_answerability(self, question: str, verbose: bool = False):
 
         user_prompt = QUESTION_ANSWERABILITY_CHECK_PROMPT["user"][:]\
         .replace("[ADD_QUESTION_HERE]", question)
@@ -399,6 +431,7 @@ class KGBasedQGChecker:
 
 
         res = resp.choices[0].message.content.strip()
+        if verbose: print(res)
 
         return "B." in res
     

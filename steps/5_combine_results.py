@@ -180,9 +180,10 @@ def main(cfg: DictConfig):
         # print(query_id_2_keypoints)
         attributes = []
         for i in range(len(queries)):
-            query_id = queries[i]["_id"]
+            query_id = "--".join(queries[i]["_id"].split("--")[:-1])
+            num_hops = queries[i]["_id"].split("--")[-1]
+            
             num_keypoints = len(query_id_2_keypoints.get(query_id, {}))
-            num_hops = query_id.split("--")[-1]
             evidence_langs = []
             evidence_published_dates = []
             evidence_content_lengths = []

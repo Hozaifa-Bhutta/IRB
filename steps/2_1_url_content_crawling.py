@@ -28,7 +28,7 @@ from omegaconf import DictConfig
 from tqdm import tqdm
 from urllib.parse import urlparse
 from cleantext import clean
-from fast_langdetect import detect as language_detection_func
+from fast_langdetect import LangDetectConfig, LangDetector
 from utils.generic import read_json_or_jsonl, write_to_json
 from utils.archive_downloader import getArchiveContent
 from utils.html_extraction import extract_text_from_html, get_publication_date
@@ -36,6 +36,7 @@ from typing import Callable, Any
 
 request_counters = {}
 MAX_REQUESTS_PER_MINUTE = 10  # Maximum requests per minute per domain
+LANG_DETECTOR = LangDetector(LangDetectConfig(max_input_length=256))
 
 def rate_limited(func: Callable) -> Callable:
     def wrapper(url: str, *args, **kwargs):
@@ -107,7 +108,6 @@ def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
     # print(f"Processing URL: {url}....")
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36',
-        'Accept-Language': 'en-US,en;q=0.9',
     }
     
     is_accessible = False
@@ -132,16 +132,16 @@ def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
             return is_accessible, content_dict
 
         
-
-        if "music" in domain:
+        domain_lowered = domain.lower()
+        if "music" in domain_lowered:
             content_dict["content"] = "Music-related domain, not useful for fact extraction"
             return is_accessible, content_dict 
 
-        if "porn" in domain or "adult" in domain:
+        if "porn" in domain_lowered or "adult" in domain_lowered:
             content_dict["content"] = "Sensored content in the URL"
             return is_accessible, content_dict 
         
-        if ".pdf" in url:
+        if "pdf" in url.lower():
             content_dict["content"] = "PDF file not supported"
             return is_accessible, content_dict
 
@@ -150,7 +150,7 @@ def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
         content_type = response.headers.get('Content-Type', '')
         print(f"Response code for {url}: {response.status_code}")
 
-        if "application/pdf" in content_type or url.endswith(".pdf"):
+        if "application/pdf" in content_type:
             raise NotImplementedError("Pdf files not supported")
         
 
@@ -173,7 +173,7 @@ def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
                 is_accessible = True
                 content_dict["content"] = text
                 content_dict["published_date"] = published_date
-                content_dict["lang"] = language_detection_func(text)[0]["lang"]
+                content_dict["lang"] = LANG_DETECTOR.detect(text)[0]["lang"]
                 return is_accessible, content_dict
 
         content_dict["content"] = f"Content type is {content_type}"

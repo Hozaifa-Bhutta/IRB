@@ -318,39 +318,86 @@ QUESTION_REFINEMENT_PROMPT = {
 }
 
 
+# QUESTION_ANSWERABILITY_CHECK_PROMPT = {
+#     "system": """You are a reliable AI assistant. Your task is to assess if a question will result in multiple different answers or not.
+#     In other words, how many entity/object can be used to answer the given question? Choose from the following options
+#     A. Multiple
+#     B. Single
+
+#     Following are a few examples. In these examples, there will be rationale for the answer. However, for the user input, you do not need
+#     to provide rationale.
+
+#     Example 1:
+#     Question: Who participated in a specific tournament held in Birmingham, England and finished in eighth place?
+#     Rationale: There can be more than one person that fits the description of the question
+#     Answer: A. Multiple
+
+
+#     Example 2:
+#     Question: What specimen did Lemierre et al. describe that is from the lowest Oligocene epoch, was found in Chartres-de-Bretagne, western France, and is one of the oldest occurrences of the genus reported to date?
+#     Rationale: It is likely that there is only one specimen that fits the description. Therefore B. is chosen
+#     Answer: B. Single
+    
+#     Example 3:
+#     Question: What person graduated with a Doctorate in Biblical Theology from Albert-Ludwigs-Universität Freiburg in Germany after studying there from 1999 until 2005?
+#     Rationale: Although the description is detailed, there can still be multiple people that fits this description
+#     Answer: A. Multiple
+    
+#     Example 4:
+#     Question: What book was published by Dayna Bowen Matthew in 2015 that examined how implicit bias affects health outcomes?
+#     Rationale: It is likely that there is only one book that fits this description
+#     Answer: B. Single
+    
+#     Example 5:
+#     Question: What is the film that was premiered at Cannes Film Festival 2023?
+#     Rationale: Probably there are more than 1 film that was premiered during this event
+#     Answer: A. Multiple""",
+
+#     "user": """Now let's assess if the user provided question has single or multiple answers. Remember that for this input, you do not need to 
+#     provide rationale
+    
+#     Question: [ADD_QUESTION_HERE]
+#     Answer: """
+# }
+
+
+
 QUESTION_ANSWERABILITY_CHECK_PROMPT = {
-    "system": """You are a reliable AI assistant. Your task is to assess if a question will result in multiple different answers or not.
-    In other words, how many entity/object can be used to answer the given question? Choose from the following options
-    A. Multiple
-    B. Single
+    "system": """You are an expert query analyst. Your task is to analyze a question and determine if it is asking for a single, unique entity or if it could be answered by multiple different entities.
+Your response must be only 'A.' or 'B.'.
 
-    Following are a few examples. In these examples, there will be rationale for the answer. However, for the user input, you do not need
-    to provide rationale.
+Classification Rules
+B. Single: Choose this if the question's phrasing and details strongly imply one specific, unique answer. This is common when the question asks for: * A specific, named work (e.g., "the book published by X in Y on topic Z"). * A unique specimen or object described in a specific paper (e.g., "the specimen described by Lemierre et al."). * An entity identified by a superlative (e.g., "the oldest..." or "the first...").
+A. Multiple: Choose this if the question describes a category, class, or set of entities, even if the description is very detailed. This includes questions asking for: * A person who fits a description (e.g., "a person who graduated from..."). * An item from a set (e.g., "a film that premiered at..."). * Warning: Do not be fooled by the word "the". For example, "What is the film that premiered at Cannes?" is A. Multiple because the event (Cannes) implies a set of many films.
 
-    Example 1:
-    Question: Who participated in a specific tournament held in Birmingham, England and finished in eighth place?
-    Rationale: There can be more than one person that fits the description of the question
-    Answer: A. Multiple
+Examples
+Example 1: 
+Question: Who participated in a specific tournament held in Birmingham, England and finished in eighth place? 
+Rationale: There can be more than one person that fits the description of the question (e.g., in different years, or different divisions of the same tournament). 
+Answer: A. Multiple
 
+Example 2: 
+Question: What specimen did Lemierre et al. describe that is from the lowest Oligocene epoch, was found in Chartres-de-Bretagne, western France, and is one of the oldest occurrences of the genus reported to date? 
+Rationale: The query is asking for "the specimen" described by a specific paper, which is a unique identifier. It is likely there is only one. 
+Answer: B. Single
 
-    Example 2:
-    Question: What specimen did Lemierre et al. describe that is from the lowest Oligocene epoch, was found in Chartres-de-Bretagne, western France, and is one of the oldest occurrences of the genus reported to date?
-    Rationale: It is likely that there is only one specimen that fits the description. Therefore B. is chosen
-    Answer: B. Single
-    
-    Example 3:
-    Question: What person graduated with a Doctorate in Biblical Theology from Albert-Ludwigs-Universität Freiburg in Germany after studying there from 1999 until 2005?
-    Rationale: Although the description is detailed, there can still be multiple people that fits this description
-    Answer: A. Multiple
-    
-    Example 4:
-    Question: What book was published by Dayna Bowen Matthew in 2015 that examined how implicit bias affects health outcomes?
-    Rationale: It is likely that there is only one book that fits this description
-    Answer: B. Single""",
+Example 3: 
+Question: What person graduated with a Doctorate in Biblical Theology from Albert-Ludwigs-Universität Freiburg in Germany after studying there from 1999 until 2005? 
+Rationale: Although the description is detailed, it describes a category of people. It is very likely that more than one person fits this description. 
+Answer: A. Multiple
+
+Example 4: 
+Question: What book was published by Dayna Bowen Matthew in 2015 that examined how implicit bias affects health outcomes? 
+Rationale: An author publishing a specific book on a specific topic in a single year is a unique event. It is highly likely there is only one book that fits. 
+Answer: B. Single
+
+Example 5: Question: What is the film that was premiered at Cannes Film Festival 2023? 
+Rationale: A film festival premieres many films. This question is asking to identify a member of a set. 
+Answer: A. Multiple""",
 
     "user": """Now let's assess if the user provided question has single or multiple answers. Remember that for this input, you do not need to 
-    provide rationale
+provide rationale
     
-    Question: [ADD_QUESTION_HERE]
-    Answer: """
+Question: [ADD_QUESTION_HERE]
+Answer: """
 }

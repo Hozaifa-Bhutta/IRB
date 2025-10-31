@@ -15,6 +15,7 @@ def main(cfg: DictConfig)-> None:
     decontextualized_facts_folder = cfg.step2_2.output_folder
     fact_groundedness_folder = cfg.step3.output_folder
     output_folder = cfg.step4.output_folder + "_extracted_kg"
+    kg_completeness_word_check_threshold = cfg.step4.kg_completeness_word_check_threshold
 
     local_llm_port = cfg.general.local_llm_port
     local_llm_model = cfg.general.local_llm_model
@@ -37,8 +38,8 @@ def main(cfg: DictConfig)-> None:
         graph_builder_prompt = GRAPH_BUILDER_PROMPT
     )
     kg_based_qg_checker = KGBasedQGChecker(
-        minicheck_model_name = "flan-t5-large",
-        minicheck_cache_dir = '/scratch/lamdo/minicheck_ckpts/'
+        minicheck_model_name = None,
+        minicheck_cache_dir = None
     )
     
     files = os.listdir(decontextualized_facts_folder)
@@ -48,11 +49,10 @@ def main(cfg: DictConfig)-> None:
     output_files_full_path = [os.path.join(output_folder, file) for file in files]
 
 
-    count = 0
     for dff_file_path, fgf_file_path, output_file_path in tqdm(zip(decontextualized_facts_files_full_path, 
                                                       fact_groundedness_files_full_path, 
                                                       output_files_full_path), total = len(files)):
-        if count == 100: break
+        if os.path.exists(output_file_path): continue
         try:
             dff_data = read_json_or_jsonl(dff_file_path)
             fgf_data = read_json_or_jsonl(fgf_file_path)
@@ -88,12 +88,21 @@ def main(cfg: DictConfig)-> None:
         fact_kg_mapper = {}
         for fact_id, keypoints in keypoints_mapper.items():
             good_kg = False
-            for attempt in range(2):
-                extracted_kg = kg_based_qg_utils.extract_kg_from_keypoints(keypoints = keypoints)
-                graph_completenesss = kg_based_qg_checker.check_completeness_of_extracted_kg(knowledge_graph = extracted_kg, keypoints = keypoints)
-                if graph_completenesss: 
-                    good_kg = True
-                    break
+            for attempt in range(1):
+                try:
+                    extracted_kg = kg_based_qg_utils.extract_kg_from_keypoints(keypoints = keypoints)
+
+                    graph_completenesss = kg_based_qg_checker.check_completeness_of_extracted_kg(
+                        knowledge_graph = extracted_kg, 
+                        keypoints = keypoints, 
+                        word_check_threshold = kg_completeness_word_check_threshold)
+                    
+                    if graph_completenesss: 
+                        good_kg = True
+                        break
+                except Exception as e:
+                    continue
+                
             if good_kg: fact_kg_mapper[fact_id] = extracted_kg
 
         if fact_kg_mapper:
@@ -107,7 +116,6 @@ def main(cfg: DictConfig)-> None:
             }
 
             write_to_json(data = to_save, filename = output_file_path)
-            count += 1
 
 
 

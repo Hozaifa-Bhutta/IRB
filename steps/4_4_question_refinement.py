@@ -48,7 +48,7 @@ def main(cfg: DictConfig)-> None:
                                                                                                         fact_groundedness_files_full_path, 
                                                                                                         question_answerability_files_full_path,
                                                                                                         output_files_full_path), total = len(files)):
-
+        if os.path.exists(output_file_path): continue
         try:
             dff_data = read_json_or_jsonl(dff_file_path)
             fgf_data = read_json_or_jsonl(fgf_file_path)
@@ -93,7 +93,11 @@ def main(cfg: DictConfig)-> None:
                 question = line["question"]
                 masked_keypoints_str = line["masked_keypoints_str"]
 
-                refined_question = kg_based_qg_utils.question_refinement(question, [masked_keypoints_str])
+                try:
+                    refined_question = kg_based_qg_utils.question_refinement(question, [masked_keypoints_str])
+                except Exception as e:
+                    continue
+                
                 to_append = dict(line)
                 to_append["question"] = refined_question
 
