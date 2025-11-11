@@ -125,6 +125,8 @@ Maintain Entity Consistency: When extracting entities, it's vital to ensure cons
 If a entity, such as "John Doe", is mentioned multiple times in the text but is referred to by different names or pronouns (e.g., "Joe", "he"), always \
 use the most complete identifier for that entity. The knowledge graph should be coherent and easily understandable, so maintaining consistency in entity references is crucial.
 
+Each relation should appear strictly once.
+
 IMPORTANT NOTES:
 - Don't add any explanation and text. For the following text, extract entities and relations
 

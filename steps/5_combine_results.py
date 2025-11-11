@@ -124,9 +124,13 @@ def main(cfg: DictConfig):
             for line in fact_queries:
                 query_text = line["question"]
                 num_hops = line["num_hops"]
+                first_masked_node = line["masked_kg"][0]["head_unmasked"]
                 query_id = f"{wiki_title}--{fact_id}--{num_hops}"
+
+                if "<Unknown" in query_text: continue
+
                 queries.append({"_id": query_id, "text": query_text})
-                answers.append({"_id": query_id, "text": [kp for kp_index, kp in enumerate(keypoints) if kp_index in good_keypoints[fact_id]]})
+                answers.append({"_id": query_id, "text": [kp for kp_index, kp in enumerate(keypoints) if kp_index in good_keypoints[fact_id]], "short": first_masked_node})
 
 
         # filter queries and answers based on if the answer contain any keypoints (if not then remove the id)
@@ -138,6 +142,8 @@ def main(cfg: DictConfig):
 
         queries = [line for line in queries if line["_id"] in good_qids]
         answers = [line for line in answers if line["_id"] in good_qids]
+
+        queries_ids = [line["_id"] for line in queries]
 
         # corpus
         for fact in raw_facts:
@@ -174,14 +180,18 @@ def main(cfg: DictConfig):
 
                 query_id_2_keypoints[query_id][kp_id].append({"url": url, "lang": url_lang, "published_date": published_date, "content_lengths": content_lengths})
 
-            if query_id not in qrels: qrels[query_id] = {}
-            qrels[query_id][url] = 1 #int(check_label) if url not in qrels[query_id] else max(int(check_label), int(qrels[query_id][url]))
+            for num_hop in range(3):
+                query_id_with_num_hop = f"{query_id}--{num_hop}"
+                if query_id_with_num_hop not in queries_ids: continue
+
+                if query_id_with_num_hop not in qrels: qrels[query_id_with_num_hop] = {}
+                qrels[query_id_with_num_hop][url] = 1 #int(check_label) if url not in qrels[query_id] else max(int(check_label), int(qrels[query_id][url]))
         
         # print(query_id_2_keypoints)
         attributes = []
         for i in range(len(queries)):
-            query_id = "--".join(queries[i]["_id"].split("--")[:-1])
-            num_hops = queries[i]["_id"].split("--")[-1]
+            query_id = "--".join(queries[i]["_id"].split("--")[:-1]) # query_id without num_hop
+            num_hops = int(queries[i]["_id"].split("--")[-1])
             
             num_keypoints = len(query_id_2_keypoints.get(query_id, {}))
             evidence_langs = []
@@ -206,7 +216,7 @@ def main(cfg: DictConfig):
                 evidence_content_lengths.append(evidence_content_lengths_kp_id)
 
             to_append = {
-                "_id": query_id,
+                "_id": queries[i]["_id"],
                 "num_keypoints": num_keypoints,
                 "num_hops": num_hops,
                 "topics": topics,

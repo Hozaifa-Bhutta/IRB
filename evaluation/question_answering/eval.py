@@ -1,15 +1,13 @@
 import os, hydra, json, sys, time, openai
-sys.path.append("../../steps/utils")
-sys.path.append("./steps/utils")
 from omegaconf import DictConfig
-from openai_utils import init_client, OPENAI_CLIENT
-from utils.qa_prompt import QA_SYSTEM_PROMPT, QA_USER_PROMPT, QA_SYSTEM_PROMPT_WITHOUT_CONTEXT, QA_USER_PROMPT_WITHOUT_CONTEXT
-from utils.qa_eval_metrics import run_bertscore_evaluation, run_minicheck_based_evaluation, run_llm_based_evaluation, run_llm_based_evaluation_keypoints
-from utils.allowed_datasets import ALLOWED_DATASETS
+from llm_apis import init_llm
+from evaluation.question_answering.utils.qa_prompt import QA_SYSTEM_PROMPT, QA_USER_PROMPT, QA_SYSTEM_PROMPT_WITHOUT_CONTEXT, QA_USER_PROMPT_WITHOUT_CONTEXT
+from evaluation.question_answering.utils.qa_eval_metrics import run_llm_based_evaluation_keypoints
+from evaluation.question_answering.utils.allowed_datasets import ALLOWED_DATASETS
 from tqdm import tqdm
 
 # maximum number of samples to run evaluation
-NUM_SAMPLE = 1000**2
+NUM_SAMPLE = 1000 #1000**2
 
 
 def create_enumerated_list(texts):
@@ -20,7 +18,8 @@ def create_enumerated_list(texts):
 def generate_answer(query, 
                     contexts, 
                     use_retrieval_contexts = True,
-                    max_num_contexts = 20):
+                    max_num_contexts = 20,
+                    LLM = None):
     # time.sleep(0.5)
     qa_user_prompt = QA_USER_PROMPT if use_retrieval_contexts else QA_USER_PROMPT_WITHOUT_CONTEXT
     qa_system_prompt = QA_SYSTEM_PROMPT if use_retrieval_contexts else QA_SYSTEM_PROMPT_WITHOUT_CONTEXT
@@ -30,38 +29,32 @@ def generate_answer(query,
     user_prompt = qa_user_prompt.replace("[ADD CONTEXT HERE]", str_context)
     user_prompt = user_prompt.replace("[ADD QUESTION HERE]", query)
 
-    print(user_prompt)
+    # print(user_prompt)
 
     try:
-        resp = OPENAI_CLIENT["client"].chat.completions.create(
-            model=OPENAI_CLIENT["model"],
-            messages=[
-                {
-                    "role": "system",
-                    "content": qa_system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt
-                }
-            ],
-            max_tokens = 2048,
+        result = LLM.generate(
+            system_prompt = qa_system_prompt,
+            user_prompt = user_prompt,
+            max_output_tokens = 2048
         )
-
-        result = resp.choices[0].message.content.strip()
 
         return result
     except openai.RateLimitError as e:
         return "Could not answer this question due to an error"
     
 
-def data_relative_path(dataset_name, dataset_date = None, subset = None):
-    if dataset_date and subset:
-        return os.path.join("benchmarks", dataset_date, dataset_name, subset)
-    elif dataset_date and not subset:
+def data_relative_path(dataset_name, dataset_date = None):
+    if dataset_date:
         return os.path.join("benchmarks", dataset_date, dataset_name)
     else:
         raise NotImplemented
+    
+
+def metadata_folder_name_creation(dataset: str, llm_model_name: str, retrieval_model: str, use_retrieval_contexts: bool, use_chunk: bool):
+    temp = [dataset, llm_model_name] + \
+            ([retrieval_model, f"chunk{use_chunk}"] if use_retrieval_contexts else [])
+    print(temp)
+    return "__".join(temp)
 
 @hydra.main(version_base=None, config_path="../../conf/evaluation", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig):
@@ -70,40 +63,32 @@ def main(cfg: DictConfig):
     work_dir = cfg.general.work_dir
     dataset = cfg.general.dataset
     dataset_date = cfg.general.dataset_date
+
     max_num_contexts = cfg.qa.max_num_contexts
     outfolder = cfg.qa.outfolder
     use_retrieval_contexts = cfg.qa.use_retrieval_contexts
-    minicheck_ckpt_path = cfg.qa.minicheck_ckpt_path
     eval_only = cfg.qa.eval_only
-    openai_model_name = cfg.qa.openai_model_name
-    subset = cfg.qa.subset
     use_chunk = cfg.qa.use_chunk
-
-    local_llm_port = cfg.qa.local_llm_port
-    local_llm_model = cfg.qa.local_llm_model
-
-    eval_local_llm_port = cfg.qa.eval_local_llm_port
-    eval_local_llm_model = cfg.qa.eval_local_llm_model
-    eval_openai_model_name = cfg.qa.eval_openai_model_name
-
-    openai_api_key = os.getenv("OPENAI_API_KEY")
+    qa_llm_model_name = cfg.qa.qa_llm_model_name
+    eval_llm_model_name = cfg.qa.eval_llm_model_name
 
     dataset_name_2_relative_path = {
-        dn: data_relative_path(dn, dataset_date, subset) \
+        dn: data_relative_path(dn, dataset_date) \
             for dn in ALLOWED_DATASETS
     }
 
-    if subset:
-        outfile_pred = os.path.join(outfolder, f"{dataset}__{subset}__{retrieval_model}__rc{int(use_retrieval_contexts)}__chunk{use_chunk}.hyps.txt")
-        outfile_gt = os.path.join(outfolder, f"{dataset}__{subset}__{retrieval_model}__rc{int(use_retrieval_contexts)}__chunk{use_chunk}.refs.txt")
-    else:
-        outfile_pred = os.path.join(outfolder, f"{dataset}__{retrieval_model}__rc{int(use_retrieval_contexts)}__chunk{use_chunk}.hyps.txt")
-        outfile_gt = os.path.join(outfolder, f"{dataset}__{retrieval_model}__rc{int(use_retrieval_contexts)}__chunk{use_chunk}.refs.txt")
+    _metadata_folder = metadata_folder_name_creation(
+        dataset = dataset, llm_model_name = qa_llm_model_name, retrieval_model = retrieval_model,
+        use_retrieval_contexts = use_retrieval_contexts, use_chunk = use_chunk
+    )
+    os.makedirs(os.path.join(outfolder, _metadata_folder), exist_ok=True)
+    eval_metadata_outfile = os.path.join(outfolder, _metadata_folder, "eval_metadata.json")
+    eval_result_outfile = os.path.join(outfolder, _metadata_folder, "eval_result.json")
 
+    print(f"Model predictions will be written to '{eval_metadata_outfile}'")
+    print(f"Evaluation results will be written to '{eval_result_outfile}'")
 
-    experiment_name = f"{dataset}__{retrieval_model}"
-
-    retrieval_metadata_path = os.path.join(retrieval_metadata_folder, f"{experiment_name}.json")
+    retrieval_metadata_path = os.path.join(retrieval_metadata_folder, f"{dataset}__{retrieval_model}.json")
 
     queries_path = os.path.join(
         work_dir, 
@@ -140,12 +125,7 @@ def main(cfg: DictConfig):
         groundtruth_answers = [json.loads(line) for line in f]
 
     if eval_only is False:
-
-        init_client(openai_api_key, 
-                    openai_model_name = openai_model_name,
-                    local = local_llm_port is not None, 
-                    port = local_llm_port, 
-                    model_name = local_llm_model)
+        LLM = init_llm(qa_llm_model_name)
 
 
         if use_retrieval_contexts:
@@ -169,18 +149,23 @@ def main(cfg: DictConfig):
 
                 retrieval_metadata = temp
 
-
-
             queries = [line for line in queries if line["_id"] in retrieval_metadata]
             groundtruth_answers = [line for line in groundtruth_answers if line["_id"] in retrieval_metadata]
 
         else: retrieval_metadata = {}
 
-        
-            
-
-        groundtruths_preds = []
-        for query, gt_answer in tqdm(zip(queries, groundtruth_answers), desc = "Generating answers"):
+        eval_metadata = {
+            "config": {
+                "LLM_model_name": qa_llm_model_name,
+                "dataset": dataset,
+                "retrieval_model": retrieval_model if use_retrieval_contexts else "None",
+                "use_chunk": use_chunk
+            },
+            "predictions": {},
+            "groundtruths": {},
+            "queries": {}
+        }
+        for query, gt_answer in tqdm(zip(queries, groundtruth_answers), desc = "Generating answers", total = len(queries)):
             query_text = query.get("text")
             query_id = query.get("_id")
 
@@ -191,68 +176,39 @@ def main(cfg: DictConfig):
 
             contexts = retrieval_metadata.get(query_id)
 
-            answer = generate_answer(
-                query = query_text,
-                contexts = contexts,
-                use_retrieval_contexts = use_retrieval_contexts,
-                max_num_contexts = max_num_contexts
-            )
+            try:
+                answer = generate_answer(
+                    query = query_text,
+                    contexts = contexts,
+                    use_retrieval_contexts = use_retrieval_contexts,
+                    max_num_contexts = max_num_contexts,
+                    LLM = LLM
+                )
+            except Exception as e:
+                print(e)
+                answer = "No answer generated"
 
             to_append = [gt_answer_text, answer]
 
-            groundtruths_preds.append(to_append)
-            if len(groundtruths_preds) == NUM_SAMPLE: break
+            eval_metadata["predictions"][query_id] = answer
+            eval_metadata["groundtruths"][query_id] = gt_answer_text
+            eval_metadata["queries"][query_id] = query_text
 
-        with open(outfile_pred, "w") as f:
-            for line in groundtruths_preds:
-                pred = line[1]
-                f.write(pred.replace("\n", " "))
-                f.write("\n")
+            if len(eval_metadata["groundtruths"]) == NUM_SAMPLE: break
 
-        with open(outfile_gt, "w") as f:
-            for line in groundtruths_preds:
-                gt = line[0]
-                f.write(gt.replace("\n", " "))
-                f.write("\n")
-
-    else:
-        groundtruths = []
-        for gt_answer in groundtruth_answers:
-            gt_answer_text = gt_answer.get("text")
-            gt_answer_text = gt_answer_text if isinstance(gt_answer_text, str) else "--__--".join(gt_answer_text)
-
-            groundtruths.append(gt_answer_text)
-
-            if len(groundtruths) == NUM_SAMPLE: break
-        
-        with open(outfile_gt, "w") as f:
-            for gt in groundtruths:
-                f.write(gt.replace("\n", " "))
-                f.write("\n")
+        with open(eval_metadata_outfile, "w") as f:
+            json.dump(eval_metadata, f, indent = 4)
 
         
-    assert os.path.exists(outfile_gt) and os.path.exists(outfile_pred)
-    # print("====BERTSCORE====")
-    # run_bertscore_evaluation(outfile_pred, outfile_gt)
-    # print("====MINICHECK====")
-    evaluation_metadata_file = os.path.join(outfolder, f"{dataset}__{retrieval_model}__rc{int(use_retrieval_contexts)}__chunk{use_chunk}.evaluation_metadata.txt")
-    # run_minicheck_based_evaluation(outfile_pred, outfile_gt, minicheck_ckpt_path, evaluation_metadata_file)
-
+    assert os.path.exists(eval_metadata_outfile)
 
     # re-init client
-    init_client(
-        openai_api_key, 
-        openai_model_name = eval_openai_model_name,
-        local = eval_local_llm_port is not None, 
-        port = eval_local_llm_port, 
-        model_name = eval_local_llm_model
-    )
+    LLM = init_llm(eval_llm_model_name)
     run_llm_based_evaluation_keypoints(
-        queries = [q.get("text") for q in queries][:NUM_SAMPLE],
-        outfile_pred=outfile_pred,
-        outfile_gt = outfile_gt,
-        OPENAI_CLIENT = OPENAI_CLIENT,
-        evaluation_metadata_file=evaluation_metadata_file
+        eval_metadata_outfile = eval_metadata_outfile,
+        groundtruth_answers = groundtruth_answers,
+        LLM = LLM,
+        eval_result_outfile = eval_result_outfile
     )
 
 

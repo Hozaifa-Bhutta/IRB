@@ -3,13 +3,13 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk import pos_tag
 from typing import List
 
-
 try:
     nlp = spacy.load("en_core_web_sm")
 except OSError:
     print("Downloading 'en_core_web_sm' model. Please wait...")
     spacy.cli.download("en_core_web_sm")
     nlp = spacy.load("en_core_web_sm")
+
 
 
 def write_to_jsonl(data, filename):

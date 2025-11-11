@@ -19,86 +19,29 @@ from utils.token_counting import init_enc as init_tiktoken_enc, TIKTOKEN_ENC
 from minicheck.minicheck import MiniCheck
 from tqdm import tqdm
 from typing import List, Dict, Union, Optional
-
-# MINICHECK = {
-#     "model": None,
-#     "model_name": None
-# }
-# def init_minicheck(model_name: str = 'flan-t5-large', 
-#                    cache_dir:str = './ckpts') -> None:
-#     """
-#     Initialize the Minicheck model.
-#     Parameters
-#     ----------
-#         model_name : str, optional
-#             The name of the model to use, by default 'flan-t5-large'.
-#         cache_dir : str, optional
-#             The directory to cache the model, by default './ckpts'.
-#     """
-#     if MINICHECK["model_name"] != model_name:
-#         print(f"Initializing Minicheck ({model_name})")
-#         model = MiniCheck(model_name=model_name, cache_dir=cache_dir)
-#         MINICHECK["model"] = model
-        
+from langcodes import Language
 
 
-def groundedness_check_func(raw_facts: List, 
-                       keypoints_mapper: Dict[Union[int, str], List[str]], 
-                       url_content_mapper,
-                       max_tokens: int = 2000) -> Dict[str, int]:
-    """Check the groundedness of keypoints against the content of cited URLs.
-    This function is deprecated
-    Parameters
-    ----------
-        raw_facts : List
-            List of raw fact dictionaries, each containing 'fact', 'citation_urls', and 'pos'.
-        keypoints_mapper : Dict[Union[int, str], str]
-            A mapping from fact IDs to their corresponding keypoints.
-        url_content_mapper : Dict[str, Dict[str, Union[str, bool]]]
-            A mapping from URLs to their content and error status.
-        max_tokens : int, optional
-            The maximum number of words to consider from the URL content, by default 2000.
-    Returns
-    -------
-        Dict[str, int]
-            A mapping from "(factid)--__--(url)--__--(keypoint_index)" to groundedness label (0 or 1).
-    """
-    
-    res = {}
-    keypoints_contexts_pairs = []
-    skipped = []
-    for fact in raw_facts:
-        fact_id = fact.get("fact")
-        citation_urls = fact.get("citation_urls")
-        citation_positions = fact.get("pos")
-        keypoints = keypoints_mapper.get(fact_id)
-        if not keypoints or not citation_urls: continue
+LANG_OVERRIDES = {
+    "pt-br": "Portuguese (Brazil)",
+    "zh-cn": "Chinese (China)",
+    "zh-tw": "Chinese (Taiwan)",
+    "yue": "Cantonese",
+}
 
-        for kp_index, kp in enumerate(keypoints):
-            for pos, url in zip(citation_positions, citation_urls):
-                temp = url_content_mapper.get(url)
-                if not temp or kp_index != pos: continue
-
-                content = temp["url_content"]
-                if max_tokens:
-                    content = TIKTOKEN_ENC[OPENAI_CLIENT["model"]]["enc"].decode(
-                        TIKTOKEN_ENC[OPENAI_CLIENT["model"]]["enc"].encode(content)[:max_tokens])
-                if url_content_mapper.get(url, {}).get("error") or not content: continue
-
-                keypoints_contexts_pairs.append([f"{fact_id}--__--{url}--__--{kp_index}", kp, content])
-
-    groundedness_pred, raw_prob, _, _ = MINICHECK["model"].score(
-        docs=[line[2] for line in keypoints_contexts_pairs], 
-        claims=[line[1] for line in keypoints_contexts_pairs]
-    )
-    
-    assert len(groundedness_pred) == len(keypoints_contexts_pairs)
-    for i in range(len(keypoints_contexts_pairs)):
-        res[keypoints_contexts_pairs[i][0]] = groundedness_pred[i] if groundedness_pred else 0
-
-    return res
-
-
+def lang_display_name_from_code(code: str) -> str:
+    if not code: return code
+    normalized = code.replace("_", "-").lower()
+    if normalized in LANG_OVERRIDES:
+        return LANG_OVERRIDES[normalized]
+    try:
+        return Language.get(normalized).display_name("en")
+    except Exception:
+        base = normalized.split("-")[0]
+        try:
+            return Language.get(base).display_name("en")
+        except Exception:
+            return code
 
 def llm_based_groundedness_check_helper(
         kp: str, 
@@ -107,13 +50,14 @@ def llm_based_groundedness_check_helper(
         lang: str) -> bool:
     
     if not kp or not content: return False
+
+    lang_display_name = lang_display_name_from_code(code = lang)
     
     user_prompt = GROUNDEDNESS_CHECK_PROMPT["user"][:]\
         .replace("[ADD_KEYPOINT_HERE]", kp)\
         .replace("[ADD_CONTEXT_PUBLISHED_DATE_HERE]", published_date if published_date else "N/A")\
-        .replace("[ADD_CONTEXT_LANGUAGE_HERE]", lang if lang else "N/A")\
+        .replace("[ADD_CONTEXT_LANGUAGE_HERE]", lang_display_name if lang else "N/A")\
         .replace("[ADD_CONTEXT_HERE]", content)
-    
 
     resp = OPENAI_CLIENT["client"].chat.completions.create(
         model=OPENAI_CLIENT["model"],

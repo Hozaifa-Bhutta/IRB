@@ -1,26 +1,62 @@
+import torch, time
+from openai import OpenAI
 from transformers import AutoTokenizer, AutoModel
 
 model_name_2_model_path = {
     "e5_base": "intfloat/e5-base-v2",
-    "bge_m3": "BAAI/bge-m3"
+    "bge_m3": "BAAI/bge-m3",
+    "grit_lm": "GritLM/GritLM-7B"
 }
 
 model_name_2_model_class = {
     "e5_base": AutoModel,
-    "bge_m3": AutoModel
+    "bge_m3": AutoModel,
+    "grit_lm": AutoModel
 }
 
 model_name_2_tokenizer_class = {
     "e5_base": AutoTokenizer,
-    "bge_m3": AutoTokenizer
+    "bge_m3": AutoTokenizer,
+    "grit_lm": AutoTokenizer
 }
 
 model_name_2_prefix = {
-    "e5_base": {"query": "query:", "doc": "document:"}
+    "e5_base": {"query": "query:", "doc": "document:"},
+    "grit_lm": {"query": "<|embed|>\n", "doc": "<|embed|>\n"}
 }
 
 
-def text_embedding_batch(batch, model, tokenizer, model_name, prefix = None, device = None):
+def init_model(retrieval_model, device):
+    if retrieval_model in ["e5_base", "bge_m3", "grit_lm"]:
+        model = model_name_2_model_class[retrieval_model].from_pretrained(
+            model_name_2_model_path[retrieval_model], 
+        )
+        tokenizer = model_name_2_tokenizer_class[retrieval_model].from_pretrained(
+            model_name_2_model_path[retrieval_model]
+        )
+
+        model.eval()
+        model.to(device)
+
+        return model, tokenizer
+    else:
+        return None, None
+
+
+def text_embedding_batch_api(batch, model, tokenizer, model_name, prefix, device = None, max_length = 512):
+    client = OpenAI()
+
+    response = client.embeddings.create(
+        model=model_name,
+        input=batch  # Pass the entire list
+    )
+
+    embeddings = torch.tensor([item.embedding for item in response.data])
+
+    return embeddings
+
+
+def text_embedding_batch_hf(batch, model, tokenizer, model_name, prefix = None, device = None, max_length = 512):
     if prefix is not None:
         batch = [prefix + " " + text for text in batch]
     
@@ -29,17 +65,30 @@ def text_embedding_batch(batch, model, tokenizer, model_name, prefix = None, dev
                         truncation=True,
                         return_tensors="pt", 
                         return_token_type_ids=False, 
-                        max_length=256).to(device)
+                        max_length=max_length).to(device)
         
     output = model(**inputs)
 
     if model_name in ["specter2", "bge_m3"]:
-        return output.last_hidden_state[:, 0, :].cpu()
+        return output.last_hidden_state[:, 0, :].cpu().float()
     
-    elif model_name in ["e5_base"]:
+    elif model_name in ["e5_base", "grit_lm"]:
         attention_mask = inputs["attention_mask"]
         last_hidden = output.last_hidden_state.masked_fill(~attention_mask[..., None].bool(), 0.0)
-        return last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]
+        return (last_hidden.sum(dim=1) / attention_mask.sum(dim=1)[..., None]).float()
     
     else:
         raise NotImplementedError
+    
+
+
+def text_embedding_batch(batch, model, tokenizer, model_name, prefix = None, device = None, max_length = 512):
+    if model:
+        return text_embedding_batch_hf(batch, model, tokenizer, model_name, prefix, device, max_length)
+    else: 
+        res = text_embedding_batch_api(batch, model, tokenizer, model_name, prefix, device, max_length)
+        print(res.shape)
+
+        time.sleep(1)
+
+        return res

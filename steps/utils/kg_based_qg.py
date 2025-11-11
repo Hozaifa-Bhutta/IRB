@@ -45,7 +45,10 @@ class KGBasedQGUtils:
                 heads.add(head)
         return graph, heads
     
-    def _get_bad_nodes(self, all_nodes: List[str], keypoints: Optional[List[str]] = None):
+    def _get_bad_nodes(self, all_nodes: List[str], keypoints: Optional[List[str]] = None, knowledge_graph: Optional[List[Dict[str, str]]] = None):
+        # there are several types of nodes that we define as bad. These "bad" nodes will not be masked
+
+        # nodes that overlap with other nodes, because when we mask one, it will still be there in another
         overlapping_nodes = set()
         for node1 in all_nodes:
             for node2 in all_nodes:
@@ -53,56 +56,68 @@ class KGBasedQGUtils:
                     overlapping_nodes.add(node1)
                     overlapping_nodes.add(node2)
 
+        # nodes that do not contain any capitalized words
         non_capitalized_nodes = {node for node in all_nodes if not any([word.istitle() for word in node.split()])}
+
+        # nodes that are single words
         single_word_nodes = {node for node in all_nodes if len(node.split()) == 1}
+
         bad_nodes = overlapping_nodes | non_capitalized_nodes | single_word_nodes
 
         if keypoints:
             keypoints_str = "\n".join(keypoints)
+            # nodes that are not found in the keypoints
             nodes_not_found_in_keypoints = {node for node in all_nodes if node not in keypoints_str}
             bad_nodes = bad_nodes | nodes_not_found_in_keypoints
 
+        if knowledge_graph is not None:
+            # non-exclusive nodes, where an exclusive node is one that is the only head of any relation and also is the only tail of any relation 
+            def get_nonexclusive_nodes(knowledge_graph):
+                rel_info = {}
+                for edge in knowledge_graph:
+                    rel = edge.get("relation")
+                    head = edge.get("head")
+                    tail = edge.get("tail")
+
+                    if rel not in rel_info: rel_info[rel] = {"heads": set(), "tails": set()}
+                    rel_info[rel]["heads"].add(head)
+                    rel_info[rel]["tails"].add(tail)
+
+                nonexclusive = set()
+                for rel in rel_info:
+                    heads = rel_info[rel]["heads"]
+                    if len(heads) > 1: nonexclusive.update(heads)
+
+                    tails = rel_info[rel]["tails"]
+                    if len(tails) > 1: nonexclusive.update(tails)
+
+                return nonexclusive
+
+            nonexclusive_nodes = get_nonexclusive_nodes(knowledge_graph)
+            bad_nodes = bad_nodes | nonexclusive_nodes
+
         return bad_nodes
-
-
-    def _get_semantic_based_traversal_order(self, knowledge_graph: List[Dict[str, str]], keypoints: List[str]) -> List[int]:
-        if not knowledge_graph:
-            return []
-        
-        if not hasattr(self, "text_embedding"):
-            self.text_embedding = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-
-        keypoints_str = "\n".join(keypoints)
-        relations = [f"{rel['head']} {rel['relation']} {rel['tail']}" for rel in knowledge_graph]
-
-        embeddings = self.text_embedding.encode([keypoints_str] + relations, normalize_embeddings=True)
-
-        keypoints_embeddings = embeddings[0:1]
-        relations_embeddings = embeddings[1:]
-
-        keypoints_relations_scores = keypoints_embeddings.dot(relations_embeddings.T)[0]
-        traversal_order = np.argsort(-1 * keypoints_relations_scores).tolist()
-
-        return traversal_order
     
 
     def _knowledge_graph_masking(self, 
                                  knowledge_graph: List[Dict[str, str]], 
-                                 traversal_order: List[int], 
                                  max_nodes_to_mask: int,
                                  keypoints: Optional[List[str]] = None):
         graph, heads = self._convert_kg_to_nx_graph(knowledge_graph)
 
-        bad_nodes = self._get_bad_nodes(list(graph.nodes()), keypoints)
+        bad_nodes = self._get_bad_nodes(list(graph.nodes()), keypoints, knowledge_graph)
 
         if keypoints: keypoints_str = "\n".join(keypoints)
         else: keypoints_str = ""
-
-        first_edge = knowledge_graph[traversal_order[0]]
-
-        if first_edge["head"] in bad_nodes:
-            return []
         
+        traversal_order = None
+        for i in range(len(knowledge_graph)):
+            if knowledge_graph[i].get("head") and knowledge_graph[i].get("head") not in bad_nodes:
+                traversal_order = list(range(i, len(knowledge_graph))) + list(range(0, i))
+                break
+        
+        if traversal_order is None: return []
+        first_edge = knowledge_graph[traversal_order[0]]
 
         masked_entities_info = [[first_edge["head"], first_edge["head_type"]]]
         masked_entities_names = [first_edge["head"]]
@@ -300,6 +315,14 @@ class KGBasedQGChecker:
 
         check = len(relations_words.intersection(base_doc_words)) / len(base_doc_words)
         return check >= threshold
+    
+    def _max_relation_occurrences(self, knowledge_graph: List[Dict[str, str]]) -> int:
+        relcounter = Counter()
+        for edge in knowledge_graph:
+            relation = edge["relation"]
+            relcounter[relation] += 1
+
+        return max(relcounter.values())
 
     def _check_graph_connectedness(self, knowledge_graph):
         graph = nx.DiGraph()

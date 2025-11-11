@@ -103,7 +103,6 @@ def main(cfg: DictConfig)-> None:
             try:
                 all_masked_knowledge_graphs = kg_based_qg_utils._knowledge_graph_masking(
                     knowledge_graph = graph_data,
-                    traversal_order = traversal_order,
                     max_nodes_to_mask = 3,
                     keypoints = keypoints
                 )
