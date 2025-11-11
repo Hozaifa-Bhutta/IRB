@@ -31,6 +31,8 @@ step3:
 
 step4:
   output_folder: null
+  kg_completeness_word_check_threshold: 0.5
+  question_progression_word_check_threshold: 0.75
 
 step5:
   output_folder: null

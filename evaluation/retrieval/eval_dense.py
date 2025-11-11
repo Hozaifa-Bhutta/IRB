@@ -6,7 +6,7 @@ from tqdm import tqdm
 from typing import List, Dict, Tuple
 from dataclasses import dataclass
 from utils.text_embeddings import model_name_2_model_class, \
-    model_name_2_tokenizer_class, model_name_2_model_path, model_name_2_prefix, text_embedding_batch
+    model_name_2_tokenizer_class, model_name_2_model_path, model_name_2_prefix, text_embedding_batch, init_model
 from utils.generic import process_search_results
 from utils.allowed_datasets import ALLOWED_DATASETS
 
@@ -234,12 +234,7 @@ def main(cfg: DictConfig):
 
     index, id_map, id2raw = load_index(index_folder)
 
-    model = model_name_2_model_class[retrieval_model].from_pretrained(model_name_2_model_path[retrieval_model])
-    tokenizer = model_name_2_tokenizer_class[retrieval_model].from_pretrained(model_name_2_model_path[retrieval_model])
-
-    model = model.to(DEVICE)
-
-    model.eval()
+    model, tokenizer = init_model(retrieval_model, device = DEVICE)
 
     prefix_ = model_name_2_prefix.get(retrieval_model)
     if not prefix_:

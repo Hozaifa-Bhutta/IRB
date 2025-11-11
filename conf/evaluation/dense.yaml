@@ -9,8 +9,8 @@ general:
 retrieval:
   index:
     outfolder: null
-    chunk_size: 200
-    chunk_overlap: 20
+    chunk_size: 512
+    chunk_overlap: 32
     num_chunks: 1
     chunk_idx: 0
     batch_size: 32
@@ -22,33 +22,28 @@ retrieval:
 qa:
   max_num_contexts: 5
   outfolder: null
-  local_llm_port: null
-  local_llm_model: null
   use_retrieval_contexts: true
   minicheck_ckpt_path: "/scratch/lamdo/minicheck_ckpts"
   eval_only: false # if true, only do evaluation without generating answer again
-  openai_model_name: "gpt-4o-mini-2024-07-18" #"gpt-4o-2024-05-13"
-  subset: null # 1_citations, 2_citations, 3_citations
   use_chunk: true # if this is true, use top k retrieved chunks. If this is false, use the whole content from top k URL. Note: k is 'max_num_contexts'
-
-  eval_local_llm_port:  null #6868
-  eval_local_llm_model: null #"Qwen/Qwen3-8B"
-  eval_openai_model_name: "gpt-4o-mini-2024-07-18"
+  qa_llm_model_name: null
+  eval_llm_model_name: gpt-4.1-mini
 
 
 view:
   configurations: 
-    # - {keypoints: single}
-    # - {keypoints: multi}
-    # - {language: english_only}
-    # - {language: multilingual}
-    # - {freshness: 2023}
-    # - {freshness: 2024}
-    # - {freshness: 2025}
-    # - {topic: Culture}
-    # - {topic: Geography}
-    # - {topic: History_and_Society}
-    # - {topic: STEM}
+    - {keypoints: single}
+    - {keypoints: multi}
+    - {language: english_only}
+    - {language: multilingual}
+    - {freshness: 2024}
+    - {freshness: 2025}
+    - {topic: Culture}
+    - {topic: Geography}
+    - {topic: History_and_Society}
+    - {topic: STEM}
+    - {numhops: single}
+    - {numhops: multi}
     # - {freshness: 2025, topic: Culture}
     # - {freshness: 2025, topic: Geography}
     # - {freshness: 2025, topic: History_and_Society}

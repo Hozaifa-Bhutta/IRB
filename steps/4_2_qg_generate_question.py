@@ -38,8 +38,9 @@ def main(cfg: DictConfig)-> None:
         graph_builder_prompt = None
     )
     kg_based_qg_checker = KGBasedQGChecker(
-        minicheck_model_name = "flan-t5-large",
-        minicheck_cache_dir = '/scratch/lamdo/minicheck_ckpts/'
+        minicheck_model_name = None,
+        minicheck_cache_dir = None,
+        openai_client = OPENAI_CLIENT
     )
     
     files = os.listdir(decontextualized_facts_folder)
@@ -54,6 +55,8 @@ def main(cfg: DictConfig)-> None:
                                                                                     fact_groundedness_files_full_path, 
                                                                                     extracted_kg_files_full_path,
                                                                                     output_files_full_path), total = len(files)):
+        if os.path.exists(output_file_path): continue
+        
         try:
             dff_data = read_json_or_jsonl(dff_file_path)
             fgf_data = read_json_or_jsonl(fgf_file_path)
@@ -97,35 +100,37 @@ def main(cfg: DictConfig)-> None:
             this_fact_questions = []
             
             traversal_order = range(len(graph_data))#kg_based_qg_utils._get_traversal_order(graph_data)
-            all_masked_knowledge_graphs = kg_based_qg_utils._knowledge_graph_masking(
-                knowledge_graph = graph_data,
-                traversal_order = traversal_order,
-                max_nodes_to_mask = 3,
-                keypoints = keypoints
-            )
+            try:
+                all_masked_knowledge_graphs = kg_based_qg_utils._knowledge_graph_masking(
+                    knowledge_graph = graph_data,
+                    max_nodes_to_mask = 3,
+                    keypoints = keypoints
+                )
+            except Exception as e: continue
 
             for line in all_masked_knowledge_graphs:
-                masked_kg = line["masked_kg"]
-                num_hops = line["num_hops"]
-                masked_keypoints_str = line["masked_keypoints_str"]
+                try:
+                    masked_kg = line["masked_kg"]
+                    num_hops = line["num_hops"]
+                    masked_keypoints_str = line["masked_keypoints_str"]
 
-                questions = kg_based_qg_utils.generate_question_from_masked_kg_step_by_step(masked_kg)
+                    questions = kg_based_qg_utils.generate_question_from_masked_kg_step_by_step(masked_kg)
 
-                question_progression_check = kg_based_qg_checker.check_correctness_of_question_progression(
-                    generated_questions = questions, masked_knowledge_graph = masked_kg)
-                if question_progression_check:
-                    this_fact_questions.append(
-                        {
-                            "question": questions[-1],
-                            "num_hops": num_hops,
-                            "masked_kg": masked_kg,
-                            "masked_keypoints_str": masked_keypoints_str
-                        }
-                    )
+                    question_progression_check = kg_based_qg_checker.check_correctness_of_question_progression(
+                        generated_questions = questions, masked_knowledge_graph = masked_kg)
+                    if question_progression_check:
+                        this_fact_questions.append(
+                            {
+                                "question": questions[-1],
+                                "num_hops": num_hops,
+                                "masked_kg": masked_kg,
+                                "masked_keypoints_str": masked_keypoints_str
+                            }
+                        )
+                except Exception as e: continue
 
-
-            # if good_question:
-            fact_question_mapper[fact_id] = this_fact_questions
+            if this_fact_questions:
+                fact_question_mapper[fact_id] = this_fact_questions
 
         if fact_question_mapper:
             to_save = {

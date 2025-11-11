@@ -49,7 +49,7 @@ def main(cfg: DictConfig)-> None:
                                                                                                         extracted_kg_files_full_path,
                                                                                                         generated_question_files_full_path,
                                                                                                         output_files_full_path), total = len(files)):
-
+        if os.path.exists(output_file_path): continue
         try:
             dff_data = read_json_or_jsonl(dff_file_path)
             fgf_data = read_json_or_jsonl(fgf_file_path)
@@ -97,7 +97,10 @@ def main(cfg: DictConfig)-> None:
             all_questions_filtered = []
             for line in all_questions:
                 question = line["question"]
-                answerability = kg_based_qg_checker.check_question_answerability(question)
+                try:
+                    answerability = kg_based_qg_checker.check_question_answerability(question)
+                except Exception as e:
+                    continue
                 if answerability:
                     all_questions_filtered.append(line)
 

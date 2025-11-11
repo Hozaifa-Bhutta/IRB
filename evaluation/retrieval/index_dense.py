@@ -4,7 +4,7 @@ from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
 from utils.text_embeddings import model_name_2_model_class, \
-    model_name_2_tokenizer_class, model_name_2_model_path, model_name_2_prefix, text_embedding_batch
+    model_name_2_tokenizer_class, model_name_2_model_path, model_name_2_prefix, text_embedding_batch, init_model
 from utils.text_chunking import init_chunker, text_chunking
 from utils.allowed_datasets import ALLOWED_DATASETS
 
@@ -83,22 +83,17 @@ def main(cfg: DictConfig):
         chunk_overlap = chunk_overlap
     )
 
-
-
     dataset_name_2_relative_path = {
         dn: os.path.join("benchmarks", dataset_date, dn) if dataset_date is not None else os.path.join("data", dn) \
             for dn in ALLOWED_DATASETS
     }
 
-    model = model_name_2_model_class[retrieval_model].from_pretrained(model_name_2_model_path[retrieval_model])
-    tokenizer = model_name_2_tokenizer_class[retrieval_model].from_pretrained(model_name_2_model_path[retrieval_model])
+    model, tokenizer = init_model(retrieval_model, device = DEVICE)
 
     prefix_ = model_name_2_prefix.get("model_name")
     if not prefix_:
         prefix = None
     else: prefix = prefix_["doc"]
-
-    model = model.to(DEVICE)
 
 
     # load corpus
