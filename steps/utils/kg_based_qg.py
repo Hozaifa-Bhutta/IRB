@@ -1,38 +1,74 @@
 import json, os, string, nltk, sys
 import numpy as np
 import networkx as nx
+from rapidfuzz import fuzz
+from copy import deepcopy
 from collections import Counter
 from typing import List, Dict, Tuple, Set, Union, Optional
-from sentence_transformers import SentenceTransformer
-from utils.prompts import QUESTION_ANSWERABILITY_CHECK_PROMPT
-from pydantic import BaseModel
 
 
 ENGLISH_STOPWORDS = set(nltk.corpus.stopwords.words('english'))
 PORTER_STEMMER = nltk.stem.PorterStemmer()
 
-class RelationFormat(BaseModel):
-    head: str
-    head_type: str
-    relation: str
-    tail: str
-    tail_type: str
 
-class KnowledgeGraphFormat(BaseModel):
-    relations: list[RelationFormat]
+class KGBasedQGUtilsHelper:
+    def __init__(self):
+        import spacy
+        self.nlp = spacy.load("en_core_web_sm")
 
+    def is_proper_noun_phrase(self, substrings: List[str], full_string: str):
+        def get_entity_status(input_str: str):
+            entity_status = []
+            casing_status = []
+            tokens = []
+            for i, tok in enumerate(self.nlp(input_str)):
+                if tok.text.lower() in ENGLISH_STOPWORDS: continue
+                if tok.ent_type_: entity_status.append(True)
+                else: entity_status.append(False)
 
+                tokens.append(tok.text)
 
+                if (tok.text.istitle() or tok.text.isupper()) and i > 0: casing_status.append(True)
+                else: casing_status.append(False)
+
+            final_entity_status = [es or cs for es, cs in zip(entity_status, casing_status)]
+            
+            return tokens, final_entity_status
+        
+        full_string_tokens, full_string_entity_status = get_entity_status(full_string)
+
+        res = []
+        for substring in substrings:
+            substring_tokens, _ = get_entity_status(substring)
+
+            matched_index = -1
+            for i in range(len(full_string_tokens)):
+                if full_string_tokens[i: i + len(substring_tokens)] == substring_tokens: 
+                    matched_index = i
+                    break
+            
+            if matched_index != -1:
+                substring_entity_status = [stt for tok, stt in zip(full_string_tokens[matched_index: matched_index + len(substring_tokens)],
+                                                                   full_string_entity_status[matched_index: matched_index + len(substring_tokens)]) if tok.lower() not in ENGLISH_STOPWORDS]
+                if sum(substring_entity_status) / len(substring_entity_status) >= 2/3: res.append(True)
+                else: res.append(False)
+
+            else: res.append(False)
+
+        return res
 
 class KGBasedQGUtils:
-    def __init__(self, openai_client,
+    def __init__(self, 
+                 LLM,
                  question_generation_prompt = None,
                  graph_builder_prompt = None,
                  question_refinement_prompt = None):
-        self.openai_client = openai_client
+        self.LLM = LLM
         self.question_generation_prompt = question_generation_prompt
         self.graph_builder_prompt = graph_builder_prompt
         self.question_refinement_prompt = question_refinement_prompt
+        self.text_splitter = lambda text: [item.strip(string.punctuation).lower() for item in text.replace("_", " ").replace("-", " ").split()]
+        self.helper = KGBasedQGUtilsHelper()
 
 
     def _convert_kg_to_nx_graph(self, knowledge_graph: List[Dict[str, str]]) -> Tuple[nx.DiGraph, Set[str]]:
@@ -52,17 +88,23 @@ class KGBasedQGUtils:
         overlapping_nodes = set()
         for node1 in all_nodes:
             for node2 in all_nodes:
-                if node1 != node2 and node1 in node2:
+                if node1 != node2 and fuzz.partial_ratio(self.text_splitter(node1), self.text_splitter(node2)) >= 80:
                     overlapping_nodes.add(node1)
                     overlapping_nodes.add(node2)
 
-        # nodes that do not contain any capitalized words
-        non_capitalized_nodes = {node for node in all_nodes if not any([word.istitle() for word in node.split()])}
+        # nodes whose component word is not capitalized (excluding stop words)
+        # capitalization_status = {node: [int(word.istitle() or word.isupper()) for word in node.split() if word.lower() not in ENGLISH_STOPWORDS] for node in all_nodes}
+        # non_capitalized_nodes = {node for node in all_nodes if sum(capitalization_status[node]) / len(capitalization_status[node]) < 2/3}
+        is_entity = self.helper.is_proper_noun_phrase(all_nodes, "\n".join(keypoints))
+        non_entity_nodes = {node for i, node in enumerate(all_nodes) if not is_entity[i]}
 
-        # nodes that are single words
-        single_word_nodes = {node for node in all_nodes if len(node.split()) == 1}
+        # # nodes that are single words
+        # single_word_nodes = {node for node in all_nodes if len(node.split()) == 1}
 
-        bad_nodes = overlapping_nodes | non_capitalized_nodes | single_word_nodes
+        # nodes that do not cover all keypoints
+        lack_coverage_nodes = {triplet["head"] for triplet in knowledge_graph if len(triplet["head_coverage"]) != len(keypoints)}
+
+        bad_nodes = overlapping_nodes | non_entity_nodes | lack_coverage_nodes
 
         if keypoints:
             keypoints_str = "\n".join(keypoints)
@@ -102,7 +144,7 @@ class KGBasedQGUtils:
     def _knowledge_graph_masking(self, 
                                  knowledge_graph: List[Dict[str, str]], 
                                  max_nodes_to_mask: int,
-                                 keypoints: Optional[List[str]] = None):
+                                 keypoints: List[str]):
         graph, heads = self._convert_kg_to_nx_graph(knowledge_graph)
 
         bad_nodes = self._get_bad_nodes(list(graph.nodes()), keypoints, knowledge_graph)
@@ -136,6 +178,7 @@ class KGBasedQGUtils:
                 relation["head"] not in bad_nodes, # self explanatory
             ]):
                 # do the masking of the current head
+                # since the masked node is going to be the head of the relation, there's no need to check if this node is leaf
                 masked_entities_info.append([relation["head"], relation["head_type"]])
                 masked_entities_names.append(relation["head"])
         
@@ -179,6 +222,41 @@ class KGBasedQGUtils:
             prompt += f"\n{i+1}. {relation_text}"
 
         return prompt + f"\n\nQuestion generation steps: ({len(masked_kg)} steps)"
+    
+
+    def kg_postprocessing(self, knowledge_graph: List[Dict[str, str]], keypoints: List[str]) -> List[Dict[str, str]]:
+
+        def get_original_string(input_str, keypoints_str):
+            input_str_lower = input_str.lower()
+            keypoints_str_lower = keypoints_str.lower()
+
+            try: 
+                start_index = keypoints_str_lower.index(input_str_lower)
+            except ValueError: 
+                return input_str
+
+            return keypoints_str[start_index: start_index + len(input_str_lower)]
+        
+
+        keypoints_str = "\n".join(keypoints)
+        postprocessed_knowledge_graph = deepcopy(knowledge_graph)
+        for i, rel in enumerate(knowledge_graph):
+            head = rel["head"]
+            tail = rel["tail"]
+
+            postprocessed_head = get_original_string(head, keypoints_str)
+            postprocessed_tail = get_original_string(tail, keypoints_str)
+
+            head_coverage = [i for i, kp in enumerate(keypoints) if postprocessed_head in kp]
+            tail_coverage = [i for i, kp in enumerate(keypoints) if postprocessed_tail in kp]
+
+            postprocessed_knowledge_graph[i]["head"] = postprocessed_head
+            postprocessed_knowledge_graph[i]["tail"] = postprocessed_tail
+            postprocessed_knowledge_graph[i]["head_coverage"] = head_coverage
+            postprocessed_knowledge_graph[i]["tail_coverage"] = tail_coverage
+
+        return postprocessed_knowledge_graph
+
 
 
     
@@ -187,56 +265,52 @@ class KGBasedQGUtils:
         user_prompt = self.graph_builder_prompt["user"][:]\
             .replace("[ADD_KEYPOINTS_HERE]", concatenated_keypoints)
         
-        resp = self.openai_client["client"].chat.completions.create(
-            model=self.openai_client["model"],
-            messages=[
-                {
-                    "role": "system",
-                    "content": self.graph_builder_prompt["system"]
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt
-                }
-            ],
-            max_tokens = 1024,
-        )
-
-        _result = resp.choices[0].message.content.replace("Knowledge Graph:", "").strip()
+        _result = self.LLM.generate(
+            system_prompt = self.graph_builder_prompt["system"],
+            user_prompt = user_prompt
+        ).replace("Knowledge Graph:", "").strip()
 
         if _result.startswith("```json"):
             _result = _result[7:-3]
 
         try:
-            return json.loads(_result)
+            return self.kg_postprocessing(knowledge_graph = json.loads(_result), keypoints = keypoints)
         except Exception as e:
             return {"error": str(e)}
     
 
     def generate_question_from_masked_kg_step_by_step(self, masked_kg: List[Dict[str, str]], masked_keypoints_str: Optional[str] = None) -> List[str]:
+        def format_user_prompt(generated_questions: List[str], relation_texts: List[str], question_target_type: str):
+            assert len(generated_questions) == len(relation_texts)
+            
+            res = []
+            for relation_text, generated_question in zip(relation_texts, generated_questions[1:] + [""]):
+                to_append = f"Relation: {relation_text}\nGenerated question: {generated_question}"
+                res.append(to_append)
+
+            res = "\n\n".join(res)
+            user_prompt = f"""User input:\nThe generated question must ask about an a/an '{question_target_type}'\nQuestion generation steps:\n{res}"""
+            return user_prompt
+
+        question_target_type = masked_kg[0]["head_type"]
         generated_questions = [""]
+        relation_texts = []
         for i, rel in enumerate(masked_kg):
 
             head_str = rel["head"]
             tail_str = rel["tail"]
             relation_text = f"{head_str} [{rel['head_type']}] | {rel['relation']} | {tail_str} [{rel['tail_type']}]"
+            relation_texts.append(relation_text)
 
             current_question = generated_questions[-1]
 
-            user_prompt = f"Relation: {relation_text}"
-            if current_question: user_prompt += f"\nExisting question: {current_question}"
+            user_prompt = format_user_prompt(generated_questions, relation_texts, question_target_type)
 
-            resp = self.openai_client["client"].chat.completions.create(
-                model=self.openai_client["model"],
+            resp = self.LLM.client.chat.completions.create(
+                model=self.LLM.model_name,
                 messages=[
-                    {
-                        "role": "system",
-                        "content": self.question_generation_prompt["system"]
-                    },
-                    {
-                        "role": "user",
-                        "content": user_prompt
-                    }
+                    {"role": "system", "content": self.question_generation_prompt["system"]},
+                    {"role": "user", "content": user_prompt}
                 ],
                 prediction={
                     "type": "content",
@@ -244,37 +318,30 @@ class KGBasedQGUtils:
                 },
                 max_tokens = 128,
             )
-
             question = resp.choices[0].message.content.strip()
+
+            print(question)
 
             generated_questions.append(question)
 
         return generated_questions[1:]
     
 
-    def question_refinement(self, generated_question: str, keypoints: List[str]):
-        keypoints_str = "\n".join(keypoints)
+    def question_refinement(self, generated_question: str, masked_keypoints_str: str, masked_kg: List[Dict[str, str]]):
+        question_target_type = masked_kg[0]["head_type"]
 
         user_prompt = self.question_refinement_prompt["user"][:]\
-        .replace("[ADD_KEYPOINTS_HERE]", keypoints_str)\
-        .replace("[ADD_QUESTION_HERE]", generated_question)
-        
-        resp = self.openai_client["client"].chat.completions.create(
-            model=self.openai_client["model"],
-            messages=[
-                {
-                    "role": "system",
-                    "content": self.question_refinement_prompt["system"]
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt
-                }
-            ],
-            max_tokens = 128,
-        )
+        .replace("[ADD_KEYPOINTS_HERE]", masked_keypoints_str)\
+        .replace("[ADD_QUESTION_HERE]", generated_question)\
+        .replace("[ADD_QUESTION_TARGET_TYPE]", question_target_type)
 
-        return resp.choices[0].message.content.strip()
+        res = self.LLM.generate(
+            system_prompt = self.question_refinement_prompt["system"],
+            user_prompt = user_prompt,
+            max_output_tokens = 128
+        ).strip()
+
+        return res
 
 
 
@@ -283,7 +350,8 @@ class KGBasedQGChecker:
     def __init__(self, 
                  minicheck_model_name, 
                  minicheck_cache_dir, 
-                 openai_client = None):
+                 question_answerability_check_prompt = None,
+                 LLM = None):
         from minicheck.minicheck import MiniCheck
         
         if minicheck_cache_dir and minicheck_model_name:
@@ -292,7 +360,8 @@ class KGBasedQGChecker:
         
         self.stemmer = nltk.stem.PorterStemmer()
 
-        self.openai_client = openai_client
+        self.LLM = LLM
+        self.question_answerability_check_prompt = question_answerability_check_prompt
 
         self.text_splitter = lambda text: [item.strip(string.punctuation).lower() for item in text.replace("_", " ").replace("-", " ").split()]
 
@@ -432,28 +501,15 @@ class KGBasedQGChecker:
 
     def check_question_answerability(self, question: str, verbose: bool = False):
 
-        user_prompt = QUESTION_ANSWERABILITY_CHECK_PROMPT["user"][:]\
+        user_prompt = self.question_answerability_check_prompt["user"][:]\
         .replace("[ADD_QUESTION_HERE]", question)
-        resp = self.openai_client["client"].chat.completions.create(
-            model=self.openai_client["model"],
-            messages=[
-                {
-                    "role": "system",
-                    "content": QUESTION_ANSWERABILITY_CHECK_PROMPT["system"]
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt
-                }
-            ],
-            # temperature=0.1,
-            max_tokens = 16,
-            # extra_body={"chat_template_kwargs": {"enable_thinking": False}},
-        )
 
-
-
-        res = resp.choices[0].message.content.strip()
+        res = self.LLM.generate(
+            system_prompt = self.question_answerability_check_prompt["system"],
+            user_prompt = user_prompt,
+            max_output_tokens = 16
+        ).strip()
+        
         if verbose: print(res)
 
         return "B." in res

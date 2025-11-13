@@ -15,9 +15,9 @@ from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
 from typing import List, Union
-from utils.generic import read_json_or_jsonl, write_to_json
-from utils.openai_utils import init_client, OPENAI_CLIENT
-from utils.prompts import KEYPOINT_EXTRACTION_PROMPT
+from steps.utils.generic import read_json_or_jsonl, write_to_json
+from llm_apis import init_llm, BaseLLMAPI
+from steps.utils.prompts import KEYPOINT_EXTRACTION_PROMPT
 
 
 def get_first_paragraph(extracted_sentences: List[str]) -> str:
@@ -77,7 +77,8 @@ def create_keypoints(fact: int,
                      marked_sentences: List[str],
                      extracted_sentences: List[str], 
                      wiki_title: str = None,
-                     last_updated_date: str = None) -> Union[List[str], None]:
+                     last_updated_date: str = None,
+                     LLM: BaseLLMAPI = None) -> Union[List[str], None]:
     """Create keypoints from a fact sentence using OpenAI's GPT model.
     Parameters
     ----------
@@ -118,23 +119,16 @@ def create_keypoints(fact: int,
         .replace("[ADD_LAST_UPDATED_DATE]", last_updated_date)
 
     try:
-        resp = OPENAI_CLIENT["client"].chat.completions.create(
-            model=OPENAI_CLIENT["model"],
-            messages=[
-                {
-                    "role": "system",
-                    "content": KEYPOINT_EXTRACTION_PROMPT["system"]
-                },
-                {
-                    "role": "user",
-                    "content": user_prompt
-                }
-            ],
-            max_tokens = 1024,
-        )
-    except Exception: return None
+        result = LLM.generate(
+            system_prompt = KEYPOINT_EXTRACTION_PROMPT["system"],
+            user_prompt = user_prompt,
+            max_output_tokens = 1024
+        ).strip()
+    except Exception as e:
+        print(e) 
+        return None
 
-    result = resp.choices[0].message.content.strip()
+
     try:
         temp = result.replace("##KEYPOINTS##:", "").strip()
         res = json.loads(temp)
@@ -153,17 +147,9 @@ def main(cfg: DictConfig)-> None:
     extracted_facts_folder = cfg.step1.output_folder
     crawled_url_content_folder = cfg.step2_1.output_folder
     output_folder = cfg.step2_2.output_folder
-    local_llm_port = cfg.general.local_llm_port
-    local_llm_model = cfg.general.local_llm_model
-    openai_model_name = cfg.general.openai_model_name
+    llm_model_name = cfg.general.llm_model_name
 
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-
-    init_client(openai_api_key, 
-                openai_model_name = openai_model_name,
-                local = local_llm_port is not None, 
-                port = local_llm_port, 
-                model_name = local_llm_model)
+    LLM = init_llm(llm_model_name)
 
     files = os.listdir(extracted_facts_folder)
     files = [file for file in files if file.endswith('.json')]
@@ -207,14 +193,12 @@ def main(cfg: DictConfig)-> None:
                 marked_sentences = marked_sentences,
                 extracted_sentences=extracted_sentences, 
                 wiki_title = ef_data.get("title"),
-                last_updated_date = wiki_page_last_updated_date
+                last_updated_date = wiki_page_last_updated_date,
+                LLM = LLM
             )
 
             if not keypoints_from_fact: continue
             keypoints_mapper[int(fact["fact"])] = keypoints_from_fact
-
-            if not local_llm_model:
-                time.sleep(0.2)
 
         to_save = {
             "title": ef_data.get("title"),

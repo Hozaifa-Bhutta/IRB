@@ -1,9 +1,9 @@
 import json, os, hydra
 from collections import defaultdict
-from utils.prompts import GRAPH_BUILDER_PROMPT
-from utils.generic import read_json_or_jsonl, write_to_json, maybe_create_folder
-from utils.openai_utils import init_client, OPENAI_CLIENT
-from utils.kg_based_qg import KGBasedQGUtils, KGBasedQGChecker
+from steps.utils.prompts import GRAPH_BUILDER_PROMPT
+from steps.utils.generic import read_json_or_jsonl, write_to_json, maybe_create_folder
+from steps.utils.kg_based_qg import KGBasedQGUtils, KGBasedQGChecker
+from llm_apis import init_llm, BaseLLMAPI
 from typing import List
 from omegaconf import DictConfig
 from tqdm import tqdm
@@ -17,23 +17,15 @@ def main(cfg: DictConfig)-> None:
     output_folder = cfg.step4.output_folder + "_extracted_kg"
     kg_completeness_word_check_threshold = cfg.step4.kg_completeness_word_check_threshold
 
-    local_llm_port = cfg.general.local_llm_port
-    local_llm_model = cfg.general.local_llm_model
-    openai_model_name = cfg.general.openai_model_name
-
-    openai_api_key = os.getenv("OPENAI_API_KEY")
+    llm_model_name = cfg.general.llm_model_name
 
     maybe_create_folder(output_folder)
 
-    init_client(openai_api_key, 
-                openai_model_name = openai_model_name,
-                local = local_llm_port is not None, 
-                port = local_llm_port, 
-                model_name = local_llm_model)
+    LLM = init_llm(llm_model_name)
     
 
     kg_based_qg_utils = KGBasedQGUtils(
-        openai_client = OPENAI_CLIENT,
+        LLM = LLM,
         question_generation_prompt = None, # in this step we will not be generating questions yet
         graph_builder_prompt = GRAPH_BUILDER_PROMPT
     )

@@ -7,8 +7,8 @@ from datetime import datetime
 from omegaconf import DictConfig
 from tqdm import tqdm
 from typing import List
-from utils.generic import read_json_or_jsonl, write_to_jsonl, write_to_json, maybe_create_folder
-from utils.token_counting import token_count_tiktoken
+from steps.utils.generic import read_json_or_jsonl, write_to_jsonl, write_to_json, maybe_create_folder
+from steps.utils.token_counting import token_count_tiktoken
 
 def process_qrels(qrels):
     qrels_lines = []
