@@ -11,12 +11,10 @@
 
 import os, hydra
 from omegaconf import DictConfig
-from argparse import ArgumentParser
-from utils.generic import read_json_or_jsonl, write_to_json
-from utils.prompts import GROUNDEDNESS_CHECK_PROMPT
-from utils.openai_utils import init_client, OPENAI_CLIENT
-from utils.token_counting import init_enc as init_tiktoken_enc, TIKTOKEN_ENC
-from minicheck.minicheck import MiniCheck
+from steps.utils.generic import read_json_or_jsonl, write_to_json
+from steps.utils.prompts import GROUNDEDNESS_CHECK_PROMPT
+from steps.utils.token_counting import init_enc as init_tiktoken_enc, TIKTOKEN_ENC
+from llm_apis import init_llm, BaseLLMAPI
 from tqdm import tqdm
 from typing import List, Dict, Union, Optional
 from langcodes import Language
@@ -47,7 +45,8 @@ def llm_based_groundedness_check_helper(
         kp: str, 
         content: str, 
         published_date: str, 
-        lang: str) -> bool:
+        lang: str,
+        LLM: BaseLLMAPI) -> bool:
     
     if not kp or not content: return False
 
@@ -59,24 +58,11 @@ def llm_based_groundedness_check_helper(
         .replace("[ADD_CONTEXT_LANGUAGE_HERE]", lang_display_name if lang else "N/A")\
         .replace("[ADD_CONTEXT_HERE]", content)
 
-    resp = OPENAI_CLIENT["client"].chat.completions.create(
-        model=OPENAI_CLIENT["model"],
-        messages=[
-            {
-                "role": "system",
-                "content": GROUNDEDNESS_CHECK_PROMPT["system"]
-            },
-            {
-                "role": "user",
-                "content": user_prompt
-            }
-        ],
-        # temperature=0.1,
-        max_tokens = 16,
-        # extra_body={"chat_template_kwargs": {"enable_thinking": False}},
-    )
-
-    _result = resp.choices[0].message.content.strip()
+    _result = LLM.generate(
+        system_prompt = GROUNDEDNESS_CHECK_PROMPT["system"],
+        user_prompt = user_prompt,
+        max_output_tokens = 16
+    ).strip()
 
     if "Not Grounded" in _result:
         return False
@@ -89,11 +75,10 @@ def llm_based_groundedness_check_func(
         raw_facts: List, 
         keypoints_mapper: Dict[Union[int, str], List[str]], 
         url_content_mapper: Dict[str, Dict],
-        max_tokens: Optional[int] = None) -> Dict[str, int]:
+        max_tokens: Optional[int] = None,
+        LLM: BaseLLMAPI = None) -> Dict[str, int]:
 
     """Check the groundedness of keypoints against the content of cited URLs.
-    This function does the same thing as 'groundedness_check_func', but use LLM instead of MiniCheck
-    Parameters
     ----------
         raw_facts : List
             List of raw fact dictionaries, each containing 'fact', 'citation_urls', and 'pos'.
@@ -129,15 +114,15 @@ def llm_based_groundedness_check_func(
                 lang = temp["lang"]
 
                 if max_tokens:
-                    content = TIKTOKEN_ENC[OPENAI_CLIENT["model"]]["enc"].decode(
-                        TIKTOKEN_ENC[OPENAI_CLIENT["model"]]["enc"].encode(content)[:max_tokens])
+                    content = TIKTOKEN_ENC[LLM.model_name]["enc"].decode(
+                        TIKTOKEN_ENC[LLM.model_name]["enc"].encode(content)[:max_tokens])
 
                 if url_content_mapper.get(url, {}).get("error") or not content: continue
 
                 keypoints_contexts_pairs.append([f"{fact_id}--__--{url}--__--{kp_index}", kp, content, published_date, lang])
 
     keypoints_contexts_pairs = sorted(keypoints_contexts_pairs, key = lambda x: x[0])
-    groundedness_pred = [llm_based_groundedness_check_helper(kp, content, published_date, lang) \
+    groundedness_pred = [llm_based_groundedness_check_helper(kp, content, published_date, lang, LLM) \
                          for _, kp, content, published_date, lang in keypoints_contexts_pairs]
     
     assert len(groundedness_pred) == len(keypoints_contexts_pairs)
@@ -158,24 +143,13 @@ def main(cfg: DictConfig)-> None:
     output_folder = cfg.step3.output_folder
     max_tokens = cfg.step3.max_tokens
 
-    local_llm_port = cfg.general.local_llm_port
-    local_llm_model = cfg.general.local_llm_model
-    openai_model_name = cfg.general.openai_model_name
+    llm_model_name = cfg.general.llm_model_name
 
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-
-    init_client(openai_api_key, 
-                openai_model_name = openai_model_name,
-                local = local_llm_port is not None, 
-                port = local_llm_port, 
-                model_name = local_llm_model)
+    LLM = init_llm(llm_model_name)
     
     if max_tokens is not None:
         # This will raise an error if we do not use OpenAI's model
-        init_tiktoken_enc(model_name = openai_model_name)
-
-    # minicheck_ckpt_path = cfg.step3.minicheck_ckpt_path
-    # init_minicheck(cache_dir = minicheck_ckpt_path)
+        init_tiktoken_enc(model_name = llm_model_name)
 
 
     files = os.listdir(extracted_facts_folder)
@@ -208,7 +182,8 @@ def main(cfg: DictConfig)-> None:
             raw_facts = raw_facts,
             keypoints_mapper = keypoints_mapper,
             url_content_mapper = url_content_mapper,
-            max_tokens = max_tokens
+            max_tokens = max_tokens,
+            LLM = LLM
         )
 
         to_save = {

@@ -2,10 +2,10 @@ import json, hydra, os, string, nltk
 import numpy as np
 from collections import defaultdict
 from omegaconf import DictConfig
-from utils.openai_utils import init_client, OPENAI_CLIENT
-from utils.prompts import QUESTION_GENERATION_PROMPT_FROM_KG_SINGLE_STEP
-from utils.kg_based_qg import KGBasedQGUtils, KGBasedQGChecker
-from utils.generic import read_json_or_jsonl, write_to_json, maybe_create_folder
+from steps.utils.prompts import QUESTION_GENERATION_PROMPT_FROM_KG_SINGLE_STEP
+from steps.utils.kg_based_qg import KGBasedQGUtils, KGBasedQGChecker
+from steps.utils.generic import read_json_or_jsonl, write_to_json, maybe_create_folder
+from llm_apis import init_llm
 from tqdm import tqdm
 from typing import List, Dict
 
@@ -15,32 +15,26 @@ from typing import List, Dict
 def main(cfg: DictConfig)-> None:
     decontextualized_facts_folder = cfg.step2_2.output_folder
     fact_groundedness_folder = cfg.step3.output_folder
+    max_num_hops = cfg.step4.max_num_hops
     extracted_kg_folder = cfg.step4.output_folder + "_extracted_kg"
     output_folder = cfg.step4.output_folder + "_generated_question"
 
-    local_llm_port = cfg.general.local_llm_port
-    local_llm_model = cfg.general.local_llm_model
-    openai_model_name = cfg.general.openai_model_name
-
-    openai_api_key = os.getenv("OPENAI_API_KEY")
+    llm_model_name = cfg.general.llm_model_name
 
     maybe_create_folder(output_folder)
 
-    init_client(openai_api_key, 
-                openai_model_name = openai_model_name,
-                local = local_llm_port is not None, 
-                port = local_llm_port, 
-                model_name = local_llm_model)
+    LLM = init_llm(llm_model_name)
+
     
     kg_based_qg_utils = KGBasedQGUtils(
-        openai_client = OPENAI_CLIENT,
+        LLM = LLM,
         question_generation_prompt = QUESTION_GENERATION_PROMPT_FROM_KG_SINGLE_STEP, 
         graph_builder_prompt = None
     )
     kg_based_qg_checker = KGBasedQGChecker(
         minicheck_model_name = None,
         minicheck_cache_dir = None,
-        openai_client = OPENAI_CLIENT
+        LLM = LLM
     )
     
     files = os.listdir(decontextualized_facts_folder)
@@ -99,11 +93,10 @@ def main(cfg: DictConfig)-> None:
 
             this_fact_questions = []
             
-            traversal_order = range(len(graph_data))#kg_based_qg_utils._get_traversal_order(graph_data)
             try:
                 all_masked_knowledge_graphs = kg_based_qg_utils._knowledge_graph_masking(
                     knowledge_graph = graph_data,
-                    max_nodes_to_mask = 3,
+                    max_nodes_to_mask = max_num_hops,
                     keypoints = keypoints
                 )
             except Exception as e: continue

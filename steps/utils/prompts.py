@@ -125,6 +125,8 @@ Maintain Entity Consistency: When extracting entities, it's vital to ensure cons
 If a entity, such as "John Doe", is mentioned multiple times in the text but is referred to by different names or pronouns (e.g., "Joe", "he"), always \
 use the most complete identifier for that entity. The knowledge graph should be coherent and easily understandable, so maintaining consistency in entity references is crucial.
 
+Avoid creating entities that overlap. For example, if there already exists a node named "John Doe", try not to create another node named "John Doe's graduation day"
+
 Each relation should appear strictly once.
 
 IMPORTANT NOTES:
@@ -265,58 +267,94 @@ Knowledge Graph:
 
 
 QUESTION_GENERATION_PROMPT_FROM_KG_SINGLE_STEP = {
-    "system": """You are an expert AI assistant specializing in Natural Language Generation. Your task is to take as input a new relation (head [head type] | relation | tail [tail type]) and optionally an existing question, and 
-    output a new question by incorporating information of the two inputs. The newly generated question must fully capture the information of the given question and the new relation. In the case you are not provided
-    an input question, just base your question generation on the new relation. 
-    
-    Some relation may have <Unknown> entity has head or tail or both. This "unknown" entity is the target of the question that we are generating.
-    
-    Example 1:
-    Relation: <Unknown> #1 [event] | occurred on | 2 January 2023 [date]
+    "system": """You are an expert AI assistant specializing in Knowledge Graph-to-Text generation. Your task is to generate a single natural language question based on a cumulative list of "Question generation steps" (triplets).
 
-    Generated question: What event occurred on 2 January 2023?
+### The Golden Rule: Target <Unknown> #1
+The ultimate goal of every question is to identify the entity labeled **<Unknown> #1**.
+* **<Unknown> #1** is the "Answer Node." The question must grammatically and semantically ask for this entity.
+* If there are more than 1 Unknown nodes: **<Unknown> #2, #3, etc.** are "Intermediate Nodes." You must **never** ask for the identity of #2 or #3 directly. Instead, use them to describe or constrain <Unknown> #1.
 
+**Incorrect Logic:**
+Relation: <Unknown> #1 [event] | occurred near | <Unknown> #2 [location]
+Bad Question: "Where did the event occur?" (This asks for #2, a location).
 
-    Example 2: 
-    Relation: <Unknown> #1 [event] | occurred near | <Unknown> #2 [location]
-    Existing question: What event occurred at 13:59 AEST on 2 January 2023?
+**Correct Logic:**
+Relation: <Unknown> #1 [event] | occurred near | <Unknown> #2 [location]
+Good Question: "What event occurred near a specific location?" (This asks for #1, an event, using #2 as a descriptor).
 
-    Generated question: What event occurred at 13:59 AEST on 2 January 2023 near a specific location?
+### Instructions for Multi-Hop Relations
+If there are more than 1 Unknown nodes, the question is going to be multi-hop. 
+When new relations are added involving <Unknown> #2 (or others), treat them as adjectives or relative clauses modifying the original subject (<Unknown> #1).
 
-    
-    Example 3:
-    Relation: Gold Coast [city] | located in | Queensland [region]
-    Existing question: What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast?
+The following are some examples
 
-    Generated question: What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast, Queensland?
-
-    
-    Example 4:
-    Relation: <Unknown> #1 [Person] | exceeded his authority by imposing | fentanyl tariffs [Tariff]
-
-    Generated question: Who exceeded his authority by imposing fentanyl tariffs?
+Example 1:
+The generated question must ask about a/an 'event'
+Question generation steps:
+Relation: <Unknown> #1 [event] | occurred on | 2 January 2023 [date]
+Generated question: What event occurred on 2 January 2023?
 
 
-    Example 5:
-    Relation: United States Court of International Trade [Court] | ruled on | May 28 [Date]
-    Existing question: Who was ruled by the United States Court of International Trade that he exceeded his authority by imposing fentanyl tariffs?
+Example 2: 
+The generated question must ask about a/an 'event'
+Question generation steps:
+Relation: <Unknown> #1 [event] | occurred on | 2 January 2023 [date]
+Generated question: What event occurred on 2 January 2023?
 
-    Generated question: Who was ruled by the United States Court of International Trade on May 28 that he exceeded his authority by imposing fentanyl tariffs?
+Relation: <Unknown> #1 [event] | occurred at time | 13:59 AEST [time]
+Generated question: What event occurred at 13:59 AEST on 2 January 2023?
+
+Relation: <Unknown> #1 [event] | occurred near | <Unknown> #2 [location]
+Generated question: What event occurred at 13:59 AEST on 2 January 2023 near a specific location?
 
 
-    Example 6: 
-    Relation: <Unknown> #1 [Person] | exceeded his authority by imposing | reciprocal tariffs [Tariff]
-    Existing question: Who was ruled by the United States Court of International Trade on May 28 that he exceeded his authority by imposing fentanyl tariffs?
+Example 3:
+The generated question must ask about a/an 'event'
+Question generation steps:
+Relation: <Unknown> #1 [event] | occurred on | 2 January 2023 [date]
+Generated question: What event occurred on 2 January 2023?
 
-    Generated question: Who was ruled by the United States Court of International Trade on May 28 that he exceeded his authority by imposing fentanyl tariffs and reciprocal tariffs?
-    """,
+Relation: <Unknown> #1 [event] | occurred at time | 13:59 AEST [time]
+Generated question: What event occurred at 13:59 AEST on 2 January 2023?
 
-    "user": """Relation: [ADD_RELATION_HERE]\nExisting question: [ADD_EXISTING_QUESTION_HERE]\n\nGenerated question:"""
+Relation: <Unknown> #1 [event] | occurred near | <Unknown> #2 [location]
+Generated question: What event occurred at 13:59 AEST on 2 January 2023 near a specific location?
+
+Relation: <Unknown> #2 [location] | located in | Gold Coast [city]
+Generated question: What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast?
+
+Relation: Gold Coast [city] | located in | Queensland [region]
+Generated question: What event occurred at 13:59 AEST on 2 January 2023 near a location in Gold Coast, Queensland?
+
+
+Example 4:
+The generated question must ask about an a/an 'Person'
+Question generation steps:
+Relation: <Unknown> #1 [Person] | exceeded his authority by imposing | fentanyl tariffs [Tariff]
+Generated question: Who exceeded his authority by imposing fentanyl tariffs?
+
+
+Example 5:
+The generated question must ask about an a/an 'Person'
+Question generation steps:
+Relation: <Unknown> #1 [Person] | exceeded his authority by imposing | fentanyl tariffs [Tariff]
+Generated question: Who exceeded his authority by imposing fentanyl tariffs?
+
+Relation: United States Court of International Trade [Court] | ruled that | <Unknown> #1 [Person]
+Generated question: Who was ruled by the United States Court of International Trade that he exceeded his authority by imposing fentanyl tariffs?
+
+Relation: United States Court of International Trade [Court] | ruled on | May 28 [Date]
+Generated question: Who was ruled by the United States Court of International Trade on May 28 that he exceeded his authority by imposing fentanyl tariffs?""",
+
+    "user": """User input:
+The generated question must ask about an a/an '[ADD_QUESTION_TARGET_TYPE]'
+Question generation steps:
+[ADD_STEPS_HERE]"""
 }
 
 QUESTION_REFINEMENT_PROMPT = {
     "system": "Given a question answer pair, improve the question since it may be awkwardly worded. Response without further explanations",
-    "user": "Answer: [ADD_KEYPOINTS_HERE]\nQuestion: [ADD_QUESTION_HERE]\n\nImproved question:" 
+    "user": "The generated improved question must ask about an a/an '[ADD_QUESTION_TARGET_TYPE]'\nAnswer: [ADD_KEYPOINTS_HERE]\nQuestion: [ADD_QUESTION_HERE]\n\nImproved question:" 
 }
 
 

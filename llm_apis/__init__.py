@@ -1,6 +1,7 @@
 from .bedrock_models import BedRockLLM
 from .gemini_models import GeminiLLM
 from .openai_models import OpenAILLM
+from .base import BaseLLMAPI
 
 
 MODEL_NAME_2_MODEL_CLASS = {

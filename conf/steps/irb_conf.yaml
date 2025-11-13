@@ -1,7 +1,5 @@
 general:
-  local_llm_port: null #6868
-  local_llm_model: null #"Qwen/Qwen3-8B"
-  openai_model_name: "gpt-4o-mini-2024-07-18" #"gpt-4.1-mini" # if use OpenAI models, this will be the name of the one used for running the pipeline
+  llm_model_name: "gpt-4.1-mini" 
   target_year: null
   start_from: 2024-01-01
 
@@ -26,11 +24,11 @@ step2_2:
 
 step3:
   output_folder: null
-  minicheck_ckpt_path: "/scratch/lamdo/minicheck_ckpts"
   max_tokens: 20000
 
 step4:
   output_folder: null
+  max_num_hops: 5
   kg_completeness_word_check_threshold: 0.5
   question_progression_word_check_threshold: 0.75
 
