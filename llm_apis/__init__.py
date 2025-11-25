@@ -7,10 +7,12 @@ from .base import BaseLLMAPI
 MODEL_NAME_2_MODEL_CLASS = {
     "gpt-5-mini": OpenAILLM,
     "gpt-5": OpenAILLM,
+    "gpt-5_low": OpenAILLM,
     "gpt-4.1": OpenAILLM,
     "gpt-4.1-mini": OpenAILLM,
     "gpt-4o-mini": OpenAILLM,
     "gemini-2.5-flash": GeminiLLM,
+    "gemini-2.5-flash-for-eval": GeminiLLM,
     "gemini-2.5-pro": GeminiLLM
 }
 
@@ -22,6 +24,10 @@ MODEL_NAME_2_INIT_DICT = {
     "gpt-5": {
         "model_name": "gpt-5",
         "reasoning": "medium",
+    },
+    "gpt-5_low": {
+        "model_name": "gpt-5",
+        "reasoning": "low",
     },
     "gpt-4.1": {
         "model_name": "gpt-4.1"
@@ -35,6 +41,10 @@ MODEL_NAME_2_INIT_DICT = {
     "gemini-2.5-flash": {
         "model_name": "gemini-2.5-flash",
         "reasoning": "medium"
+    },
+    "gemini-2.5-flash-for-eval": {
+        "model_name": "gemini-2.5-flash",
+        "reasoning": "none"
     },
     "gemini-2.5-pro": {
         "model_name": "gemini-2.5-pro",

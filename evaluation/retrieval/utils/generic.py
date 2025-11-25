@@ -19,3 +19,5 @@ def process_search_results(queries_ids, all_hits):
         predictions_metadata["full"][query_id] = formatted_results
     
     return predictions_metadata
+
+

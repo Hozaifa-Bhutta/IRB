@@ -1,6 +1,7 @@
-import json, os, string, nltk, sys
+import json, os, string, nltk, sys, random, dateutil, humanize, pycountry, names
 import numpy as np
 import networkx as nx
+from datetime import datetime, timedelta
 from rapidfuzz import fuzz
 from copy import deepcopy
 from collections import Counter
@@ -16,7 +17,7 @@ class KGBasedQGUtilsHelper:
         import spacy
         self.nlp = spacy.load("en_core_web_sm")
 
-    def is_proper_noun_phrase(self, substrings: List[str], full_string: str):
+    def is_proper_noun_phrase(self, substrings: List[str], full_string: str, check_threshold: float = 0.75):
         def get_entity_status(input_str: str):
             entity_status = []
             casing_status = []
@@ -50,12 +51,207 @@ class KGBasedQGUtilsHelper:
             if matched_index != -1:
                 substring_entity_status = [stt for tok, stt in zip(full_string_tokens[matched_index: matched_index + len(substring_tokens)],
                                                                    full_string_entity_status[matched_index: matched_index + len(substring_tokens)]) if tok.lower() not in ENGLISH_STOPWORDS]
-                if sum(substring_entity_status) / len(substring_entity_status) >= 2/3: res.append(True)
+                if substring_entity_status and sum(substring_entity_status) / len(substring_entity_status) >= check_threshold: res.append(True)
                 else: res.append(False)
 
             else: res.append(False)
 
         return res
+    
+
+    def _knowledge_graph_paraphrase_date(self, 
+                                         masked_kg: List[Dict[str, str]], 
+                                         max_node: int,
+                                         wikidump_date: str,
+                                         create_false_premise: bool = False):
+        nodes_to_paraphrase = []
+        for triplet in masked_kg:
+            if "<Unknown" not in triplet["head"] and triplet["head_type"] == "Date":
+                nodes_to_paraphrase.append(triplet["head"])
+            
+            if "<Unknown" not in triplet["tail"] and triplet["tail_type"] == "Date":
+                nodes_to_paraphrase.append(triplet["tail"])
+
+        nodes_to_paraphrase = random.sample(nodes_to_paraphrase, max_node) if len(nodes_to_paraphrase) > max_node else nodes_to_paraphrase
+
+        wikidump_dt = datetime.strptime(wikidump_date, "%Y-%m-%d")
+
+        paraphrase_mapper = {}
+        for node_value in nodes_to_paraphrase:
+
+            try:
+                dt = dateutil.parser.parse(node_value)
+                td = wikidump_dt - dt
+                if create_false_premise:
+                    td = td + timedelta(days = random.choice(range(366, 365 * 5)))
+                paraphrased_node_value = "roughly " + humanize.naturaltime(td)
+            except Exception: continue
+
+            paraphrase_mapper[node_value] = paraphrased_node_value
+
+
+        return paraphrase_mapper
+    
+
+    def _knowledge_graph_paraphrase_year(self, masked_kg: List[Dict[str, str]], 
+                                         max_node: int,
+                                         wikidump_date: str,
+                                         create_false_premise: bool = False):
+        
+        def is_valid_year_datetime(year_str):
+            try:
+                datetime.strptime(year_str, '%Y')
+                return True
+            except ValueError:
+                return False
+            
+        nodes_to_paraphrase = []
+        for triplet in masked_kg:
+            if "<Unknown" not in triplet["head"] and triplet["head_type"] == "Year":
+                nodes_to_paraphrase.append(triplet["head"])
+            
+            if "<Unknown" not in triplet["tail"] and triplet["tail_type"] == "Year":
+                nodes_to_paraphrase.append(triplet["tail"])
+
+        nodes_to_paraphrase = [int(node) for node in nodes_to_paraphrase if is_valid_year_datetime(node)]
+        nodes_to_paraphrase = random.sample(nodes_to_paraphrase, max_node) if len(nodes_to_paraphrase) > max_node else nodes_to_paraphrase
+
+        wikidump_year = int(datetime.strptime(wikidump_date, "%Y-%m-%d").year)
+
+        paraphrase_mapper = {}
+        for node_value in nodes_to_paraphrase:
+
+            year_delta = wikidump_year - node_value
+            if create_false_premise:
+                year_delta += random.choice([-4, -3, -2, -1, 1, 2, 3, 4])
+            abs_year_delta = abs(year_delta)
+            if year_delta == 0: paraphrased_node_value = "this year"
+            elif year_delta > 0: 
+                paraphrased_node_value = f"{abs_year_delta} year ago" if abs_year_delta == 1 else f"{abs_year_delta} years ago"
+            elif year_delta < 0: 
+                paraphrased_node_value = f"{abs_year_delta} year from now" if abs_year_delta == 1 else f"{abs_year_delta} years from now"
+
+            paraphrase_mapper[str(node_value)] = paraphrased_node_value
+
+
+        return paraphrase_mapper
+    
+    def _knowledge_graph_paraphrase_person(self, masked_kg: List[Dict[str, str]], 
+                                         max_node: int,
+                                         create_false_premise: bool = False):
+        def is_valid_person_name(text):
+            clean_text = text.strip()
+            
+            words = clean_text.split()
+            
+            if len(words) <= 1:
+                return False
+                
+            for word in words:
+                if not word[0].isupper():
+                    return False
+            return True
+        
+        def abbreviate_name(name, create_false_premise = False):
+            words = name.strip().split()
+            if not words:
+                return ""
+            
+            if create_false_premise:
+                words = words[:-1] + [names.get_last_name()] # replace last name with a random last name
+            
+            initials = [word[0].upper() + "." for word in words[:-1]]
+            
+            return " ".join(initials + [words[-1]])
+        
+        nodes_to_paraphrase = []
+        for triplet in masked_kg:
+            if "<Unknown" not in triplet["head"] and triplet["head_type"] == "Person":
+                nodes_to_paraphrase.append(triplet["head"])
+            
+            if "<Unknown" not in triplet["tail"] and triplet["tail_type"] == "Person":
+                nodes_to_paraphrase.append(triplet["tail"])
+
+        nodes_to_paraphrase = [node for node in nodes_to_paraphrase if is_valid_person_name(node)]
+        nodes_to_paraphrase = random.sample(nodes_to_paraphrase, max_node) if len(nodes_to_paraphrase) > max_node else nodes_to_paraphrase
+
+
+        paraphrase_mapper = {}
+        for node_value in nodes_to_paraphrase:
+            paraphrased_node_value = abbreviate_name(node_value, create_false_premise)
+            paraphrase_mapper[node_value] = paraphrased_node_value
+
+        return paraphrase_mapper
+    
+
+    def _knowledge_graph_paraphrase_country(self, masked_kg: List[Dict[str, str]], 
+                                         max_node: int,
+                                         create_false_premise: bool = False):
+        
+        def country_flag_search(query):
+            search_results = pycountry.countries.search_fuzzy(query)
+
+            if not search_results: return None
+            return search_results[0].flag
+
+        nodes_to_paraphrase = []
+        for triplet in masked_kg:
+            if "<Unknown" not in triplet["head"] and triplet["head_type"] == "Country":
+                nodes_to_paraphrase.append(triplet["head"])
+            
+            if "<Unknown" not in triplet["tail"] and triplet["tail_type"] == "Country":
+                nodes_to_paraphrase.append(triplet["tail"])
+        
+        country2flags = {country: country_flag_search(country) for country in nodes_to_paraphrase}
+        nodes_to_paraphrase = [node for node in nodes_to_paraphrase if country2flags.get(node) is not None]
+        nodes_to_paraphrase = random.sample(nodes_to_paraphrase, max_node) if len(nodes_to_paraphrase) > max_node else nodes_to_paraphrase
+
+        paraphrase_mapper = {}
+        for node_value in nodes_to_paraphrase:
+            if not create_false_premise:
+                paraphrased_node_value = "the country whose flag is " + country2flags[node_value]
+            else:
+                all_countries = list(pycountry.countries)
+                for _ in range(10):
+                    random_country = random.choice(all_countries).name
+                    if random_country != node_value: break
+                paraphrased_node_value = random_country
+            paraphrase_mapper[node_value] = paraphrased_node_value
+
+        return paraphrase_mapper
+
+
+    def knowledge_graph_paraphrase(self, 
+                                   masked_kg: List[Dict[str, str]], 
+                                   wikidump_date: str,
+                                   create_false_premise: bool = False):
+        paraphrase = self._knowledge_graph_paraphrase_date(masked_kg, 10, wikidump_date, create_false_premise = create_false_premise)
+        paraphrase.update(self._knowledge_graph_paraphrase_person(masked_kg, 10, create_false_premise = create_false_premise))
+        paraphrase.update(self._knowledge_graph_paraphrase_year(masked_kg, 10, wikidump_date, create_false_premise = create_false_premise))
+        paraphrase.update(self._knowledge_graph_paraphrase_country(masked_kg, 10, create_false_premise = create_false_premise))
+
+        if not paraphrase: return {"masked_kg": None, "paraphrase": None}
+
+        if create_false_premise:
+            # just do 1 paraphrase
+            k, v = random.choice(list(paraphrase.items()))
+            paraphrase = {k: v}
+
+        res = []
+        for triplet in masked_kg:
+            res.append({
+                "head": triplet["head"] if triplet["head"] not in paraphrase else paraphrase[triplet["head"]],
+                "head_unmasked": triplet["head_unmasked"] if triplet["head_unmasked"] not in paraphrase else paraphrase[triplet["head_unmasked"]],
+                "head_type": triplet["head_type"],
+                "relation": triplet["relation"],
+                "tail": triplet["tail"] if triplet["tail"] not in paraphrase else paraphrase[triplet["tail"]],
+                "tail_unmasked": triplet["tail_unmasked"] if triplet["tail_unmasked"] not in paraphrase else paraphrase[triplet["tail_unmasked"]],
+                "tail_type": triplet["tail_type"]
+            })
+
+        return {"masked_kg": res, "paraphrase": paraphrase, "false_premise": create_false_premise}
+    
+
 
 class KGBasedQGUtils:
     def __init__(self, 
@@ -88,23 +284,29 @@ class KGBasedQGUtils:
         overlapping_nodes = set()
         for node1 in all_nodes:
             for node2 in all_nodes:
-                if node1 != node2 and fuzz.partial_ratio(self.text_splitter(node1), self.text_splitter(node2)) >= 80:
+                if node1 != node2 and fuzz.partial_ratio(self.text_splitter(node1), self.text_splitter(node2)) >= 75:
                     overlapping_nodes.add(node1)
                     overlapping_nodes.add(node2)
 
-        # nodes whose component word is not capitalized (excluding stop words)
-        # capitalization_status = {node: [int(word.istitle() or word.isupper()) for word in node.split() if word.lower() not in ENGLISH_STOPWORDS] for node in all_nodes}
-        # non_capitalized_nodes = {node for node in all_nodes if sum(capitalization_status[node]) / len(capitalization_status[node]) < 2/3}
         is_entity = self.helper.is_proper_noun_phrase(all_nodes, "\n".join(keypoints))
         non_entity_nodes = {node for i, node in enumerate(all_nodes) if not is_entity[i]}
 
-        # # nodes that are single words
-        # single_word_nodes = {node for node in all_nodes if len(node.split()) == 1}
+        # nodes that appear in relation
+        nodes_in_relations = set([])
+        for node in all_nodes:
+            for triplet in knowledge_graph:
+                relation = triplet["relation"]
+                if fuzz.partial_ratio(self.text_splitter(node), self.text_splitter(relation)) >= 75:
+                    nodes_in_relations.add(node)
+
 
         # nodes that do not cover all keypoints
-        lack_coverage_nodes = {triplet["head"] for triplet in knowledge_graph if len(triplet["head_coverage"]) != len(keypoints)}
+        try:
+            lack_coverage_nodes = {triplet["head"] for triplet in knowledge_graph if len(triplet["head_coverage"]) != len(keypoints)}
+        except KeyError as e:
+            lack_coverage_nodes = set()
 
-        bad_nodes = overlapping_nodes | non_entity_nodes | lack_coverage_nodes
+        bad_nodes = overlapping_nodes | non_entity_nodes | lack_coverage_nodes | nodes_in_relations
 
         if keypoints:
             keypoints_str = "\n".join(keypoints)
@@ -141,6 +343,30 @@ class KGBasedQGUtils:
         return bad_nodes
     
 
+    def _prune_masked_graph(self, masked_kg: List[Dict[str, str]], multi_hop = True):
+        if multi_hop:
+            masked_subset_graph, _ = self._convert_kg_to_nx_graph([rel for rel in masked_kg if "<Unknown>" in rel["head"] and "<Unknown>" in rel["tail"]])
+
+            masked_nodes = masked_subset_graph.nodes()
+            non_leaf_masked_nodes = [node for node in masked_subset_graph.nodes() if len(masked_subset_graph[node])]
+        else:
+            graph, _ = self._convert_kg_to_nx_graph(masked_kg)
+
+            masked_nodes = [node for node in graph.nodes() if "<Unknown>" in node]
+            non_leaf_masked_nodes = []
+
+        pruned_graph = []
+        for triplet in masked_kg:
+            head = triplet["head"]
+            tail = triplet["tail"]
+            if (head in non_leaf_masked_nodes and tail not in masked_nodes) \
+                or (tail in non_leaf_masked_nodes and head not in masked_nodes)\
+                or (head not in masked_nodes and tail not in masked_nodes):
+                continue
+            pruned_graph.append(triplet)
+
+        return pruned_graph
+
     def _knowledge_graph_masking(self, 
                                  knowledge_graph: List[Dict[str, str]], 
                                  max_nodes_to_mask: int,
@@ -168,11 +394,12 @@ class KGBasedQGUtils:
         for j in range(1, len(traversal_order)):
             i = traversal_order[j]
             relation = knowledge_graph[i]
-            is_jump = all([knowledge_graph[j-k]["tail"] != relation["head"] for k in range(1, j + 1)])
+            # is_jump = all([knowledge_graph[j-k]["tail"] != relation["head"] for k in range(1, j + 1)])
 
             if all([
                 len(masked_entities_names) < max_nodes_to_mask, # number of masked nodes has not exceed limit
-                not is_jump, # current head is the tail of the previous relation
+                # not is_jump, # current head is the tail of the previous relation
+                any([graph.has_edge(masked_node, relation["head"]) for masked_node in masked_entities_names]), # must be the tail of some previously masked node in some relation
                 all([masked_entities_info[k][1] != relation["head_type"] for k in range(len(masked_entities_info))]), # a node with the same type as head has not been masked
                 relation["head"] not in masked_entities_names, # the head itself has not been masked
                 relation["head"] not in bad_nodes, # self explanatory
@@ -205,6 +432,114 @@ class KGBasedQGUtils:
             res.append({"masked_kg": masked_kg, "num_hops": num_hops, "masked_keypoints_str": masked_keypoints_str})
 
         return res
+    
+    def knowledge_graph_masking_single_hop(self, 
+                                            knowledge_graph: List[Dict[str, str]], 
+                                            keypoints: List[str]):
+        graph, heads = self._convert_kg_to_nx_graph(knowledge_graph)
+
+        bad_nodes = self._get_bad_nodes(list(graph.nodes()), keypoints, knowledge_graph)
+
+        if keypoints: keypoints_str = "\n".join(keypoints)
+        else: keypoints_str = ""
+        
+        traversal_order = None
+        for i in range(len(knowledge_graph)):
+            if knowledge_graph[i].get("head") and knowledge_graph[i].get("head") not in bad_nodes:
+                traversal_order = list(range(i, len(knowledge_graph))) + list(range(0, i))
+                break
+        
+        if traversal_order is None: return None
+        first_edge = knowledge_graph[traversal_order[0]]
+
+        masked_entities_info = [[first_edge["head"], first_edge["head_type"]]]
+        masked_entities_names = [first_edge["head"]]
+
+        masked_kg = []
+        for i in traversal_order:
+            relation = knowledge_graph[i]
+            masked_kg.append({
+                "head": relation["head"] if relation["head"] not in masked_entities_names else f"<Unknown> #{masked_entities_names.index(relation['head']) + 1}",
+                "head_unmasked": relation["head"],
+                "head_type": relation["head_type"],
+                "relation": relation["relation"],
+                "tail": relation["tail"] if relation["tail"] not in masked_entities_names else f"<Unknown> #{masked_entities_names.index(relation['tail']) + 1}",
+                "tail_unmasked": relation["tail"],
+                "tail_type": relation["tail_type"]
+            })
+            # masked_kg = self._prune_masked_graph(masked_kg, multi_hop = False)
+
+        masked_keypoints_str = keypoints_str[:]
+        for ent_name, ent_type in masked_entities_info:
+            masked_keypoints_str = masked_keypoints_str.replace(ent_name, f"<Unknown #{masked_entities_names.index(ent_name) + 1} ({ent_type})>")
+
+        return {"masked_kg": masked_kg, "num_hops": 1, "masked_keypoints_str": masked_keypoints_str, "keypoints_str": keypoints_str}
+
+    def knowledge_graph_masking_multi_hop(self,
+                                          masked_kg_1, masked_kg_2):
+
+        num_hop_1 = masked_kg_1["num_hops"]
+        num_hop_2 = masked_kg_2["num_hops"]
+        keypoints_str_1 = masked_kg_1["keypoints_str"]
+        keypoints_str_2 = masked_kg_2["keypoints_str"]
+
+        assert num_hop_2 == 1 and num_hop_1 == 1, "We have not implemented to work for other cases"
+        # checks
+        # the first check: masked_kg_2 should have num_hop = 1; the first non-masked tail of masked_kg_1 should be the masked head of masked_kg_2
+        temp = {(triplet["tail"], triplet["tail_type"]): i for i, triplet in enumerate(masked_kg_1["masked_kg"]) if triplet["head"] == "<Unknown> #1"}
+        check = temp.get((masked_kg_2["masked_kg"][0]["head_unmasked"], masked_kg_2["masked_kg"][0]["head_type"]), None)
+
+        if check is None: return None
+        
+
+        combined_knowledge_graph = [
+            {"head": triplet["head_unmasked"], 
+             "head_type": triplet["head_type"], 
+             "relation": triplet["relation"],
+             "tail": triplet["tail_unmasked"], 
+             "tail_type": triplet["tail_type"]}
+        for triplet in masked_kg_1["masked_kg"] + masked_kg_2["masked_kg"]]
+
+        graph, heads = self._convert_kg_to_nx_graph(combined_knowledge_graph)
+
+        bad_nodes = self._get_bad_nodes(list(graph.nodes()), [keypoints_str_1, keypoints_str_2], combined_knowledge_graph)
+
+        masked_node_1 = masked_kg_1["masked_kg"][0]["head_unmasked"]
+        masked_node_2 = masked_kg_2["masked_kg"][0]["head_unmasked"]
+        if masked_node_1 in bad_nodes or masked_node_2 in bad_nodes: return None
+
+        masked_node_1_type = masked_kg_1["masked_kg"][0]["head_type"]
+        masked_node_2_type = masked_kg_2["masked_kg"][0]["head_type"]
+        if fuzz.partial_ratio(self.text_splitter(masked_node_1_type), self.text_splitter(masked_node_2_type)) >= 75: return None
+
+        masked_node_type_1 = masked_kg_1["masked_kg"][0]["head_type"]
+        masked_node_type_2 = masked_kg_2["masked_kg"][0]["head_type"]
+
+        masked_entities_names = [masked_node_1, masked_node_2]
+        masked_entities_info = [
+            [masked_node_1, masked_node_type_1],
+            [masked_node_2, masked_node_type_2],
+        ]
+
+        combined_masked_kg = []
+        for i in range(len(combined_knowledge_graph)):
+            relation = combined_knowledge_graph[i]
+            combined_masked_kg.append({
+                "head": relation["head"] if relation["head"] not in masked_entities_names else f"<Unknown> #{masked_entities_names.index(relation['head']) + 1}",
+                "head_unmasked": relation["head"],
+                "head_type": relation["head_type"],
+                "relation": relation["relation"],
+                "tail": relation["tail"] if relation["tail"] not in masked_entities_names else f"<Unknown> #{masked_entities_names.index(relation['tail']) + 1}",
+                "tail_unmasked": relation["tail"],
+                "tail_type": relation["tail_type"]
+            })
+        masked_keypoints_str = keypoints_str_1 + "\n" + keypoints_str_2
+        for ent_name, ent_type in masked_entities_info:
+            masked_keypoints_str = masked_keypoints_str.replace(ent_name, f"<Unknown #{masked_entities_names.index(ent_name) + 1} ({ent_type})>")
+
+        return {"masked_kg": combined_masked_kg, "num_hops": num_hop_1 + num_hop_2, "masked_keypoints_str": masked_keypoints_str, "keypoints_str": keypoints_str_1 + "\n" + keypoints_str_2}
+
+
     
 
     def _build_user_prompt_from_masked_kg(self, masked_kg: List[Dict[str, str]], masked_keypoints_str: Optional[str] = None) -> str:
@@ -327,13 +662,18 @@ class KGBasedQGUtils:
         return generated_questions[1:]
     
 
-    def question_refinement(self, generated_question: str, masked_keypoints_str: str, masked_kg: List[Dict[str, str]]):
+    def question_refinement(self, generated_question: str, masked_keypoints_str: str, masked_kg: List[Dict[str, str]], wikidump_date: str, paraphrase_map: dict = {}):
+        # wikidump_date is considered the date when the question is asked
+
+        paraphrase_map = paraphrase_map if paraphrase_map else {}
         question_target_type = masked_kg[0]["head_type"]
 
         user_prompt = self.question_refinement_prompt["user"][:]\
         .replace("[ADD_KEYPOINTS_HERE]", masked_keypoints_str)\
         .replace("[ADD_QUESTION_HERE]", generated_question)\
-        .replace("[ADD_QUESTION_TARGET_TYPE]", question_target_type)
+        .replace("[ADD_QUESTION_TARGET_TYPE]", question_target_type)\
+        .replace("[ADD_QUESTION_DATE]", wikidump_date)\
+        .replace("[ADD_PARAPHRASE_MAP]", json.dumps(paraphrase_map, indent = 2))
 
         res = self.LLM.generate(
             system_prompt = self.question_refinement_prompt["system"],

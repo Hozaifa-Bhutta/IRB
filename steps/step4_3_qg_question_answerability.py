@@ -84,6 +84,7 @@ def main(cfg: DictConfig)-> None:
 
 
         filtered_fact_question_mapper = {}
+        overall_status = True # if the first hop question is not answerable, the second hop question should also be unanswerable
         for fact_id, keypoints in keypoints_mapper.items():
             if fact_id not in fact_question_mapper: continue
 
@@ -92,7 +93,10 @@ def main(cfg: DictConfig)-> None:
             for line in all_questions:
                 question = line["question"]
                 try:
-                    answerability = kg_based_qg_checker.check_question_answerability(question)
+                    if overall_status:
+                        answerability = kg_based_qg_checker.check_question_answerability(question)
+                        overall_status = answerability
+                    else: answerability = False
                 except Exception as e:
                     continue
                 if answerability:

@@ -352,9 +352,58 @@ Question generation steps:
 [ADD_STEPS_HERE]"""
 }
 
+# QUESTION_REFINEMENT_PROMPT = {
+#     "system": "Given a question answer pair, improve the question since it may be awkwardly worded. Response without further explanations",
+#     "user": "The generated improved question must ask about an a/an '[ADD_QUESTION_TARGET_TYPE]'\nAnswer: [ADD_KEYPOINTS_HERE]\nQuestion: [ADD_QUESTION_HERE]\n\nImproved question:" 
+# }
+
+
 QUESTION_REFINEMENT_PROMPT = {
-    "system": "Given a question answer pair, improve the question since it may be awkwardly worded. Response without further explanations",
-    "user": "The generated improved question must ask about an a/an '[ADD_QUESTION_TARGET_TYPE]'\nAnswer: [ADD_KEYPOINTS_HERE]\nQuestion: [ADD_QUESTION_HERE]\n\nImproved question:" 
+    "system": """You are an expert in natural language processing. Your task is to refine the wording of a user's question based on a provided Context. The Context contains masked entities (e.g., <Unknown #1>, <Unknown #2>) representing information the user is looking for.
+
+**Goal:** Improve grammatical fluency and clarity while strictly preserving the logical structure and complexity of the question.
+
+**Core Rules:**
+1. **Preserve Logical Hops:** - If the Context represents an entity as an `<Unknown>` tag (e.g., <Unknown #2 (Location)>), the Question MUST allude to it generically (e.g., "at a specific location," "at a certain place"). DO NOT resolve it or remove the step.
+   - If the Context contains a concrete name (e.g., "Haneda Airport"), the Question MUST preserve that specific name.
+2. **Refine, Don't Simplify:** You may fix grammar, awkward phrasing, and vocabulary (e.g., changing "plane" to "aircraft"), but you must not delete clauses that establish relationships between entities.
+3. **Output Only:** Output only the refined question text. Do not include the <Unknown> tags in your output.
+
+
+Example 1: (multi-hop)
+Context: <Unknown #1 (Person)> is the captain of the aircraft that exploded at <Unknown #2 (Location)> in Tokyo. 
+Original Question: Who is the captain of the plane that exploded following a collision at a location in Tokyo? 
+Bad refinement: Who is the captain of the aircraft that exploded following a collision in Tokyo? (Reason: loses the "location" hop)
+Good refinement: Who is the captain of the aircraft that exploded following a collision at a specific location in Tokyo?
+
+
+Example 2: (multi-hop)
+Context: <Unknown #1 (Date)> is the founding date of the institute located at <Unknown #2 (Street Address)> in New York.
+Original Question: When was the institute established that is located at a street in New York City?
+Bad refinement: When was the organization in New York City established? (Reason: It deletes the reference to the specific "street," which is <Unknown #2>.)
+Good Refinement: What is the founding date of the organization located at a specific street address in New York City?
+
+Example 3: (single-hop)
+Context: <Unknown #1 (Person)> is the captain of the aircraft that exploded at Haneda Airport in Tokyo. 
+Original Question: Who is the captain of the plane that exploded following a collision at Haneda Airport in Tokyo? 
+Good Refinement: Who is the captain of the aircraft that exploded following a collision at Haneda Airport in Tokyo?
+
+
+Example 4: (single-hop)
+Context: <Unknown #1 (Date)> is the founding date of the institute located at 1855 Broadway Street in New York.
+Original Question: When was the institute established that is located at 1855 Broadway Street in New York City?
+Good Refinement: What is the founding date of the organization located at 1855 Broadway Street in New York City?
+""",
+    "user": """Additional rule: If you are provided with a `Paraphrase Map`. If a term in the question appears in this map as a value, you MUST preserve that specific wording in your output. 
+- **DO NOT** "correct" the paraphrase back to the original value found in the Context. 
+- *Example:* If Context says "24 May 2024" but Paraphrase Map says "roughly a year ago", your output MUST use "roughly a year ago".
+    
+The date the question is being asked is [ADD_QUESTION_DATE] UTC (use this to determine correct verb tenses).
+The generated improved question must ask about an a/an '[ADD_QUESTION_TARGET_TYPE]'
+Context: [ADD_KEYPOINTS_HERE]
+Original Question: [ADD_QUESTION_HERE]
+Paraphrase Map: [ADD_PARAPHRASE_MAP]
+Good refinement:"""
 }
 
 

@@ -19,13 +19,14 @@ class GeminiLLM(BaseLLMAPI):
         self.reasoning = reasoning
 
 
-    def generate(self, system_prompt: str, user_prompt: str, max_output_tokens: int = 2048) -> str:
+    def generate(self, system_prompt: str, user_prompt: str, max_output_tokens: int = 2048, temperature: float = 1.0) -> str:
         kwargs = {
             "model": self.model_name,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
-            ]
+            ],
+            "temperature": temperature
         }
         if self.model_name in self.REASONING_MODELS:
             # reasoning model

@@ -146,7 +146,7 @@ Predicted answer 3: Without researching the web, I cannot answer this question.
 However, I can tell you that Barack Obama has two children.
 Predicted answer 4: Barack Obama has two children. I know that one of them is Malia,
 but I’m not sure about the other one.
-Predicted answer 5: There is no information based on the provided context
+Predicted answer 5: I cannot answer because there are not enough information in the provided context.
 ‘‘‘
 These predicted answers are all NOT_ATTEMPTED because:
 - The important information in the gold target is not included in the answer.
@@ -165,9 +165,9 @@ Don’t apologize or correct yourself if there was a mistake; we are just trying
 to grade the answer.""",
 
     "user": f"""‘‘‘
-Question: [QUESTION]
-Gold target: [SHORT]
-Predicted answer: [GENERATED_ANSWER]
+**Question:** [QUESTION]
+**Gold target:** [SHORT]
+**Predicted answer:** [GENERATED_ANSWER]
 ‘‘‘
 Grade the predicted answer of this new question as one of:
 A: CORRECT

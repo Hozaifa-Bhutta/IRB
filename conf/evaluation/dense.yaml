@@ -5,6 +5,7 @@ general:
   retrieval_model: null
   dataset_date: null
   index_folder: null
+  wikidump_date: 2025-09-29 # YYYY-MM-DD
 
 retrieval:
   index:
@@ -32,8 +33,14 @@ qa:
 
 view:
   configurations: 
-    - {keypoints: single}
-    - {keypoints: multi}
+    - {keypoints: 1}
+    - {keypoints: 2}
+    - {keypoints: 3}
+    - {keypoints: 4}
+    - {keypoints: 5}
+    - {keypoints: 6}
+    - {keypoints: 7}
+    - {keypoints: 8}
     - {language: english_only}
     - {language: multilingual}
     - {freshness: 2024}
@@ -42,8 +49,14 @@ view:
     - {topic: Geography}
     - {topic: History_and_Society}
     - {topic: STEM}
-    - {numhops: single}
-    - {numhops: multi}
+    - {numhops: 1}
+    - {numhops: 2}
+    - {numhops: 3}
+    - {numhops: 4}
+    - {numhops: 1,  freshness: 2025}
+    - {numhops: 2,  freshness: 2025}
+    - {numhops: 1,  freshness: 2024}
+    - {numhops: 2,  freshness: 2024}
     # - {freshness: 2025, topic: Culture}
     # - {freshness: 2025, topic: Geography}
     # - {freshness: 2025, topic: History_and_Society}

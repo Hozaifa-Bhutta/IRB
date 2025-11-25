@@ -6,6 +6,7 @@ from evaluation.question_answering.utils.allowed_datasets import ALLOWED_DATASET
 from evaluation.question_answering.eval import metadata_folder_name_creation, data_relative_path
 from steps.utils.generic import read_json_or_jsonl
 from typing import List, Dict
+from tqdm import tqdm
 
 
 def read_qrels(qrel_path):
@@ -24,26 +25,30 @@ def read_qrels(qrel_path):
 
     return metadata
 
-def get_average_performance(eval_res_list: List[List[float]]):
+def get_average_performance(eval_res_list: List[List[float]], split: str):
     correct, incorrect, not_attempted = [], [], []
-    accuracy = []
+    truthfulness = []
 
     for corr, incorr, not_att in eval_res_list:
         correct.append(corr)
         incorrect.append(incorr)
         not_attempted.append(not_att)
 
-        if corr == 1:
-            accuracy.append(1)
-        else: accuracy.append(0)
+
+        truthfulness.append(corr - incorr)
     
-    formatted_output = f"CORRECT: {round(np.mean(correct), 3)} INCORRECT: {round(np.mean(incorrect), 3)} NOT_ATTEMPTED: {round(np.mean(not_attempted), 3)} ACCURACY: {round(np.mean(accuracy), 3)}"
-    return formatted_output
+    return {
+        "split": split,
+        "support": len(eval_res_list),
+        "correct": round(np.mean(correct), 3),
+        "incorrect": round(np.mean(incorrect), 3),
+        "not_attempted": round(np.mean(not_attempted), 3),
+        "truthfulness": round(np.mean(truthfulness), 3)
+    }
 
 
-def filter_by_num_keypoints(att: Dict, choice: str = "single"):
-    assert choice in ["single", "multi"]
-    nkp = "single" if att.get("num_keypoints") == 1 else "multi"
+def filter_by_num_keypoints(att: Dict, choice: int = 1):
+    nkp = att.get("num_keypoints")
 
     return nkp == choice
 
@@ -52,7 +57,7 @@ def filter_by_language(att: Dict, choice: str = "english_only"):
     assert choice in ["english_only", "multilingual"]
 
     langs = (att.get("evidence_attr").get("langs"))
-    langs = list(itertools.chain.from_iterable(langs))
+    langs = list(langs)
 
     _type = None
     if any([l != "en" for l in langs]):
@@ -67,7 +72,7 @@ def filter_by_freshness(att: Dict, choice: int = 2024):
     published_dates = att.get("evidence_attr", {}).get("published_dates")
 
     create_timestamp = int(create_timestamp[:4])
-    published_dates = [int(item[:4]) for item in list(itertools.chain.from_iterable(published_dates))]
+    published_dates = [int(item[:4]) for item in list(published_dates)]
 
     all_years = published_dates + [create_timestamp]
 
@@ -82,9 +87,8 @@ def filter_by_topic(att: Dict, choice: str = "History_and_Society"):
     return any([choice in top for top in topics])
 
 
-def filter_by_numhop(att: Dict, choice: int = "single"):
-    assert choice in ["single", "multi"]
-    nh = "single" if att.get("num_hops") == 1 else "multi"
+def filter_by_numhop(att: Dict, choice: int = 1):
+    nh = att.get("num_hops")
 
     return nh == choice
 
@@ -111,16 +115,39 @@ def check_retrieval_correctness(qrels_query, retrieval_metadata_query, num_retri
     else: return "wrong"
 
 
-def show_results(eval_results, configurations, attributes):
-    print("General performance:", get_average_performance([item for item in eval_results if item]))
+def show_results(eval_results, configurations, attributes, eval_metadata):
+    general_performance = get_average_performance([item for item in eval_results if item], split = "general")
+
+    all_performances = []
+    all_reasoning_tokens = []
     for config_dict in configurations:
         temp = []
+        config_reasoning_tokens = []
         for att, eval_res in zip(attributes, eval_results):
+            query_id = att.get("_id")
             if eval_res is None: continue
-            if general_filter_func(att, config_dict): temp.append(eval_res)
+            if general_filter_func(att, config_dict): 
+                temp.append(eval_res)
+                try:
+                    reasoning_tokens = eval_metadata["raw_response"][query_id]["usage"]["output_tokens_details"]["reasoning_tokens"]
+                except Exception: reasoning_tokens = 0
+                config_reasoning_tokens.append(reasoning_tokens)
+                all_reasoning_tokens.append(reasoning_tokens)
 
-        formatted_output = get_average_performance(temp)
-        print(config_dict, f"Support: {len(temp)}", formatted_output)
+        config_performance = get_average_performance(temp, split = str(config_dict))
+        config_performance["avg_reasoning_tokens"] = np.mean(config_reasoning_tokens)
+
+        all_performances.append(config_performance)
+
+    general_performance["avg_reasoning_tokens"] = np.mean(all_reasoning_tokens)
+
+    all_performances.append(general_performance)
+
+    df = pd.DataFrame(columns=["split", "support", "avg_reasoning_tokens", "correct", "incorrect", "not_attempted", "truthfulness"], data = all_performances)
+
+    return df
+
+    
 
 @hydra.main(version_base=None, config_path="../../conf/evaluation", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig):
@@ -194,20 +221,28 @@ def main(cfg: DictConfig):
     with open(eval_result_outfile) as f:
         eval_results_ = json.load(f)
         eval_results = []
-        for line in attributes:
+        for line in tqdm(attributes):
             query_id = line["_id"]
             eval_res = eval_results_.get(query_id, {})
 
             if eval_res:
-                corr, incorr, not_att = float(eval_res.get("CORRECT", 0)), float(eval_res.get("INCORRECT", 0)), float(eval_res.get("NOT_ATTEMPTED", 0))
+                # corr, incorr, not_att = float(eval_res.get("CORRECT", 0)), float(eval_res.get("INCORRECT", 0)), float(eval_res.get("NOT_ATTEMPTED", 0))
+                
+                # optimistic scheme
+                corr = eval_res.get("CORRECT", 0) > 0
+                if corr: corr, incorr, not_att = 1, 0, 0
+                else:
+                    not_att = eval_res.get("NOT_ATTEMPTED", 0) > 0
+                    if not_att: corr, incorr, not_att = 0, 0, 1
+                    else: corr, incorr, not_att = 0, 1, 0
+
                 eval_results.append([corr, incorr, not_att])
             else: eval_results.append(None)
 
-    print("===Overall===")
-    show_results(eval_results, configurations, attributes)
-    print("=============")
+    eval_results_all = show_results(eval_results, configurations, attributes, eval_metadata)
+    eval_results_all.to_csv(os.path.join(os.environ["RESULT_DIR"], "all.csv"), index = False)
 
-    print("===Samples whose retrieval results are CORRECT===")
+
     eval_results_correct_retrieval = []
     for i, line in enumerate(attributes):
         query_id = line["_id"]
@@ -221,11 +256,10 @@ def main(cfg: DictConfig):
         ) == "correct":
             eval_results_correct_retrieval.append(eval_results[i])
         else: eval_results_correct_retrieval.append(None)
-    show_results(eval_results_correct_retrieval, configurations, attributes)
+    eval_results_retrieval_correct = show_results(eval_results_correct_retrieval, configurations, attributes, eval_metadata)
+    eval_results_retrieval_correct.to_csv(os.path.join(os.environ["RESULT_DIR"], "retrieval_correct.csv"), index = False)
 
-    print("=============")
 
-    print("===Samples whose retrieval results are PARTIALLY-CORRECT===")
     eval_results_partcorrect_retrieval = []
     for i, line in enumerate(attributes):
         query_id = line["_id"]
@@ -239,10 +273,10 @@ def main(cfg: DictConfig):
         ) == "partially-correct":
             eval_results_partcorrect_retrieval.append(eval_results[i])
         else: eval_results_partcorrect_retrieval.append(None)
-    show_results(eval_results_partcorrect_retrieval, configurations, attributes)
-    print("=============")
+    eval_results_retrieval_partcorrect = show_results(eval_results_partcorrect_retrieval, configurations, attributes, eval_metadata)
+    eval_results_retrieval_partcorrect.to_csv(os.path.join(os.environ["RESULT_DIR"], "retrieval_partcorrect.csv"), index = False)
 
-    print("===Samples whose retrieval results are INCORRECT===")
+
     eval_results_incorrect_retrieval = []
     for i, line in enumerate(attributes):
         query_id = line["_id"]
@@ -256,7 +290,8 @@ def main(cfg: DictConfig):
         ) == "wrong":
             eval_results_incorrect_retrieval.append(eval_results[i])
         else: eval_results_incorrect_retrieval.append(None)
-    show_results(eval_results_incorrect_retrieval, configurations, attributes)
+    eval_results_retrieval_incorrect = show_results(eval_results_incorrect_retrieval, configurations, attributes, eval_metadata)
+    eval_results_retrieval_incorrect.to_csv(os.path.join(os.environ["RESULT_DIR"], "retrieval_incorrect.csv"), index = False)
 
     prediction_view = []
     for i, line in enumerate(attributes):
