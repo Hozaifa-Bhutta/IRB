@@ -15,7 +15,6 @@ from typing import List, Dict
 def main(cfg: DictConfig)-> None:
     decontextualized_facts_folder = cfg.step2_2.output_folder
     fact_groundedness_folder = cfg.step3.output_folder
-    max_graph_triplets = cfg.step4.max_graph_triplets
     extracted_kg_folder = cfg.step4.output_folder + "_extracted_kg"
     output_folder = cfg.step4.output_folder + "_generated_question"
 
@@ -46,7 +45,6 @@ def main(cfg: DictConfig)-> None:
     output_files_full_path = [os.path.join(output_folder, file) for file in files]
 
     # must remove in real run
-    COUNT = 0
     for dff_file_path, fgf_file_path, extracted_kg_path, output_file_path in tqdm(zip(decontextualized_facts_files_full_path, 
                                                                                     fact_groundedness_files_full_path, 
                                                                                     extracted_kg_files_full_path,
@@ -88,6 +86,7 @@ def main(cfg: DictConfig)-> None:
         
         keypoints_mapper = keypoints_mapper_filtered
 
+        # prepare masked knowledge graph for single-hop questions
         single_hop_masked_kg_mapper = {}
         for fact_id, keypoints in keypoints_mapper.items():
             graph_data = fact_kg_mapper.get(fact_id)
@@ -97,11 +96,11 @@ def main(cfg: DictConfig)-> None:
                     knowledge_graph = graph_data,
                     keypoints = keypoints
                 )
-
-                assert len(masked_knowledge_graph_for_single_hop["masked_kg"]) <= max_graph_triplets
             except Exception: continue
             if masked_knowledge_graph_for_single_hop: single_hop_masked_kg_mapper[fact_id] = masked_knowledge_graph_for_single_hop
 
+        # try to find pairs of single-hop masked kg to piece together to create two-hop questions
+        only_single_hop_count = 0
         fact_question_mapper = {}
         for fact_id, keypoints in keypoints_mapper.items():
             graph_data = fact_kg_mapper.get(fact_id)
@@ -125,6 +124,11 @@ def main(cfg: DictConfig)-> None:
                     all_masked_knowledge_graphs.append(masked_knowledge_graph_for_two_hop)
 
             all_masked_knowledge_graphs = all_masked_knowledge_graphs[:2]
+            if len(all_masked_knowledge_graphs) < 2: # there is no two-hop question to be generated
+                if only_single_hop_count >= 3: continue
+                only_single_hop_count += 1
+
+
             all_masked_knowledge_graphs_paraphrased = [
                 {**item, **kg_based_qg_utils.helper.knowledge_graph_paraphrase(item["masked_kg"], wikidump_date, create_false_premise = False)} 
                 for item in all_masked_knowledge_graphs
@@ -140,7 +144,7 @@ def main(cfg: DictConfig)-> None:
                 paraphrased = all_masked_knowledge_graphs_paraphrased[i]
 
                 if not paraphrased["masked_kg"]: to_append = original
-                else: to_append = random.choice([original, paraphrased])
+                else: to_append = paraphrased
 
                 temp.append(to_append)
             
@@ -149,14 +153,6 @@ def main(cfg: DictConfig)-> None:
                 temp.append(random.choice(all_masked_knowledge_graphs_false_premise))
 
             all_masked_knowledge_graphs = temp
-            
-            # try:
-            #     all_masked_knowledge_graphs = kg_based_qg_utils._knowledge_graph_masking(
-            #         knowledge_graph = graph_data,
-            #         max_nodes_to_mask = max_num_hops,
-            #         keypoints = keypoints
-            #     )
-            # except Exception as e: continue
 
             for line in all_masked_knowledge_graphs:
                 try:
@@ -197,10 +193,6 @@ def main(cfg: DictConfig)-> None:
             }
 
             write_to_json(data = to_save, filename = output_file_path)
-
-            # must remove in real run
-            COUNT += 1
-            if COUNT == 20: break
 
 
 if __name__ == "__main__":

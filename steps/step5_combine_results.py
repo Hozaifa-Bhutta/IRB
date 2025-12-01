@@ -142,6 +142,7 @@ def get_queries_and_answers(question_generation_files_full_path: List[str],
         for fact_id, fact_queries in fact_question_mapper.items():
             keypoints = keypoints_mapper[fact_id]
             for fact_query in fact_queries:
+                is_false_premise = fact_query.get("false_premise")
                 query_text = fact_query["question"]
                 num_hops = fact_query["num_hops"]
                 aux_fact_id = fact_query["aux_fact_id"]
@@ -157,12 +158,16 @@ def get_queries_and_answers(question_generation_files_full_path: List[str],
                 if "<Unknown" in query_text \
                     or fuzz.partial_ratio(SIMPLE_TEXT_SPLITTER(gold_answer), SIMPLE_TEXT_SPLITTER(query_text)) >= 50: continue
 
-                queries.append({"_id": query_id, "text": query_text})
                 answer_keypoints = [kp for kp_index, kp in enumerate(keypoints) if kp_index in good_keypoints[fact_id]]
                 if aux_fact_id is not None:
                     answer_keypoints += [kp for kp_index, kp in enumerate(aux_keypoints) if kp_index in good_keypoints[aux_fact_id]]
 
-                answers.append({"_id": query_id, "text": answer_keypoints, "short": gold_answer})
+                if is_false_premise is not True:
+                    queries.append({"_id": query_id, "text": query_text})
+                    answers.append({"_id": query_id, "text": answer_keypoints, "short": gold_answer})
+                else:
+                    queries.append({"_id": "~" + query_id, "text": query_text})
+                    answers.append({"_id": "~" + query_id, "text": answer_keypoints, "short": "False premise question"})
 
     return queries, answers
 
@@ -192,6 +197,12 @@ def get_attributes(queries, answers, corpus, qrels,
     attributes = []
     for i in range(len(queries)):
         query_id = queries[i]["_id"]
+        false_premise = False
+        if query_id.startswith("~"): 
+            query_id = query_id[1:]
+            false_premise = True
+
+
         num_hops = int(queries[i]["_id"].split("--")[-1])
 
         query_wiki_title = query_id.split("--")[0]
@@ -208,6 +219,7 @@ def get_attributes(queries, answers, corpus, qrels,
                 "_id": queries[i]["_id"],
                 "num_keypoints": num_keypoints,
                 "num_hops": num_hops,
+                "false_premise": false_premise,
                 "topics": wikititle2info[query_wiki_title]["topics"],
                 "wiki_create_timestamp": wikititle2info[query_wiki_title]["create_timestamp"],
                 "evidence_attr": {
@@ -234,7 +246,7 @@ def sanity_check(queries, answers, attributes, qrels):
 
         # assert len(langs) == attributes[i]["num_keypoints"] == len(published_dates), queries[i]["_id"]
 
-    assert all([line["_id"] in qrels for line in queries])
+    assert all([line["_id"] in qrels for line in queries if not line["_id"].startswith("~")])
 
 
 

@@ -29,7 +29,6 @@ step3:
 
 step4:
   output_folder: null
-  max_graph_triplets: 8 # will not generate questions using graphs with more triplets than this amount
   kg_completeness_word_check_threshold: 0.5
   question_progression_word_check_threshold: 0.75
 
@@ -38,4 +37,4 @@ step5:
 
 step6:
   output_folder: null
-  num_samples: 200
+  num_samples: 300

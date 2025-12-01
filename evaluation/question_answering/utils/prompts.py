@@ -159,6 +159,8 @@ predicted answer only needs to contain the information that is in the question.
 - Do not punish predicted answers if they omit information that would be clearly
 inferred from the question.
 - Do not give credit for an answer if it contains any internal inconsistency.
+- If the gold answer is "False premise question" the prediction is only correct when it also states "False premise question".
+A prediction saying "I don't know" is not CORRECT, but NOT_ATTEMPTED
 
 Here is a new example. Simply reply with either CORRECT, INCORRECT, NOT ATTEMPTED.
 Don’t apologize or correct yourself if there was a mistake; we are just trying

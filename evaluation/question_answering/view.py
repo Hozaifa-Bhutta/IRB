@@ -60,7 +60,7 @@ def filter_by_language(att: Dict, choice: str = "english_only"):
     langs = list(langs)
 
     _type = None
-    if any([l != "en" for l in langs]):
+    if any([l != "en" for l in langs if l]):
         _type = "multilingual"
     else: _type = "english_only"
 
@@ -72,7 +72,7 @@ def filter_by_freshness(att: Dict, choice: int = 2024):
     published_dates = att.get("evidence_attr", {}).get("published_dates")
 
     create_timestamp = int(create_timestamp[:4])
-    published_dates = [int(item[:4]) for item in list(published_dates)]
+    published_dates = [int(item[:4]) for item in list(published_dates) if item]
 
     all_years = published_dates + [create_timestamp]
 
@@ -92,6 +92,11 @@ def filter_by_numhop(att: Dict, choice: int = 1):
 
     return nh == choice
 
+def filter_by_false_premise(att: Dict, choice: bool = False):
+    fp = att.get("false_premise")
+
+    return bool(fp) == bool(choice)
+
 
 def general_filter_func(att: Dict, choice_dict: Dict[str, str]):
     # the keys are 'language', 'freshness', 'topic', 'keypoints'
@@ -101,12 +106,14 @@ def general_filter_func(att: Dict, choice_dict: Dict[str, str]):
         "freshness": filter_by_freshness,
         "topic": filter_by_topic,
         "keypoints": filter_by_num_keypoints,
-        "numhops": filter_by_numhop
+        "numhops": filter_by_numhop,
+        "false_premise": filter_by_false_premise
     }
 
     return all([filter_mapper[k](att, v) for k, v in choice_dict.items()])
 
 def check_retrieval_correctness(qrels_query, retrieval_metadata_query, num_retrieval_contexts):
+    if not qrels_query: return "wrong"
     retrieved_doc_ids = set([item["docid"] for item in retrieval_metadata_query[:num_retrieval_contexts]])
     required_docids = qrels_query.keys()
 
@@ -296,10 +303,10 @@ def main(cfg: DictConfig):
     prediction_view = []
     for i, line in enumerate(attributes):
         query_id = line["_id"]
-        if query_id not in qrels or query_id not in retrieval_metadata: continue
+        if query_id not in retrieval_metadata: continue
 
         retrieval_correctness = check_retrieval_correctness(
-            qrels_query = qrels[query_id],
+            qrels_query = qrels.get("query_id", {}),
             retrieval_metadata_query = retrieval_metadata[query_id],
             num_retrieval_contexts = max_num_contexts
         )

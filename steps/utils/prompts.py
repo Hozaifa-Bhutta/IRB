@@ -368,6 +368,7 @@ QUESTION_REFINEMENT_PROMPT = {
    - If the Context contains a concrete name (e.g., "Haneda Airport"), the Question MUST preserve that specific name.
 2. **Refine, Don't Simplify:** You may fix grammar, awkward phrasing, and vocabulary (e.g., changing "plane" to "aircraft"), but you must not delete clauses that establish relationships between entities.
 3. **Output Only:** Output only the refined question text. Do not include the <Unknown> tags in your output.
+4. **Preserve information from original question**: Do not include information in the context that is not in the original question.
 
 
 Example 1: (multi-hop)

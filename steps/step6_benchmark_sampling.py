@@ -11,19 +11,19 @@ def attribute_binning(attributes: List[Dict]):
     res = {}
     for line in attributes:
         query_id = line["_id"]
-        num_keypoints = line.get("num_keypoints")
         num_hops = line.get("num_hops")
+        false_premise = line.get("false_premise")
         topics = set([top.split(".")[0] for top in line.get("topics")])
 
-        _publication_years = list(itertools.chain.from_iterable(line.get("evidence_attr", {}).get("published_dates"))) + [line.get("wiki_create_timestamp")]
+        _publication_years = list(line.get("evidence_attr", {}).get("published_dates")) + [line.get("wiki_create_timestamp")]
         _publication_years = [item[:4] for item in _publication_years if item]
         publication_year = min(_publication_years)
 
-        langs = list(itertools.chain.from_iterable(line.get("evidence_attr", {}).get("langs")))
+        langs = list(line.get("evidence_attr", {}).get("langs"))
         is_multilingual = any([lang for lang in langs if lang != "en"])
 
         for top in topics:
-            string_attr = f"{publication_year}__{num_keypoints}__{num_hops}__{top}__{is_multilingual}"
+            string_attr = f"{publication_year}__{num_hops}__{top}__{is_multilingual}__{false_premise}"
             if string_attr not in res: res[string_attr] = set([])
             res[string_attr].add(query_id)
 
@@ -34,24 +34,29 @@ def sample_based_on_attributes(attributes: List[Dict], num_samples: int):
         return set([line["_id"] for line in attributes])
     bins = attribute_binning(attributes)
 
+    queries_ids = set([line["_id"] for line in attributes])
+
     print("Number of bins", len(bins))
     sampled_ids = set()
     while len(sampled_ids) < num_samples:
         for bin_name in bins:
             if not bins[bin_name]: continue
+
+            print(len(sampled_ids))
+
             index = random.choice(range(len(bins[bin_name])))
             sampled_id = bins[bin_name][index]
-            sampled_ids.add(sampled_id)
-
             if sampled_id.endswith("--2"):
-                
                 sampled_id_ = sampled_id[:-3] + "--1"
-                print(sampled_id, sampled_id_)
+                if sampled_id_ not in queries_ids: continue
                 sampled_ids.add(sampled_id_)
+
+            sampled_ids.add(sampled_id)
 
             bins[bin_name].pop(index)
 
-            if len(sampled_ids) >= num_samples: break
+            if len(sampled_ids) >= num_samples: 
+                break
 
 
     return sampled_ids

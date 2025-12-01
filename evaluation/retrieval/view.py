@@ -93,6 +93,11 @@ def main(cfg: DictConfig):
     eval_results = []
     for att in attributes:
         query_id = att["_id"]
+
+        if query_id not in qrels:
+            eval_results.append(None)
+            continue
+        
         query_retrieval_results = convert_to_pytrec_eval_format(
             [query_id],
             [retrieval_metadata["full"][query_id][:]], 

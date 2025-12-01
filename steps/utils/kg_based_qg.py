@@ -1,4 +1,4 @@
-import json, os, string, nltk, sys, random, dateutil, humanize, pycountry, names
+import json, os, string, nltk, sys, random, dateutil, humanize, pycountry, names, heapq
 import numpy as np
 import networkx as nx
 from datetime import datetime, timedelta
@@ -63,7 +63,30 @@ class KGBasedQGUtilsHelper:
                                          masked_kg: List[Dict[str, str]], 
                                          max_node: int,
                                          wikidump_date: str,
-                                         create_false_premise: bool = False):
+                                         create_false_premise: bool = False,
+                                         **kwargs):
+        
+        def validate_date(date_string):
+            date_string = date_string.strip()
+
+            allowed_formats = [
+                "%Y-%m-%d",       # 2025-01-28
+                "%Y-%m",          # 2025-01
+                "%B %d, %Y",      # January 28, 2025
+                "%d %B %Y",       # 28 January 2025
+                "%B %Y",          # January 2025
+                "%b %d, %Y",      # Jan 28, 2025
+                "%d %b %Y",       # 28 Jan 2025
+                "%Y/%m/%d",       # 2025/01/28
+            ]
+            for fmt in allowed_formats:
+                try:
+                    dt = datetime.strptime(date_string, fmt)
+                    return True
+                except ValueError:
+                    continue
+            return False
+
         nodes_to_paraphrase = []
         for triplet in masked_kg:
             if "<Unknown" not in triplet["head"] and triplet["head_type"] == "Date":
@@ -72,6 +95,7 @@ class KGBasedQGUtilsHelper:
             if "<Unknown" not in triplet["tail"] and triplet["tail_type"] == "Date":
                 nodes_to_paraphrase.append(triplet["tail"])
 
+        nodes_to_paraphrase = [node for node in nodes_to_paraphrase if validate_date(node)]
         nodes_to_paraphrase = random.sample(nodes_to_paraphrase, max_node) if len(nodes_to_paraphrase) > max_node else nodes_to_paraphrase
 
         wikidump_dt = datetime.strptime(wikidump_date, "%Y-%m-%d")
@@ -80,11 +104,19 @@ class KGBasedQGUtilsHelper:
         for node_value in nodes_to_paraphrase:
 
             try:
-                dt = dateutil.parser.parse(node_value)
+                dt = dateutil.parser.parse(node_value,)
                 td = wikidump_dt - dt
                 if create_false_premise:
                     td = td + timedelta(days = random.choice(range(366, 365 * 5)))
-                paraphrased_node_value = "roughly " + humanize.naturaltime(td)
+
+                if td.days == 0:
+                    paraphrased_node_value = "today"
+                elif abs(td.days) < 7:
+                    paraphrased_node_value = "a few days" + (" ago" if td.days > 0 else " from now")
+                elif abs(td.days) < 30:
+                    paraphrased_node_value = "a few weeks" + (" ago" if td.days > 0 else " from now")
+                else:
+                    paraphrased_node_value = "roughly " + humanize.naturaltime(td)
             except Exception: continue
 
             paraphrase_mapper[node_value] = paraphrased_node_value
@@ -96,7 +128,8 @@ class KGBasedQGUtilsHelper:
     def _knowledge_graph_paraphrase_year(self, masked_kg: List[Dict[str, str]], 
                                          max_node: int,
                                          wikidump_date: str,
-                                         create_false_premise: bool = False):
+                                         create_false_premise: bool = False,
+                                         **kwargs):
         
         def is_valid_year_datetime(year_str):
             try:
@@ -138,7 +171,8 @@ class KGBasedQGUtilsHelper:
     
     def _knowledge_graph_paraphrase_person(self, masked_kg: List[Dict[str, str]], 
                                          max_node: int,
-                                         create_false_premise: bool = False):
+                                         create_false_premise: bool = False,
+                                         **kwargs):
         def is_valid_person_name(text):
             clean_text = text.strip()
             
@@ -186,10 +220,13 @@ class KGBasedQGUtilsHelper:
 
     def _knowledge_graph_paraphrase_country(self, masked_kg: List[Dict[str, str]], 
                                          max_node: int,
-                                         create_false_premise: bool = False):
+                                         create_false_premise: bool = False,
+                                         **kwargs):
         
         def country_flag_search(query):
-            search_results = pycountry.countries.search_fuzzy(query)
+            try:
+                search_results = pycountry.countries.search_fuzzy(query)
+            except Exception: return None
 
             if not search_results: return None
             return search_results[0].flag
@@ -225,17 +262,32 @@ class KGBasedQGUtilsHelper:
                                    masked_kg: List[Dict[str, str]], 
                                    wikidump_date: str,
                                    create_false_premise: bool = False):
-        paraphrase = self._knowledge_graph_paraphrase_date(masked_kg, 10, wikidump_date, create_false_premise = create_false_premise)
-        paraphrase.update(self._knowledge_graph_paraphrase_person(masked_kg, 10, create_false_premise = create_false_premise))
-        paraphrase.update(self._knowledge_graph_paraphrase_year(masked_kg, 10, wikidump_date, create_false_premise = create_false_premise))
-        paraphrase.update(self._knowledge_graph_paraphrase_country(masked_kg, 10, create_false_premise = create_false_premise))
+        paraphrase_type_2_func = {
+            "date": self._knowledge_graph_paraphrase_date,
+            "person": self._knowledge_graph_paraphrase_person,
+            "year": self._knowledge_graph_paraphrase_year,
+            "country": self._knowledge_graph_paraphrase_country
+        }
 
-        if not paraphrase: return {"masked_kg": None, "paraphrase": None}
+        all_paraphrases_to_choose = {}
+        for ptype in paraphrase_type_2_func:
+            temp = paraphrase_type_2_func[ptype](
+                masked_kg = masked_kg,
+                max_node = 10,
+                wikidump_date = wikidump_date,
+                create_false_premise = create_false_premise
+            )
+            if temp: all_paraphrases_to_choose[ptype] = temp
 
-        if create_false_premise:
-            # just do 1 paraphrase
-            k, v = random.choice(list(paraphrase.items()))
-            paraphrase = {k: v}
+        if not all_paraphrases_to_choose: return {"masked_kg": None, "paraphrase": None}
+
+        # choose one type of node to do paraphrasing
+        _type = random.choice(list(all_paraphrases_to_choose.keys()))
+        paraphrase = {}
+        if _type in ["date", "year"]:
+            paraphrase.update(all_paraphrases_to_choose.get("year", {}))
+            paraphrase.update(all_paraphrases_to_choose.get("date", {}))
+        else: paraphrase = all_paraphrases_to_choose[_type]
 
         res = []
         for triplet in masked_kg:
@@ -342,6 +394,42 @@ class KGBasedQGUtils:
 
         return bad_nodes
     
+    def _mst_from_root(self, masked_kg: List[Dict[str, str]]):
+        graph, _ = self._convert_kg_to_nx_graph(masked_kg)
+        graph = graph.to_undirected()
+
+        start_node = masked_kg[0]["head"]
+
+        mst = nx.Graph()
+        visited = set()
+        
+
+        min_heap = [(0, None, start_node)]
+        
+        total_cost = 0
+
+        while min_heap:
+            cost, u, v = heapq.heappop(min_heap)
+
+            if v in visited:
+                continue
+
+            visited.add(v)
+            mst.add_node(v)
+            
+            if u is not None:
+                mst.add_edge(u, v, weight=cost)
+                total_cost += cost
+
+            for neighbor, edge_data in graph[v].items():
+                if neighbor not in visited:
+                    edge_weight = 1
+                    heapq.heappush(min_heap, (edge_weight, v, neighbor))
+
+        
+        return [triplet for triplet in masked_kg if mst.has_edge(triplet["head"], triplet["tail"]) or mst.has_edge(triplet["tail"], triplet["head"])]
+
+
 
     def _prune_masked_graph(self, masked_kg: List[Dict[str, str]], multi_hop = True):
         if multi_hop:
@@ -468,6 +556,7 @@ class KGBasedQGUtils:
                 "tail_type": relation["tail_type"]
             })
             # masked_kg = self._prune_masked_graph(masked_kg, multi_hop = False)
+            masked_kg = self._mst_from_root(masked_kg)
 
         masked_keypoints_str = keypoints_str[:]
         for ent_name, ent_type in masked_entities_info:

@@ -1,34 +1,81 @@
 import os
+import boto3
 from llm_apis.base import BaseLLMAPI
-from openai import OpenAI
-from typing import Optional
-
+from typing import Optional, List, Dict, Any
 
 class BedRockLLM(BaseLLMAPI):
     REASONING_MODELS = []
-    def __init__(self, api_key: Optional[str] = None, model_name: str = None, reasoning: str = "medium"):
+
+    def __init__(
+        self, 
+        api_key: Optional[str] = None, 
+        region_name: str = "us-east-2", 
+        model_name: str = None, 
+        is_reasoning_model: bool = False,
+        reasoning: str = "medium",
+    ):
         super().__init__()
 
-        self.client = OpenAI(
-            api_key=api_key,
-            base_url="https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1"
+        if api_key:
+            os.environ['AWS_BEARER_TOKEN_BEDROCK'] = api_key
+
+        self.client = boto3.client(
+            service_name="bedrock-runtime",
+            region_name=region_name
         )
+        
         self.model_name = model_name
+        self.reasoning = reasoning
 
-
-    def generate(self, system_prompt, user_prompt, max_output_tokens):
-        kwargs = {
-            "model": self.model_name,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ]
+        self.is_reasoning_model = is_reasoning_model
+        # similar to gemini 2.5 pro, see https://ai.google.dev/gemini-api/docs/openai
+        self.reasoning_budgets = {
+            "none": 0,
+            "low": 1024,
+            "medium": 8192,
+            "high": 24576
         }
-        if self.model_name in self.REASONING_MODELS:
-            # reasoning model
-            kwargs["reasoning_effort"] = "medium"
 
-        resp = self.client.chat.completions.create(**kwargs)
-        result = resp.choices[0].message.content.strip()
+    def generate(self, system_prompt: str, user_prompt: str, max_output_tokens: int, return_dict: bool = False) -> str:
+        system_prompts = [{"text": system_prompt}]
+        messages = [
+            {
+                "role": "user",
+                "content": [{"text": user_prompt}]
+            }
+        ]
 
-        return result
+        inference_config = {
+            "maxTokens": max_output_tokens,
+        }
+
+        additional_fields = {}
+        if self.is_reasoning_model:
+            budget = self.reasoning_budgets.get(self.reasoning_effort, 4096)
+            additional_fields["reasoning_config"] = {
+                "type": "enabled", 
+                "budget_tokens": budget
+            }
+
+        response = self.client.converse(
+            modelId=self.model_name,
+            messages=messages,
+            system=system_prompts,
+            inferenceConfig=inference_config,
+            additionalModelRequestFields=additional_fields
+        )
+
+        content_blocks = response['output']['message']['content']
+        for block in content_blocks:
+            if 'text' in block:
+                # This is the final visible answer
+                final_answer = block['text']
+
+        if return_dict:
+            return {
+                "text": final_answer.strip(),
+                "raw": response
+            }
+        else:
+            output_content = final_answer
+            return output_content.strip()

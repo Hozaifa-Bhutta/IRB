@@ -13,7 +13,10 @@ MODEL_NAME_2_MODEL_CLASS = {
     "gpt-4o-mini": OpenAILLM,
     "gemini-2.5-flash": GeminiLLM,
     "gemini-2.5-flash-for-eval": GeminiLLM,
-    "gemini-2.5-pro": GeminiLLM
+    "gemini-2.5-pro": GeminiLLM,
+    "llama-4-scout": BedRockLLM,
+    "llama-3.3-70B": BedRockLLM,
+    "gpt-oss-120b": BedRockLLM
 }
 
 MODEL_NAME_2_INIT_DICT = {
@@ -48,6 +51,16 @@ MODEL_NAME_2_INIT_DICT = {
     },
     "gemini-2.5-pro": {
         "model_name": "gemini-2.5-pro",
+        "reasoning": "medium"
+    },
+    "llama-4-scout": {
+        "model_name": "us.meta.llama4-scout-17b-instruct-v1:0",
+    },
+    "llama-3.3-70B": {
+        "model_name": "us.meta.llama3-3-70b-instruct-v1:0"
+    },
+    "gpt-oss-120b": {
+        "model_name": "openai.gpt-oss-120b-1:0",
         "reasoning": "medium"
     }
 }

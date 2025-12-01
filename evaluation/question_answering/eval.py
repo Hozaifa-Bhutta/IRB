@@ -1,6 +1,6 @@
 import os, hydra, json, sys, time, openai
 from omegaconf import DictConfig
-from llm_apis import init_llm
+from llm_apis import init_llm, BedRockLLM, OpenAILLM, GeminiLLM
 from evaluation.question_answering.utils.qa_prompt import QA_SYSTEM_PROMPT, QA_USER_PROMPT, QA_SYSTEM_PROMPT_WITHOUT_CONTEXT, QA_USER_PROMPT_WITHOUT_CONTEXT
 from evaluation.question_answering.utils.qa_eval_metrics import run_llm_based_evaluation_keypoints
 from evaluation.question_answering.utils.allowed_datasets import ALLOWED_DATASETS
@@ -43,22 +43,12 @@ def generate_answer(query,
     # print(user_prompt)
 
     try:
-        response = LLM.client.responses.create(
-            model = LLM.model_name,
-            instructions = qa_system_prompt,
-            input = user_prompt,
-            max_output_tokens = 2048,
-            tool_choice = "none"
-        )
-
-        result = {
-            "text": response.output_text.strip(),
-            "raw": response.model_dump()
-        }
-
-        return result
-    except openai.RateLimitError as e:
-        return "Could not answer this question due to an error"
+        response = LLM.generate(qa_system_prompt, user_prompt, 4096, return_dict = True)
+        print(response)
+        return response
+    except Exception as e:
+        print("ERROR when generating answer", str(e))
+        return {"text": "Could not answer this question due to an error", "raw": {}}
     
 
 def data_relative_path(dataset_name, dataset_date = None):

@@ -243,7 +243,6 @@ def main(cfg: DictConfig):
     # load queries
     with open(queries_path) as f:
         queries = [json.loads(line) for line in f]
-        queries = [line for line in queries if line["_id"] in qrels]
 
 
     queries_texts = [line["text"] for line in queries]

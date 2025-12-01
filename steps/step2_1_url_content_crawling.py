@@ -29,9 +29,10 @@ from tqdm import tqdm
 from urllib.parse import urlparse
 from cleantext import clean
 from fast_langdetect import LangDetectConfig, LangDetector
-from utils.generic import read_json_or_jsonl, write_to_json
-from utils.archive_downloader import getArchiveContent
-from utils.html_extraction import extract_text_from_html, get_publication_date
+from steps.utils.generic import read_json_or_jsonl, write_to_json
+from steps.utils.archive_downloader import getArchiveContent
+from steps.utils.html_extraction import extract_text_from_html, get_publication_date
+from steps.utils.bad_domains import BAD_DOMAINS
 from typing import Callable, Any
 
 request_counters = {}
@@ -124,21 +125,17 @@ def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
         domain = parsed_url.netloc.lower()
 
         if domain == "archive.org" or "internetarchive.org" in domain:
-            print("Internet archive request...using library to download items")
-            content = getArchiveContent(url)
-
-            is_accessible = True
-            content_dict["content"] = content
+            content_dict["content"] = "archive.org or internetarchive.org not supported"
             return is_accessible, content_dict
 
         
         domain_lowered = domain.lower()
+        if domain_lowered in BAD_DOMAINS:
+            content_dict["content"] = "Bad domain"
+            return is_accessible, content_dict
+        
         if "music" in domain_lowered:
             content_dict["content"] = "Music-related domain, not useful for fact extraction"
-            return is_accessible, content_dict 
-
-        if "porn" in domain_lowered or "adult" in domain_lowered:
-            content_dict["content"] = "Sensored content in the URL"
             return is_accessible, content_dict 
         
         if "pdf" in url.lower():
@@ -161,6 +158,7 @@ def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
             print(f"Published date for {url}: {published_date}. Start from: {start_from}. Valid: {is_valid_date(published_date, start_from)}")
             if not is_valid_date(published_date, start_from):
                 content_dict["content"] = "Published date is before the start_from date"
+                
                 content_dict["published_date"] = published_date
                 content_dict["lang"] = lang
                 return is_accessible, content_dict
