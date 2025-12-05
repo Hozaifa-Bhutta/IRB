@@ -1,4 +1,4 @@
-import json, os, string, nltk, sys, random, dateutil, humanize, pycountry, names, heapq
+import json, os, string, nltk, sys, random, dateutil, humanize, pycountry, names, heapq, re, num2words
 import numpy as np
 import networkx as nx
 from datetime import datetime, timedelta
@@ -256,6 +256,49 @@ class KGBasedQGUtilsHelper:
             paraphrase_mapper[node_value] = paraphrased_node_value
 
         return paraphrase_mapper
+    
+
+    def _knowledge_graph_paraphrase_quantity_statistics_number(self, masked_kg: List[Dict[str, str]], 
+                                         max_node: int,
+                                         create_false_premise: bool = False,
+                                         **kwargs):
+        def number_to_text_in_string(input_string: str, create_false_premise: bool = False):
+            numbers = re.findall(r'-?\d+(?:\.\d+)?', input_string)
+            if len(numbers) != 1: return None # original node must contain strictly 1 number
+
+            numbers = [num for num in numbers if len(num) < 4]
+            if not numbers: return None
+
+            try:
+                number = numbers[0]
+                if create_false_premise:
+                    adjustment = random.uniform(0.5, 4.0) * abs(float(number)) * random.choice([-1.0, 1.0])
+                    adjusted_number = float(number) + adjustment
+                    text = num2words(adjusted_number)
+                else:
+                    text = num2words.num2words(float(number))
+                input_string = input_string.replace(number, text)
+                return input_string
+            except Exception as e:
+                print(f"Error in '_knowledge_graph_paraphrase_quantity_statistics_number': {e}")
+                return None
+        
+        SUITABLE_NODE_TYPES = ["Quantity", "Statistic", "Number"]
+        nodes_to_paraphrase = []
+        for triplet in masked_kg:
+            if "<Unknown" not in triplet["head"] and triplet["head_type"] in SUITABLE_NODE_TYPES:
+                nodes_to_paraphrase.append(triplet["head"])
+            
+            if "<Unknown" not in triplet["tail"] and triplet["tail_type"] in SUITABLE_NODE_TYPES:
+                nodes_to_paraphrase.append(triplet["tail"])
+        
+        mapper = {node: number_to_text_in_string(node, create_false_premise = create_false_premise) for node in nodes_to_paraphrase}
+        nodes_to_paraphrase = [node for node in nodes_to_paraphrase if mapper.get(node)]
+        nodes_to_paraphrase = random.sample(nodes_to_paraphrase, max_node) if len(nodes_to_paraphrase) > max_node else nodes_to_paraphrase
+
+        paraphrase_mapper = {k: mapper.get(k) for k in nodes_to_paraphrase}
+
+        return paraphrase_mapper
 
 
     def knowledge_graph_paraphrase(self, 
@@ -266,7 +309,8 @@ class KGBasedQGUtilsHelper:
             "date": self._knowledge_graph_paraphrase_date,
             "person": self._knowledge_graph_paraphrase_person,
             "year": self._knowledge_graph_paraphrase_year,
-            "country": self._knowledge_graph_paraphrase_country
+            "country": self._knowledge_graph_paraphrase_country,
+            "number": self._knowledge_graph_paraphrase_quantity_statistics_number
         }
 
         all_paraphrases_to_choose = {}
@@ -332,6 +376,11 @@ class KGBasedQGUtils:
     def _get_bad_nodes(self, all_nodes: List[str], keypoints: Optional[List[str]] = None, knowledge_graph: Optional[List[Dict[str, str]]] = None):
         # there are several types of nodes that we define as bad. These "bad" nodes will not be masked
 
+        # nodes that are plural (contain "and", "&", "et al")
+        PLURAL_DETECTION_KEYWORDS = ["and", "&", "et al", "et. al", "etal",
+                                     " + ", " plus ", " with "]
+        plural_nodes = set([node for node in all_nodes if any([kw in node for kw in PLURAL_DETECTION_KEYWORDS])])
+
         # nodes that overlap with other nodes, because when we mask one, it will still be there in another
         overlapping_nodes = set()
         for node1 in all_nodes:
@@ -358,7 +407,7 @@ class KGBasedQGUtils:
         except KeyError as e:
             lack_coverage_nodes = set()
 
-        bad_nodes = overlapping_nodes | non_entity_nodes | lack_coverage_nodes | nodes_in_relations
+        bad_nodes = overlapping_nodes | non_entity_nodes | lack_coverage_nodes | nodes_in_relations | plural_nodes
 
         if keypoints:
             keypoints_str = "\n".join(keypoints)
@@ -929,6 +978,8 @@ class KGBasedQGChecker:
     
 
     def check_question_answerability(self, question: str, verbose: bool = False):
+        BAD_TOKENS = ["\n"]
+        if any([tok in question for tok in BAD_TOKENS]): return False
 
         user_prompt = self.question_answerability_check_prompt["user"][:]\
         .replace("[ADD_QUESTION_HERE]", question)

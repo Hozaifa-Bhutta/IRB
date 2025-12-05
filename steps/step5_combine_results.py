@@ -48,12 +48,12 @@ def get_corpus(crawled_url_content_files_full_path: List[str]):
 
         for url in url_content_mapper:
             content = url_content_mapper.get(url).get("url_content")
-            if url_content_mapper.get(url, {}).get("error") or not content: continue
+            content = content if content else url_content_mapper.get(url).get("error")
+            if url_content_mapper.get(url).get("accessible") or (url_content_mapper.get(url).get("error") and url_content_mapper.get(url).get("published_date")):
+                published_date = url_content_mapper.get(url).get("published_date")
+                lang = url_content_mapper.get(url).get("lang")
 
-            published_date = url_content_mapper.get(url).get("published_date")
-            lang = url_content_mapper.get(url).get("lang")
-
-            corpus.append({"_id": url, "title": "", "text": content, "published_date": published_date, "lang": lang})
+                corpus.append({"_id": url, "title": "", "text": content, "published_date": published_date, "lang": lang})
 
     return corpus
 

@@ -34,32 +34,36 @@ from steps.utils.archive_downloader import getArchiveContent
 from steps.utils.html_extraction import extract_text_from_html, get_publication_date
 from steps.utils.bad_domains import BAD_DOMAINS
 from typing import Callable, Any
-from collections import defaultdict
 
 request_counters = {}
 MAX_REQUESTS_PER_MINUTE = 10  # Maximum requests per minute per domain
-MAX_URLS_PER_WIKI_ARTICLE = 100 # this is a hard cap on the number of URLs we will be collecting for each wikipedia page
 LANG_DETECTOR = LangDetector(LangDetectConfig(max_input_length=256))
 
+def rate_limited(func: Callable) -> Callable:
+    def wrapper(url: str, *args, **kwargs):
+        domain = urlparse(url).netloc
+        request_counters.setdefault(domain, 0)
 
-class DomainRateLimiter:
-    def __init__(self, requests_per_minute):
-        self.delay = 60.0 / requests_per_minute
-        self.next_allowed_time = defaultdict(float)
+        # Wait if the domain has reached its request limit
+        while request_counters[domain] >= MAX_REQUESTS_PER_MINUTE:
+            print(f"Rate limit hit for {domain}. Waiting...")
+            time.sleep(1)  # Check every second for available slots
 
-    async def wait_for_slot(self, url):
-        domain = urlparse(url).netloc.lower()
-        now = time.time()
-        
-        allowed_time = self.next_allowed_time[domain]
-        
-        wait_time = max(0, allowed_time - now)
-        
-        self.next_allowed_time[domain] = now + wait_time + self.delay
-        
-        if wait_time > 0:
-            print(f"Pacing ('{domain}')... sleeping {wait_time:.2f}s")
-            await asyncio.sleep(wait_time)
+        # Increment the counter for this domain
+        request_counters[domain] += 1
+        print(f"Request count for {domain}: {request_counters[domain]}")
+       
+
+        try:
+            return func(url, *args, **kwargs)
+        finally:
+            # Reset the counter for the domain after 60 seconds
+            time.sleep(60 / MAX_REQUESTS_PER_MINUTE)
+            request_counters[domain] -= 1
+            print(f"Decremented request count for {domain}: {request_counters[domain]}")
+            
+
+    return wrapper
 
 def is_valid_date(published_time_str: str, start_from: str) -> bool:
     """Check if the published date is valid based on the start_from date.
@@ -86,6 +90,7 @@ def is_valid_date(published_time_str: str, start_from: str) -> bool:
     except ValueError:
         return False
 
+@rate_limited
 def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
     """Check if a URL is accessible and retrieve its content.
     Parameters
@@ -125,9 +130,7 @@ def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
 
         
         domain_lowered = domain.lower()
-        if domain_lowered in BAD_DOMAINS or \
-            domain in BAD_DOMAINS or \
-                any([social_media_domain in domain for social_media_domain in ["facebook.com", "twitter.com", "x.com", "github.com", "google.com", "amazon.com", "youtube.com"]]):
+        if domain_lowered in BAD_DOMAINS or domain in BAD_DOMAINS:
             content_dict["content"] = "Bad domain"
             return is_accessible, content_dict
         
@@ -154,9 +157,10 @@ def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
             lang = None
             print(f"Published date for {url}: {published_date}. Start from: {start_from}. Valid: {is_valid_date(published_date, start_from)}")
             if not is_valid_date(published_date, start_from):
-                content_dict["content"] = text
+                content_dict["content"] = "Published date is before the start_from date"
+                
                 content_dict["published_date"] = published_date
-                content_dict["lang"] = LANG_DETECTOR.detect(text)[0]["lang"]
+                content_dict["lang"] = lang
                 return is_accessible, content_dict
             elif not text:
                 content_dict["content"] = "Empty HTML content"
@@ -179,21 +183,14 @@ def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
 
 
 
-async def is_url_accessible_async(url: str, start_from: str, limiter: DomainRateLimiter, semaphore: asyncio.Semaphore):
-    await limiter.wait_for_slot(url)
+async def is_url_accessible_async(url: str, start_from: str, semaphore: asyncio.Semaphore) -> tuple[bool, dict]:
     loop = asyncio.get_event_loop()
-    
     async with semaphore:
         return await loop.run_in_executor(None, is_url_accessible, url, start_from)
 
-async def check_urls_in_parallel(url_list: list[str], start_from: str, max_concurrents: int = 5):
-    limiter = DomainRateLimiter(requests_per_minute=MAX_REQUESTS_PER_MINUTE)
-    semaphore = asyncio.Semaphore(max_concurrents) 
-
-    tasks = [
-        is_url_accessible_async(url, start_from, limiter, semaphore) 
-        for url in url_list
-    ]
+async def check_urls_in_parallel(url_list: list[str], start_from: str, max_concurrent: int = 5) -> list[tuple[bool, dict]]:
+    semaphore = asyncio.Semaphore(max_concurrent)
+    tasks = [is_url_accessible_async(url, start_from, semaphore) for url in url_list]
     return await asyncio.gather(*tasks)
 
 
@@ -257,10 +254,8 @@ def main(cfg: DictConfig)-> None:
             citation_urls = fact.get("citation_urls", [])
             all_urls.update(citation_urls)
 
-            if len(all_urls) >= MAX_URLS_PER_WIKI_ARTICLE: break
-
         all_urls = list(all_urls)
-        responses = asyncio.run(check_urls_in_parallel(all_urls, start_from, max_concurrents=max_concurrents))
+        responses = asyncio.run(check_urls_in_parallel(all_urls, start_from, max_concurrent=max_concurrents))
 
         assert len(all_urls) == len(responses)
 

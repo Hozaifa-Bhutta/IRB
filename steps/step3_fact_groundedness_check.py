@@ -20,14 +20,14 @@ from typing import List, Dict, Union, Optional
 from langcodes import Language
 
 
-LANG_OVERRIDES = {
-    "pt-br": "Portuguese (Brazil)",
-    "zh-cn": "Chinese (China)",
-    "zh-tw": "Chinese (Taiwan)",
-    "yue": "Cantonese",
-}
-
 def lang_display_name_from_code(code: str) -> str:
+    LANG_OVERRIDES = {
+        "pt-br": "Portuguese (Brazil)",
+        "zh-cn": "Chinese (China)",
+        "zh-tw": "Chinese (Taiwan)",
+        "yue": "Cantonese",
+    }
+    
     if not code: return code
     normalized = code.replace("_", "-").lower()
     if normalized in LANG_OVERRIDES:

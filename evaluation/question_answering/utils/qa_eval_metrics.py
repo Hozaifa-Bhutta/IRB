@@ -116,13 +116,16 @@ def run_llm_based_evaluation_keypoints(
     for query_id, query, prediction, gt_full, gt_short in tqdm(zip(query_ids, queries, predictions, groundtruths_full, groundtruths_short)):
         keypoints = gt_full.split("--__--")
 
-        print(gt_short, prediction)
+        print("GT:", gt_short, "\nPred:", prediction)
 
         json_result = []
         if gt_short.lower().strip(string.punctuation) == prediction.lower().strip(string.punctuation):
             json_result = ["CORRECT"]
         elif "I don't know" in prediction or "I don’t know" in prediction:
             json_result = ["NOT_ATTEMPTED"]
+        elif "false premise question" in prediction.lower():
+            if gt_short == "False premise question": json_result = ["CORRECT"]
+            else: json_result = ["INCORRECT"]
         else:
             llm_use_count += 1
             print("USE LLM to Eval:", llm_use_count, " times")

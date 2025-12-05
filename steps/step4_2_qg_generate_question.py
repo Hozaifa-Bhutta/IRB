@@ -100,7 +100,6 @@ def main(cfg: DictConfig)-> None:
             if masked_knowledge_graph_for_single_hop: single_hop_masked_kg_mapper[fact_id] = masked_knowledge_graph_for_single_hop
 
         # try to find pairs of single-hop masked kg to piece together to create two-hop questions
-        only_single_hop_count = 0
         fact_question_mapper = {}
         for fact_id, keypoints in keypoints_mapper.items():
             graph_data = fact_kg_mapper.get(fact_id)
@@ -124,9 +123,6 @@ def main(cfg: DictConfig)-> None:
                     all_masked_knowledge_graphs.append(masked_knowledge_graph_for_two_hop)
 
             all_masked_knowledge_graphs = all_masked_knowledge_graphs[:2]
-            if len(all_masked_knowledge_graphs) < 2: # there is no two-hop question to be generated
-                if only_single_hop_count >= 3: continue
-                only_single_hop_count += 1
 
 
             all_masked_knowledge_graphs_paraphrased = [

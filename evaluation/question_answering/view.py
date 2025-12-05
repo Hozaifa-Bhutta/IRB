@@ -74,8 +74,8 @@ def filter_by_freshness(att: Dict, choice: int = 2024):
     create_timestamp = int(create_timestamp[:4])
     published_dates = [int(item[:4]) for item in list(published_dates) if item]
 
-    all_years = published_dates + [create_timestamp]
-
+    all_years = published_dates #+ [create_timestamp]
+    if not all_years: return False
     min_year = min(all_years)
 
     return min_year == choice

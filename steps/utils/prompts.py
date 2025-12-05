@@ -95,7 +95,7 @@ In addition, the title of the document from which the keypoints are extracted is
 GROUNDEDNESS_CHECK_PROMPT = {
     "system": """You are given a fact and a context document. Determine whether the fact is grounded in the context — that is, whether the fact is explicitly supported by the content of the context.
 Output only one of the following labels:
-+ Grounded – if the context explicitly supports or states the fact.
++ Grounded – if the context fully and explicitly supports or states the fact.
 + Not Grounded – if the context does not support the fact, or the relevant information is missing or irrelevant.
 
 Instructions:
@@ -103,10 +103,14 @@ Instructions:
 + Ignore metadata like publication date or document structure unless it contains meaningful content.
 + Output only the label (Grounded or Not Grounded) with no explanation.""",
 
-    "user": """Fact: [ADD_KEYPOINT_HERE]
-Context Language: [ADD_CONTEXT_LANGUAGE_HERE]
-Context Published Date: [ADD_CONTEXT_PUBLISHED_DATE_HERE]
-Context: [ADD_CONTEXT_HERE]
+    "user": """Fact: ```[ADD_KEYPOINT_HERE]```
+Context: 
+```
+Language: [ADD_CONTEXT_LANGUAGE_HERE]
+Published Date: [ADD_CONTEXT_PUBLISHED_DATE_HERE]
+
+[ADD_CONTEXT_HERE]
+```
 
 Output:"""
 }
@@ -115,25 +119,22 @@ Output:"""
 
 GRAPH_BUILDER_PROMPT = {
     "system": """You are a top-tier algorithm designed for extracting information in structured formats to build a knowledge graph. \
-        Your task is to identify the entities and relations requested with the user prompt from a given text. You must generate the \
-            output in a JSON format containing a list with JSON objects. Each object should have the keys: "head", "head_type", "relation", \
-                "tail", "tail_type".
-                        
-Attempt to extract as all entities and relations.
+Your task is to identify the entities and relations requested with the user prompt from a given text. You must generate the \
+output in a JSON format containing a list with JSON objects. Each object should have the keys: "head", "head_type", "relation", \
+"tail", "tail_type".
 
-Maintain Entity Consistency: When extracting entities, it's vital to ensure consistency. \
+Be sure to follow these rules:
+1. Attempt to extract as all entities and relations.
+2. Maintain Entity Consistency: When extracting entities, it's vital to ensure consistency. \
 If a entity, such as "John Doe", is mentioned multiple times in the text but is referred to by different names or pronouns (e.g., "Joe", "he"), always \
 use the most complete identifier for that entity. The knowledge graph should be coherent and easily understandable, so maintaining consistency in entity references is crucial.
-
-Avoid creating entities that overlap. For example, if there already exists a node named "John Doe", try not to create another node named "John Doe's graduation day"
-
-Each relation should appear strictly once.
+3. Avoid creating entities that overlap. For example, if there already exists a node named "John Doe", try not to create another node named "John Doe's graduation day"
 
 IMPORTANT NOTES:
 - Don't add any explanation and text. For the following text, extract entities and relations
 
 Example 1:
-Text: Cristiano Ronaldo made his La Liga debut against Deportivo La Coruña on 29 August, scoring a penalty in a 3–2 home win.
+Text: ```Cristiano Ronaldo made his La Liga debut against Deportivo La Coruña on 29 August, scoring a penalty in a 3–2 home win.```
 Knowledge Graph: 
 ```json
 [
@@ -170,7 +171,7 @@ Knowledge Graph:
 
 
 Example 2:
-Text: The idea of using computers to search for relevant pieces of information was popularized in the article As We May Think by Vannevar Bush in 1945.
+Text: ```The idea of using computers to search for relevant pieces of information was popularized in the article As We May Think by Vannevar Bush in 1945.```
 Knowledge Graph:
 ```json
 [
@@ -199,7 +200,7 @@ Knowledge Graph:
 ```
 
 Example 3:
-Text: In Donald Trump's inaugural address, he pledged to "immediately begin the overhaul of our trade system to protect American workers and families."
+Text: ```In Donald Trump's inaugural address, he pledged to "immediately begin the overhaul of our trade system to protect American workers and families."```
 Knowledge Graph:
 ```json
 [
@@ -213,7 +214,7 @@ Knowledge Graph:
 ]
 ```
 """,
-    "user": "Text: [ADD_KEYPOINTS_HERE]"
+    "user": "Text: ```[ADD_KEYPOINTS_HERE]```"
 }
 
 

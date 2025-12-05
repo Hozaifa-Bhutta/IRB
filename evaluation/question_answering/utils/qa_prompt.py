@@ -13,6 +13,7 @@ Question date: [ADD_QUESTION_DATE] UTC (YYYY-MM-DD)
 Question: [ADD QUESTION HERE]"""
 
 
+
 QA_SYSTEM_PROMPT_WITHOUT_CONTEXT = f"""Answer the provided question. You are also provided the time when the question was asked.
 Your task is to answer the question in as few words as possible.
 
