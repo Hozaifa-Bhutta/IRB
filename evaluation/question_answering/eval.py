@@ -61,6 +61,7 @@ def data_relative_path(dataset_name, dataset_date = None):
 def metadata_folder_name_creation(dataset: str, llm_model_name: str, retrieval_model: str, use_retrieval_contexts: bool, use_chunk: bool):
     temp = [dataset, llm_model_name] + \
             ([retrieval_model, f"chunk{use_chunk}"] if use_retrieval_contexts else [])
+    if use_retrieval_contexts == 2: temp += ["reranked"]
     print(temp)
     return "__".join(temp)
 
@@ -97,7 +98,11 @@ def main(cfg: DictConfig):
     print(f"Model predictions will be written to '{eval_metadata_outfile}'")
     print(f"Evaluation results will be written to '{eval_result_outfile}'")
 
-    retrieval_metadata_path = os.path.join(retrieval_metadata_folder, f"{dataset}__{retrieval_model}.json")
+    retrieval_metadata_path = os.path.join(
+        retrieval_metadata_folder, 
+        f"{dataset}__{retrieval_model}.json" if use_retrieval_contexts != 2 else f"{dataset}__{retrieval_model}__reranked.json"
+    )
+
 
     queries_path = os.path.join(
         work_dir, 
@@ -142,6 +147,8 @@ def main(cfg: DictConfig):
 
         if use_retrieval_contexts:
             assert os.path.exists(retrieval_metadata_path)
+
+            print("Use retrieval metadata at:", retrieval_metadata_path)
 
             with open(retrieval_metadata_path) as f:
                 retrieval_metadata = json.load(f)

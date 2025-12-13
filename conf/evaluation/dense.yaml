@@ -44,11 +44,11 @@ view:
     - {false_premise: false, numhops: 1}
     - {false_premise: false, numhops: 2}
     - {false_premise: true}
-    - {false_premise: false, freshness: 2024, numhops: 1}
-    - {false_premise: false, freshness: 2024, numhops: 2}
-    - {false_premise: false, freshness: 2025, numhops: 1}
-    - {false_premise: false, freshness: 2025, numhops: 2}
-    - {false_premise: false, topic: Culture, numhops: 1, language: english_only}
-    - {false_premise: false, topic: Geography, numhops: 1, language: english_only}
-    - {false_premise: false, topic: History_and_Society, numhops: 1, language: english_only}
-    - {false_premise: false, topic: STEM, numhops: 1, language: english_only}
+    # - {false_premise: false, freshness: 2024, numhops: 1}
+    # - {false_premise: false, freshness: 2024, numhops: 2}
+    # - {false_premise: false, freshness: 2025, numhops: 1}
+    # - {false_premise: false, freshness: 2025, numhops: 2}
+    # - {false_premise: false, topic: Culture, numhops: 1, language: english_only}
+    # - {false_premise: false, topic: Geography, numhops: 1, language: english_only}
+    # - {false_premise: false, topic: History_and_Society, numhops: 1, language: english_only}
+    # - {false_premise: false, topic: STEM, numhops: 1, language: english_only}

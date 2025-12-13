@@ -604,7 +604,6 @@ class KGBasedQGUtils:
                 "tail_unmasked": relation["tail"],
                 "tail_type": relation["tail_type"]
             })
-            # masked_kg = self._prune_masked_graph(masked_kg, multi_hop = False)
             masked_kg = self._mst_from_root(masked_kg)
 
         masked_keypoints_str = keypoints_str[:]
