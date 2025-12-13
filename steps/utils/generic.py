@@ -1,4 +1,4 @@
-import json, os, spacy
+import json, os, spacy, string
 from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk import pos_tag
 from typing import List
@@ -93,3 +93,6 @@ def is_proper_sentence(text: str):
 def sentence_filtering(sentences: List[str]) -> List[str]:
 
     return [i for i, s in enumerate(sentences) if is_proper_sentence(s)]
+
+
+SIMPLE_TEXT_SPLITTER = lambda text: [item.strip(string.punctuation).lower() for item in text.replace("_", " ").replace("-", " ").split()]

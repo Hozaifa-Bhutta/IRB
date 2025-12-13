@@ -3,10 +3,10 @@ import numpy as np
 from omegaconf import DictConfig
 from argparse import ArgumentParser
 from tqdm import tqdm
-from utils.text_embeddings import model_name_2_model_class, \
+from evaluation.retrieval.utils.text_embeddings import model_name_2_model_class, \
     model_name_2_tokenizer_class, model_name_2_model_path, model_name_2_prefix, text_embedding_batch, init_model
-from utils.text_chunking import init_chunker, text_chunking
-from utils.allowed_datasets import ALLOWED_DATASETS
+from evaluation.retrieval.utils.text_chunking import init_chunker, text_chunking
+from evaluation.retrieval.utils.allowed_datasets import ALLOWED_DATASETS
 
 
 DEVICE = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -102,6 +102,8 @@ def main(cfg: DictConfig):
         dataset_name_2_relative_path[dataset],
         "corpus.jsonl")
     assert os.path.exists(corpus_path)
+
+    print("Corpus path: ", corpus_path)
 
     corpus = []
     with open(corpus_path) as f:

@@ -5,6 +5,7 @@ general:
   retrieval_model: null
   dataset_date: null
   index_folder: null
+  wikidump_date: 2025-09-29 # YYYY-MM-DD
 
 retrieval:
   index:
@@ -13,9 +14,9 @@ retrieval:
     chunk_overlap: 32
     num_chunks: 1
     chunk_idx: 0
-    batch_size: 32
+    batch_size: 8 #32
   eval:
-    batch_size: 32
+    batch_size: 8 #32
     threads: 8
 
 
@@ -32,20 +33,22 @@ qa:
 
 view:
   configurations: 
-    - {keypoints: single}
-    - {keypoints: multi}
-    - {language: english_only}
-    - {language: multilingual}
-    - {freshness: 2024}
-    - {freshness: 2025}
-    - {topic: Culture}
-    - {topic: Geography}
-    - {topic: History_and_Society}
-    - {topic: STEM}
-    - {numhops: single}
-    - {numhops: multi}
-    # - {freshness: 2025, topic: Culture}
-    # - {freshness: 2025, topic: Geography}
-    # - {freshness: 2025, topic: History_and_Society}
-    # - {freshness: 2025, topic: STEM}
-    # - {topic: Culture, language: multilingual}
+    - {false_premise: false, language: english_only}
+    - {false_premise: false, language: multilingual}
+    - {false_premise: false, freshness: 2024}
+    - {false_premise: false, freshness: 2025}
+    - {false_premise: false, topic: Culture}
+    - {false_premise: false, topic: Geography}
+    - {false_premise: false, topic: History_and_Society}
+    - {false_premise: false, topic: STEM}
+    - {false_premise: false, numhops: 1}
+    - {false_premise: false, numhops: 2}
+    - {false_premise: true}
+    # - {false_premise: false, freshness: 2024, numhops: 1}
+    # - {false_premise: false, freshness: 2024, numhops: 2}
+    # - {false_premise: false, freshness: 2025, numhops: 1}
+    # - {false_premise: false, freshness: 2025, numhops: 2}
+    # - {false_premise: false, topic: Culture, numhops: 1, language: english_only}
+    # - {false_premise: false, topic: Geography, numhops: 1, language: english_only}
+    # - {false_premise: false, topic: History_and_Society, numhops: 1, language: english_only}
+    # - {false_premise: false, topic: STEM, numhops: 1, language: english_only}

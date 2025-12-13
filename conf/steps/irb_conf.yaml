@@ -2,6 +2,7 @@ general:
   llm_model_name: "gpt-4.1-mini" 
   target_year: null
   start_from: 2024-01-01
+  wikidump_date: 2025-09-29 # YYYY-MM-DD
 
 step0:
   input_file: null
@@ -28,9 +29,12 @@ step3:
 
 step4:
   output_folder: null
-  max_num_hops: 5
   kg_completeness_word_check_threshold: 0.5
   question_progression_word_check_threshold: 0.75
 
 step5:
   output_folder: null
+
+step6:
+  output_folder: null
+  num_samples: 300

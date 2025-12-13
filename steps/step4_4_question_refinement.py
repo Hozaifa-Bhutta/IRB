@@ -15,6 +15,7 @@ def main(cfg: DictConfig)-> None:
     fact_groundedness_folder = cfg.step3.output_folder
     question_answerability_folder = cfg.step4.output_folder + "_question_answerability"
     output_folder = cfg.step4.output_folder
+    wikidump_date = cfg.general.wikidump_date
 
     llm_model_name = cfg.general.llm_model_name
 
@@ -85,10 +86,19 @@ def main(cfg: DictConfig)-> None:
                 question = line["question"]
                 masked_keypoints_str = line["masked_keypoints_str"]
                 masked_kg = line["masked_kg"]
+                paraphrase_map = line["paraphrase"]
 
                 try:
-                    refined_question = kg_based_qg_utils.question_refinement(question, masked_keypoints_str, masked_kg)
+                    refined_question = kg_based_qg_utils.question_refinement(
+                        generated_question = question, 
+                        masked_keypoints_str = masked_keypoints_str, 
+                        masked_kg = masked_kg, 
+                        wikidump_date = wikidump_date,
+                        paraphrase_map = paraphrase_map
+                    )
+                    assert "<Unknown" not in refined_question
                 except Exception as e:
+                    print(e)
                     continue
                 
                 to_append = dict(line)

@@ -91,12 +91,13 @@ def main(cfg: DictConfig)-> None:
             all_questions_filtered = []
             for line in all_questions:
                 question = line["question"]
-                try:
-                    answerability = kg_based_qg_checker.check_question_answerability(question)
-                except Exception as e:
-                    continue
-                if answerability:
-                    all_questions_filtered.append(line)
+
+                try: answerability = kg_based_qg_checker.check_question_answerability(question)
+                except Exception: answerability = False
+
+                if not answerability: break    
+
+                all_questions_filtered.append(line)
 
             if all_questions_filtered:
                 filtered_fact_question_mapper[fact_id] = all_questions_filtered

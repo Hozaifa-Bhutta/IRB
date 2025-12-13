@@ -1,7 +1,7 @@
 import json, os, hydra
 from omegaconf import DictConfig
-from utils.text_chunking import init_chunker, text_chunking
-from utils.allowed_datasets import ALLOWED_DATASETS
+from evaluation.retrieval.utils.text_chunking import init_chunker, text_chunking
+from evaluation.retrieval.utils.allowed_datasets import ALLOWED_DATASETS
 
 
 @hydra.main(version_base=None, config_path="../../conf/evaluation/", config_name=os.getenv("CONFIG_NAME"))
@@ -9,7 +9,7 @@ def main(cfg: DictConfig):
     dataset_name = cfg.general.dataset
     dataset_date = cfg.general.dataset_date
     work_dir = cfg.general.work_dir
-    outfolder = cfg.retrieval.index.outfolder
+    collection_folder = cfg.retrieval.index.collection_folder
     chunk_size = cfg.retrieval.index.chunk_size
     chunk_overlap = cfg.retrieval.index.chunk_overlap
 
@@ -38,8 +38,7 @@ def main(cfg: DictConfig):
             jline = json.loads(line)
             corpus.append(jline)
 
-    outfolder_dataset = os.path.join(outfolder, "collections", f"{dataset_name}__bm25")
-    outfile = os.path.join(outfolder_dataset, "chunk.jsonl")
+    outfile = os.path.join(collection_folder, "chunk.jsonl")
 
     with open(outfile, "w") as f:
         for line in corpus:

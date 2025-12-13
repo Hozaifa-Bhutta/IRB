@@ -1,4 +1,4 @@
-import os, json
+import os, json, string
 import numpy as np
 from tqdm import tqdm
 from collections import Counter
@@ -87,7 +87,8 @@ def run_llm_based_evaluation_keypoints(
         eval_metadata_outfile, 
         groundtruth_answers,
         LLM,
-        eval_result_outfile
+        LLM2 = None,
+        eval_result_outfile = None
     ):
     assert os.path.exists(eval_metadata_outfile), "Prediction or outfile file missing"
 
@@ -110,30 +111,42 @@ def run_llm_based_evaluation_keypoints(
     
 
 
+    llm_use_count = 0
     eval_result = {}
     for query_id, query, prediction, gt_full, gt_short in tqdm(zip(query_ids, queries, predictions, groundtruths_full, groundtruths_short)):
         keypoints = gt_full.split("--__--")
 
-        print(keypoints, gt_short)
+        print("GT:", gt_short, "\nPred:", prediction)
 
         json_result = []
-        for keypoint in keypoints:
+        if gt_short.lower().strip(string.punctuation) == prediction.lower().strip(string.punctuation):
+            json_result = ["CORRECT"]
+        elif "I don't know" in prediction or "I don’t know" in prediction:
+            json_result = ["NOT_ATTEMPTED"]
+        elif "false premise question" in prediction.lower():
+            if gt_short == "False premise question": json_result = ["CORRECT"]
+            else: json_result = ["INCORRECT"]
+        else:
+            llm_use_count += 1
+            print("USE LLM to Eval:", llm_use_count, " times")
             try:
                 user_prompt = user_prompt_template.replace("[QUESTION]", query)\
-                                                    .replace("[KEYPOINT]", keypoint)\
                                                     .replace("[SHORT]", gt_short)\
-                                                    .replace("[GENERATED_ANSWER]", prediction)
+                                                    .replace("[GENERATED_ANSWER]", prediction)\
+                                                    .replace("[ADD_KEYPOINTS_HERE]", "\n".join(keypoints))
 
-                print(user_prompt[-500:])
-                result = LLM.generate(
-                    system_prompt = system_prompt,
-                    user_prompt = user_prompt,
-                    max_output_tokens = 16
-                )
-                if "A" in result: json_result.append("CORRECT")
-                elif "B" in result: json_result.append("INCORRECT")
-                elif "C" in result: json_result.append("NOT_ATTEMPTED")
-                else: json_result.append("INCORRECT")
+                for llm in [LLM, LLM2]:
+                    if llm is None: continue
+                    result = llm.generate(
+                        system_prompt = system_prompt,
+                        user_prompt = user_prompt,
+                        max_output_tokens = 16,
+                        temperature = 0.2
+                    )
+                    if "A" in result: json_result.append("CORRECT")
+                    elif "B" in result: json_result.append("INCORRECT")
+                    elif "C" in result: json_result.append("NOT_ATTEMPTED")
+                    else: json_result.append("INCORRECT")
             except Exception as e:
                 print(e)
                 continue

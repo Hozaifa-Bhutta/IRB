@@ -5,8 +5,8 @@ from omegaconf import DictConfig
 from pyserini.search.lucene import LuceneSearcher
 from typing import List, Dict, Tuple
 from tqdm import tqdm
-from utils.allowed_datasets import ALLOWED_DATASETS
-from utils.generic import process_search_results
+from evaluation.retrieval.utils.allowed_datasets import ALLOWED_DATASETS
+from evaluation.retrieval.utils.generic import process_search_results
 
 logger = logging.getLogger(__name__)
 
@@ -169,14 +169,14 @@ def main(cfg: DictConfig):
     work_dir = cfg.general.work_dir
     dataset_name = cfg.general.dataset
     dataset_date = cfg.general.dataset_date
+    index_folder = cfg.general.index_folder
     retrieval_metadata_path = cfg.general.retrieval_metadata_path
     batch_size = cfg.retrieval.eval.batch_size
     threads = cfg.retrieval.eval.threads
-    index_folder = cfg.retrieval.eval.index_folder
 
     assert dataset_name in ALLOWED_DATASETS
 
-    index_path = os.path.join(index_folder, f"{dataset_name}__bm25")
+    index_path = index_folder
 
 
     dataset_name_2_relative_path = {
@@ -202,7 +202,7 @@ def main(cfg: DictConfig):
     # load queries
     with open(queries_path) as f:
         queries = [json.loads(line) for line in f]
-        queries = [line for line in queries if line["_id"] in qrels]
+        queries = [line for line in queries]
 
     top_k = 200
     all_hits = {}

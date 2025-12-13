@@ -15,7 +15,7 @@ class OpenAILLM(BaseLLMAPI):
         self.client = OpenAI(api_key = api_key if api_key else os.environ["OPENAI_API_KEY"])
         self.reasoning = reasoning
 
-    def generate(self, system_prompt, user_prompt, max_output_tokens = 2048, temperature = None, top_p = None):
+    def generate(self, system_prompt, user_prompt, max_output_tokens = 2048, temperature = None, top_p = None, return_dict: bool = False):
         kwargs = {
             "model": self.model_name,
             "instructions": system_prompt,
@@ -31,6 +31,12 @@ class OpenAILLM(BaseLLMAPI):
             kwargs["temperature"] = temperature
 
         resp = self.client.responses.create(**kwargs)
-        result = resp.output_text.strip()
 
-        return result
+        if return_dict:
+            return {
+                "text": resp.output_text.strip(),
+                "raw": resp.model_dump()
+            }
+        else:
+            result = resp.output_text.strip()
+            return result

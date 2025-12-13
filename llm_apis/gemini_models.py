@@ -19,19 +19,27 @@ class GeminiLLM(BaseLLMAPI):
         self.reasoning = reasoning
 
 
-    def generate(self, system_prompt: str, user_prompt: str, max_output_tokens: int = 2048) -> str:
+    def generate(self, system_prompt: str, user_prompt: str, max_output_tokens: int = 2048, temperature: float = 1.0, return_dict: bool = False) -> str:
         kwargs = {
             "model": self.model_name,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
-            ]
+            ],
+            "temperature": temperature,
+            "max_tokens": max_output_tokens
         }
         if self.model_name in self.REASONING_MODELS:
             # reasoning model
             kwargs["reasoning_effort"] = self.reasoning
 
         resp = self.client.chat.completions.create(**kwargs)
-        result = resp.choices[0].message.content.strip()
 
-        return result
+        if return_dict:
+            return {
+                "text": resp.choices[0].message.content.strip(),
+                "raw": resp.model_dump()
+            }
+        else:
+            result = resp.choices[0].message.content.strip()
+            return result

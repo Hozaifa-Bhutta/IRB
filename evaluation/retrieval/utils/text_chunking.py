@@ -1,3 +1,4 @@
+import tiktoken
 from chonkie import TokenChunker
 
 
@@ -8,9 +9,10 @@ CHUNKER = {
 def init_chunker(chunk_size = 200, chunk_overlap = 20):
     if not CHUNKER["chunker"]:
         print("Initializing Chunker. Currently only allow TokenChunker")
+        tokenizer = tiktoken.get_encoding("cl100k_base")
 
         chunker = TokenChunker(
-            tokenizer = "word",
+            tokenizer = tokenizer,
             chunk_size = chunk_size,
             chunk_overlap = chunk_overlap
         )

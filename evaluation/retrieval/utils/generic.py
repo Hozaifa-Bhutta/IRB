@@ -12,10 +12,11 @@ def process_search_results(queries_ids, all_hits):
             if docid not in temp: temp[docid] = 0
             temp[docid] = max(temp[docid], hit.score)
             
-            if len(predictions_metadata["chunk"][query_id]) < 20: 
-                predictions_metadata["chunk"][query_id].append(json.loads(hit.lucene_document.get('raw')))
+            predictions_metadata["chunk"][query_id].append(json.loads(hit.lucene_document.get('raw')))
 
-        formatted_results = [{"docid": k, "score": v} for k,v in temp.items()]
+        formatted_results = list(sorted([{"docid": k, "score": v} for k,v in temp.items()], key = lambda x: -x["score"]))
         predictions_metadata["full"][query_id] = formatted_results
     
     return predictions_metadata
+
+

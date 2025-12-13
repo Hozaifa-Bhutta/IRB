@@ -5,10 +5,9 @@ from omegaconf import DictConfig
 from tqdm import tqdm
 from typing import List, Dict, Tuple
 from dataclasses import dataclass
-from utils.text_embeddings import model_name_2_model_class, \
-    model_name_2_tokenizer_class, model_name_2_model_path, model_name_2_prefix, text_embedding_batch, init_model
-from utils.generic import process_search_results
-from utils.allowed_datasets import ALLOWED_DATASETS
+from evaluation.retrieval.utils.text_embeddings import model_name_2_prefix, text_embedding_batch, init_model
+from evaluation.retrieval.utils.generic import process_search_results
+from evaluation.retrieval.utils.allowed_datasets import ALLOWED_DATASETS
 
 
 logger = logging.getLogger(__name__)
@@ -244,7 +243,6 @@ def main(cfg: DictConfig):
     # load queries
     with open(queries_path) as f:
         queries = [json.loads(line) for line in f]
-        queries = [line for line in queries if line["_id"] in qrels]
 
 
     queries_texts = [line["text"] for line in queries]

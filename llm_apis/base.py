@@ -5,5 +5,5 @@ class BaseLLMAPI:
         pass
 
 
-    def generate(self, system_prompt: str, user_prompt: str, max_output_tokens: int) -> str:
+    def generate(self, system_prompt: str, user_prompt: str, max_output_tokens: int, return_dict: bool) -> str:
         raise NotImplementedError

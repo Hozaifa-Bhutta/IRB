@@ -9,7 +9,7 @@
 #     }
 # }
 
-import os, hydra
+import os, hydra, time
 from omegaconf import DictConfig
 from steps.utils.generic import read_json_or_jsonl, write_to_json
 from steps.utils.prompts import GROUNDEDNESS_CHECK_PROMPT
@@ -20,14 +20,14 @@ from typing import List, Dict, Union, Optional
 from langcodes import Language
 
 
-LANG_OVERRIDES = {
-    "pt-br": "Portuguese (Brazil)",
-    "zh-cn": "Chinese (China)",
-    "zh-tw": "Chinese (Taiwan)",
-    "yue": "Cantonese",
-}
-
 def lang_display_name_from_code(code: str) -> str:
+    LANG_OVERRIDES = {
+        "pt-br": "Portuguese (Brazil)",
+        "zh-cn": "Chinese (China)",
+        "zh-tw": "Chinese (Taiwan)",
+        "yue": "Cantonese",
+    }
+    
     if not code: return code
     normalized = code.replace("_", "-").lower()
     if normalized in LANG_OVERRIDES:
@@ -58,11 +58,17 @@ def llm_based_groundedness_check_helper(
         .replace("[ADD_CONTEXT_LANGUAGE_HERE]", lang_display_name if lang else "N/A")\
         .replace("[ADD_CONTEXT_HERE]", content)
 
-    _result = LLM.generate(
-        system_prompt = GROUNDEDNESS_CHECK_PROMPT["system"],
-        user_prompt = user_prompt,
-        max_output_tokens = 16
-    ).strip()
+    try:
+        _result = LLM.generate(
+            system_prompt = GROUNDEDNESS_CHECK_PROMPT["system"],
+            user_prompt = user_prompt,
+            max_output_tokens = 16
+        ).strip()
+
+        time.sleep(0.1)
+    except Exception: 
+        print("Unsuccessful API call")
+        return False
 
     if "Not Grounded" in _result:
         return False
@@ -164,6 +170,7 @@ def main(cfg: DictConfig)-> None:
                                                                                 crawled_url_content_files_full_path, 
                                                                                 decontextualized_facts_files_full_path,
                                                                                 output_files_full_path), total = len(files)):
+        if os.path.exists(output_file_path): continue
         try:
             ef_data = read_json_or_jsonl(ef_file_path)
             cuc_data = read_json_or_jsonl(cuc_file_path)
