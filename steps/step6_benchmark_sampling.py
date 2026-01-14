@@ -29,7 +29,7 @@ def attribute_binning(attributes: List[Dict]):
 
     return {k: list(v) for k, v in res.items()}
 
-def sample_based_on_attributes(attributes: List[Dict], num_samples: int):
+def sample_based_on_attributes(attributes: List[Dict], num_samples: int, false_premise_limit: int):
     if len(attributes) < num_samples:
         return set([line["_id"] for line in attributes])
     bins = attribute_binning(attributes)
@@ -42,11 +42,15 @@ def sample_based_on_attributes(attributes: List[Dict], num_samples: int):
         for bin_name in bins:
             if not bins[bin_name]: continue
 
-            print(len(sampled_ids))
+
 
             index = random.choice(range(len(bins[bin_name])))
             sampled_id = bins[bin_name][index]
-            if sampled_id.endswith("--2"):
+
+            if sampled_id.startswith("~") and len([sid for sid in sampled_ids if sid.startswith("~")]) >= false_premise_limit:
+                continue
+
+            if sampled_id.endswith("--2") and not sampled_id.startswith("~"):
                 sampled_id_ = sampled_id[:-3] + "--1"
                 if sampled_id_ not in queries_ids: continue
                 sampled_ids.add(sampled_id_)
@@ -68,6 +72,7 @@ def main(cfg: DictConfig):
     full_benchmark_folder = cfg.step5.output_folder
     output_folder = cfg.step6.output_folder
     num_samples = int(cfg.step6.num_samples)
+    false_premise_limit = int(cfg.step6.false_premise_limit)
 
 
     sampled_queries_file = os.path.join(output_folder, "queries.jsonl")
@@ -79,7 +84,7 @@ def main(cfg: DictConfig):
     full_bench_answers = read_json_or_jsonl(os.path.join(full_benchmark_folder, "answers.jsonl"))
     full_bench_attributes = read_json_or_jsonl(os.path.join(full_benchmark_folder, "attributes.jsonl"))
 
-    sampled_ids = sample_based_on_attributes(full_bench_attributes, num_samples)
+    sampled_ids = sample_based_on_attributes(full_bench_attributes, num_samples, false_premise_limit)
 
 
     sampled_queries = [line for line in full_bench_queries if line["_id"] in sampled_ids]

@@ -1,0 +1,9 @@
+model_name,redundant,resilience,augmentation,hopeless
+gpt-4.1-mini,6.2,25.0,0.0,1.6
+gpt-4.1,0.0,100.0,3.4,0.0
+gpt-5-mini,55.6,42.9,35.7,29.3
+gpt-5,85.2,69.2,46.3,36.5
+llama-4-scout,18.6,52.6,14.1,21.7
+llama-3.3-70B,14.3,10.0,5.8,0.0
+gpt-oss-120b,35.7,44.4,13.2,7.1
+deepseek-r1,22.1,22.2,26.5,15.8

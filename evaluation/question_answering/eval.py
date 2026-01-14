@@ -81,6 +81,7 @@ def main(cfg: DictConfig):
     use_chunk = cfg.qa.use_chunk
     qa_llm_model_name = cfg.qa.qa_llm_model_name
     eval_llm_model_name = cfg.qa.eval_llm_model_name
+    eval_llm2_model_name = cfg.qa.eval_llm2_model_name
 
     dataset_name_2_relative_path = {
         dn: data_relative_path(dn, dataset_date) \
@@ -227,7 +228,7 @@ def main(cfg: DictConfig):
 
     # re-init client
     LLM = init_llm(eval_llm_model_name)
-    LLM2 = init_llm("gemini-2.5-flash-for-eval")
+    LLM2 = init_llm(eval_llm2_model_name)
     run_llm_based_evaluation_keypoints(
         eval_metadata_outfile = eval_metadata_outfile,
         groundtruth_answers = groundtruth_answers,

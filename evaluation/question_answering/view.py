@@ -1,9 +1,10 @@
-import json, hydra, os, itertools
+import json, hydra, os, itertools, traceback
 import numpy as np
 import pandas as pd
 from omegaconf import DictConfig
 from evaluation.question_answering.utils.allowed_datasets import ALLOWED_DATASETS
 from evaluation.question_answering.eval import metadata_folder_name_creation, data_relative_path
+from evaluation.question_answering.utils.count_tokens import count_tokens
 from steps.utils.generic import read_json_or_jsonl
 from typing import List, Dict
 from tqdm import tqdm
@@ -135,9 +136,21 @@ def show_results(eval_results, configurations, attributes, eval_metadata):
             if eval_res is None: continue
             if general_filter_func(att, config_dict): 
                 temp.append(eval_res)
+
+                # try to count token as if it is an openai model
                 try:
                     reasoning_tokens = eval_metadata["raw_response"][query_id]["usage"]["output_tokens_details"]["reasoning_tokens"]
                 except Exception: reasoning_tokens = 0
+
+                # next, try to count token as if it is a bedrock model
+                if reasoning_tokens == 0:
+                    try:
+                        index = [j for j in range(len(eval_metadata["raw_response"][query_id]["output"]["message"]["content"])) if "reasoningContent" in eval_metadata["raw_response"][query_id]["output"]["message"]["content"][j]][0]
+                        reasoning_tokens = count_tokens(text = eval_metadata["raw_response"][query_id]["output"]["message"]["content"][index]["reasoningContent"]["reasoningText"]["text"],
+                                                        model = eval_metadata["config"]["LLM_model_name"])
+                    except Exception as e:
+                        reasoning_tokens = 0
+
                 config_reasoning_tokens.append(reasoning_tokens)
                 all_reasoning_tokens.append(reasoning_tokens)
 
@@ -233,15 +246,15 @@ def main(cfg: DictConfig):
             eval_res = eval_results_.get(query_id, {})
 
             if eval_res:
-                # corr, incorr, not_att = float(eval_res.get("CORRECT", 0)), float(eval_res.get("INCORRECT", 0)), float(eval_res.get("NOT_ATTEMPTED", 0))
+                corr, incorr, not_att = float(eval_res.get("CORRECT", 0)), float(eval_res.get("INCORRECT", 0)), float(eval_res.get("NOT_ATTEMPTED", 0))
                 
-                # optimistic scheme
-                corr = eval_res.get("CORRECT", 0) > 0
-                if corr: corr, incorr, not_att = 1, 0, 0
-                else:
-                    not_att = eval_res.get("NOT_ATTEMPTED", 0) > 0
-                    if not_att: corr, incorr, not_att = 0, 0, 1
-                    else: corr, incorr, not_att = 0, 1, 0
+                # # optimistic scheme
+                # corr = eval_res.get("CORRECT", 0) > 0
+                # if corr: corr, incorr, not_att = 1, 0, 0
+                # else:
+                #     not_att = eval_res.get("NOT_ATTEMPTED", 0) > 0
+                #     if not_att: corr, incorr, not_att = 0, 0, 1
+                #     else: corr, incorr, not_att = 0, 1, 0
 
                 eval_results.append([corr, incorr, not_att])
             else: eval_results.append(None)
@@ -306,12 +319,20 @@ def main(cfg: DictConfig):
         if query_id not in retrieval_metadata: continue
 
         retrieval_correctness = check_retrieval_correctness(
-            qrels_query = qrels.get("query_id", {}),
+            qrels_query = qrels.get(query_id, {}),
             retrieval_metadata_query = retrieval_metadata[query_id],
             num_retrieval_contexts = max_num_contexts
         )
 
-        to_append = [query_id, f"RETRIEVAL: {retrieval_correctness}", queries[i]["text"], eval_metadata["predictions"][query_id], answers[i]["short"], answers[i]["text"], eval_results_.get(query_id), line]
+        to_append = [
+            query_id, 
+            "QUERY:" + queries[i]["text"], 
+            "PRED: " + eval_metadata["predictions"][query_id], 
+            "GT:" + answers[i]["short"], 
+            f"False-premise: {attributes[i]['false_premise']}",
+            f"RETRIEVAL: {retrieval_correctness}", 
+            "Year: " + str(min([int(item[:4]) for item in line["evidence_attr"]["published_dates"]])),
+            eval_results_.get(query_id)]
         prediction_view.append(to_append)
 
     with open(f"prediction_view_{_metadata_folder}.json", "w") as f:

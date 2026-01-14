@@ -1,4 +1,4 @@
-# python -m evaluation.combined_view --result_folder ./results_llmbased_gitig_14Nov2025
+# python -m evaluation.combined_view --result_folder ./results_llmbased_gitig_2Dec2025
 
 import json, os
 import pandas as pd
@@ -33,7 +33,23 @@ def rag_correct_incorrect_noretrieval(result_folder):
     data = defaultdict()
     data["model"] = []
     for folder in folders:
-        file = os.path.join(result_folder, folder, "all.csv")
+        if "rc0" in folder: continue
+        data["model"].append(folder)
+        for mode in ["retrieval_correct", "retrieval_incorrect"]:
+            file = os.path.join(result_folder, folder, f"{mode}.csv")
+
+            df = pd.read_csv(file)
+            for line in df.to_dict(orient='records'):
+                split_name = line["split"].replace(",", "")
+                if split_name !="general": continue
+
+                for answer_type in ["correct", "incorrect"]:
+                    if f"{mode}__{answer_type}" not in data: data[f"{mode}__{answer_type}"] = []
+                    data[f"{mode}__{answer_type}"].append(round(line[answer_type] * 100, 1))
+
+    return pd.DataFrame(data)
+
+
 
 
 def retriever_performance(result_folder, metric = "recall"):
@@ -41,15 +57,34 @@ def retriever_performance(result_folder, metric = "recall"):
     data = defaultdict()
     data["model"] = []
     for folder in folders:
-        file = os.path.join(result_folder, folder, "retriever.csv")
+        for mode in ["", "__reranked"]:
+            file = os.path.join(result_folder, folder, f"retriever{mode}.csv")
+            df = pd.read_csv(file)
+
+            data["model"].append(f"{folder}{mode}")
+            for line in df.to_dict(orient='records'):
+                split_name = line["split"].replace(",", "")
+                if not line[metric]: continue
+                if split_name not in data: data[split_name] = []
+                data[split_name].append(round(line[metric] * 100, 1))
+
+    return pd.DataFrame(data)
+
+
+def reasoning_tokens(result_folder):
+    folders = [item for item in os.listdir(result_folder) if item.startswith("irb__")]
+
+    data = defaultdict()
+    data["model"] = []
+    for folder in folders:
+        file = os.path.join(result_folder, folder, "all.csv")
         df = pd.read_csv(file)
 
         data["model"].append(folder)
         for line in df.to_dict(orient='records'):
             split_name = line["split"].replace(",", "")
-            if not line[metric]: continue
             if split_name not in data: data[split_name] = []
-            data[split_name].append(round(line[metric] * 100, 1))
+            data[split_name].append(round(line["avg_reasoning_tokens"], 1))
 
     return pd.DataFrame(data)
 
@@ -68,10 +103,14 @@ def main():
     output_correctness_file = os.path.join(output_folder, "correctness.csv")
     output_retrieval_recall_file = os.path.join(output_folder, "retrieval_recall.csv")
     output_retrieval_ndcg_file = os.path.join(output_folder, "retrieval_ndcg.csv")
+    output_correct_incorrect_rag_file = os.path.join(output_folder, "correct_incorrect.csv")
+    output_reasoning_file = os.path.join(output_folder, "reasoning_tokens.csv")
 
     rag_correctness(result_folder).to_csv(output_correctness_file, index = False)
     retriever_performance(result_folder, metric = "recall").to_csv(output_retrieval_recall_file, index = False)
     retriever_performance(result_folder, metric = "ndcg").to_csv(output_retrieval_ndcg_file, index = False)
+    rag_correct_incorrect_noretrieval(result_folder).to_csv(output_correct_incorrect_rag_file, index = False)
+    reasoning_tokens(result_folder).to_csv(output_reasoning_file, index = False)
 
 if __name__ == "__main__":
     main()
