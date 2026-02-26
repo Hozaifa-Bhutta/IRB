@@ -4,7 +4,7 @@ from llm_apis.base import BaseLLMAPI
 from typing import Optional
 
 class OpenAILLM(BaseLLMAPI):
-    REASONING_MODELS = ["gpt-5"]
+    REASONING_MODELS = ["gpt-5", "gpt-5-mini"]
     def __init__(self, 
                  api_key: Optional[str] = None, 
                  model_name: str = "gpt-4o-mini",

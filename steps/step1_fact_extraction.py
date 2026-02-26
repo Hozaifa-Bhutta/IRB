@@ -4,6 +4,10 @@
 # {
 #     "title": "...",
 #     "wiki_url": "...",
+#     "topics": ["...", ...],
+#     "create_timestamp": "...",
+#     "timestamp": "...",
+#     "marked_sentences": ["sent1", "sent2"],
 #     "extracted_sentences": ["sent1", "sent2"],
 #     "raw_facts": [
 #         {
@@ -17,21 +21,14 @@
 from typing import Union, Any, Dict, List, Tuple
 import json, re, mwparserfromhell, os, hydra
 from omegaconf import DictConfig
-from argparse import ArgumentParser
 from tqdm import tqdm
 from cleantext import clean
 from nltk.tokenize import sent_tokenize
-from utils.generic import read_json_or_jsonl, write_to_json, split_sentence_with_newlines, sentence_filtering
-from utils.bad_domains import BAD_DOMAINS
+
+from steps.utils.generic import read_json_or_jsonl, write_to_json, split_sentence_with_newlines, sentence_filtering
+from steps.utils.bad_domains import BAD_DOMAINS
 
 
-# this function cleans up text 
-# clean_text_func = lambda text: clean(text,
-#     fix_unicode=True,               # fix various unicode errors
-#     to_ascii=True,                  # transliterate to closest ASCII representation
-#     lang="en",                       # set to 'de' for German special handling,
-#     lower = False
-# )
 def clean_text_func(text: str) -> str:
     """
     Clean up the input text by fixing Unicode errors, converting to ASCII,

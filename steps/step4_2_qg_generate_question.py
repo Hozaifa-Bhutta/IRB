@@ -1,14 +1,48 @@
+# this script is used for step-by-step question generation (the second sub-step of step 4)
+# the input is step2_2 and step3
+# the output should look like
+# {
+#     "title": "",
+#     "wiki_url": "",
+#     "topics": ["...", "..."],
+#     "create_timestamp": "",
+#     "timestamp": "",
+#     "fact_question_mapper": {
+#         "fact_id": [
+#             {
+#                 "question": "",
+#                 "num_hops": integer,
+#                 "aux_fact_id": "",
+#                 "paraphrase": "",
+#                 "false_premise": "",
+#                 "masked_kg": [
+#                     {
+#                         "head": "",
+#                         "head_unmasked": "",
+#                         "head_type": "",
+#                         "relation": "",
+#                         "tail": "",
+#                         "tail_unmasked": "",
+#                         "tail_type": ""
+#                     },
+#                 ]
+#             }
+#         ]
+#     }
+# }
+
 import json, hydra, os, random
 import numpy as np
 from collections import defaultdict
 from omegaconf import DictConfig
-from steps.utils.prompts import QUESTION_GENERATION_PROMPT_FROM_KG_SINGLE_STEP
-from steps.utils.kg_based_qg import KGBasedQGUtils, KGBasedQGChecker
-from steps.utils.generic import read_json_or_jsonl, write_to_json, maybe_create_folder
 from llm_apis import init_llm
 from tqdm import tqdm
 from typing import List, Dict
 
+
+from steps.utils.prompts import QUESTION_GENERATION_PROMPT_FROM_KG_SINGLE_STEP
+from steps.utils.kg_based_qg import KGBasedQGUtils, KGBasedQGChecker
+from steps.utils.generic import read_json_or_jsonl, write_to_json, maybe_create_folder
 
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))

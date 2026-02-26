@@ -1,13 +1,17 @@
+# the input the same as step4_2
+# the output format is also the same as step4_2
+
 import json, hydra, os, string, nltk
 import numpy as np
 from collections import defaultdict
 from omegaconf import DictConfig
-from steps.utils.kg_based_qg import KGBasedQGUtils
-from steps.utils.generic import read_json_or_jsonl, write_to_json, maybe_create_folder
-from steps.utils.prompts import QUESTION_REFINEMENT_PROMPT
 from llm_apis import init_llm
 from tqdm import tqdm
 from typing import List, Dict
+
+from steps.utils.kg_based_qg import KGBasedQGUtils
+from steps.utils.generic import read_json_or_jsonl, write_to_json, maybe_create_folder
+from steps.utils.prompts import QUESTION_REFINEMENT_PROMPT
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig)-> None:

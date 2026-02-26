@@ -828,10 +828,11 @@ class KGBasedQGChecker:
                  minicheck_model_name, 
                  minicheck_cache_dir, 
                  question_answerability_check_prompt = None,
+                 graph_completeness_check_prompt = None,
                  LLM = None):
-        from minicheck.minicheck import MiniCheck
         
         if minicheck_cache_dir and minicheck_model_name:
+            from minicheck.minicheck import MiniCheck
             self.minicheck_scorer = MiniCheck(model_name=minicheck_model_name, cache_dir=minicheck_cache_dir)
         else: self.minicheck_scorer = None
         
@@ -839,6 +840,7 @@ class KGBasedQGChecker:
 
         self.LLM = LLM
         self.question_answerability_check_prompt = question_answerability_check_prompt
+        self.graph_completeness_check_prompt = graph_completeness_check_prompt
 
         self.text_splitter = lambda text: [item.strip(string.punctuation).lower() for item in text.replace("_", " ").replace("-", " ").split()]
 
@@ -897,6 +899,53 @@ class KGBasedQGChecker:
         relations_groundedness = self._check_groundedness_of_relations(base_doc = keypoints_str, relations = relations, verbose = verbose)
 
         return relations_groundedness
+
+
+    def check_completeness_of_extracted_kg_v2(self, knowledge_graph: List[Dict[str, str]], keypoints: List[str], word_check_threshold: float = 0.75, verbose: bool = False) -> bool:
+        # first check word-coverage
+        keypoints_str = "\n".join(keypoints)
+
+        relations = [f"{rel['head']} {rel['relation']} {rel['tail']}" for rel in knowledge_graph]
+
+        word_based_completeness = self._check_word_based_completeness(base_doc = keypoints_str, relations = relations, threshold = word_check_threshold)
+        if not word_based_completeness: 
+            if verbose:
+                print("Failed word-based completeness check:", word_based_completeness)
+            return False
+        
+        # if passed then we next do semantic check
+
+        # relation statements and node type statements
+        statements = list(set([f"{rel['head']} {rel['relation']} {rel['tail']}" for rel in knowledge_graph] \
+            + [f"{rel['head']} is a {rel['head_type']}" for rel in knowledge_graph] \
+            + [f"{rel['tail']} is a {rel['tail_type']}" for rel in knowledge_graph]))
+        
+
+        statements_str = ""
+        for i, stm in enumerate(statements):
+            statements_str += f"{i + 1}. {stm}\n"
+
+
+        # check if ALL statements are true given the keypoints
+        user_prompt = self.graph_completeness_check_prompt["user"][:]\
+            .replace("[ADD_STATEMENTS_HERE]", statements_str)\
+            .replace("[ADD_KEYPOINTS_HERE]", keypoints_str)
+        
+
+        res = self.LLM.generate(
+            system_prompt = self.graph_completeness_check_prompt["system"],
+            user_prompt = user_prompt,
+            max_output_tokens = 16
+        ).strip()
+
+        if verbose:
+            print(res)
+
+        return "A." in res
+
+
+
+
     
 
     def _check_consistency_question_pairs(self, generated_questions: List[str]) -> List[bool]:

@@ -4,6 +4,9 @@
 # {
 #     "title": "...",
 #     "wiki_url": "...",
+#     "topics": ["...", ...],
+#     "create_timestamp": "...",
+#     "timestamp": "...",
 #     "url_content_mapper": {
 #         "url1": {
 #             "accessible": "...",
@@ -11,6 +14,7 @@
 #             "title": "...",
 #             "error": "...",
 #             "published_date":"...",
+#             "lang": "...",
 #         },
 #         "url2": {
 #             "accessible": "...",
@@ -18,6 +22,7 @@
 #             "title": "...",
 #             "error": "...",
 #             "published_date":"...",
+#             "lang": "...",
 #         },
 #     }
 # }
@@ -29,12 +34,13 @@ from tqdm import tqdm
 from urllib.parse import urlparse
 from cleantext import clean
 from fast_langdetect import LangDetectConfig, LangDetector
+from typing import Callable, Any
+from collections import defaultdict
+
 from steps.utils.generic import read_json_or_jsonl, write_to_json
 from steps.utils.archive_downloader import getArchiveContent
 from steps.utils.html_extraction import extract_text_from_html, get_publication_date
 from steps.utils.bad_domains import BAD_DOMAINS
-from typing import Callable, Any
-from collections import defaultdict
 
 request_counters = {}
 MAX_REQUESTS_PER_MINUTE = 10  # Maximum requests per minute per domain

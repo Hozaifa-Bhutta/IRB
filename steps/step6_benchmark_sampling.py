@@ -2,9 +2,9 @@
 
 import os, hydra, itertools, random, shutil
 from omegaconf import DictConfig
-from steps.utils.generic import read_json_or_jsonl, write_to_jsonl, write_to_json, maybe_create_folder
 from typing import List, Dict
 
+from steps.utils.generic import read_json_or_jsonl, write_to_jsonl, write_to_json, maybe_create_folder
 
 def attribute_binning(attributes: List[Dict]):
     # produce string version of attributes, and put query_id into bins
