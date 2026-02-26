@@ -4,15 +4,19 @@
 #     "title": "...", # wiki page title
 #     "wiki_url": "...", # wiki page url
 #     "source": "wikitext...", # raw text of the wiki page
+#     "create_timestamp": "...", # creation timestamp of the wiki page
+#     "timestamp": "...", # last updated timestamp
+#     "topics": ["...", ...], # predicted outlink topics for the wiki page
 # }
-import json, gzip, os, hydra, re
+
+
+import json, gzip, os, hydra, re, requests
 from datetime import datetime
 from omegaconf import DictConfig
-from argparse import ArgumentParser
 from tqdm import tqdm
-from utils.generic import maybe_create_folder, write_to_json
 from typing import Optional, List, Dict, Any
-import requests
+
+from steps.utils.generic import maybe_create_folder, write_to_json
 
 def get_articletopics_with_scores(weighted_tags: List[str]) -> List[Dict[str, Any]]:
     topic_list = []
@@ -83,10 +87,8 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
                     if create_year != target_year:
                         continue
 
-                    # Construct the Wikipedia URL using the page ID for reference
                     url = f"https://en.wikipedia.org/?curid={obj.get('page_id')}"
 
-                    # predict outlink topics using the Wikimedia API whose score is > 0.5
                     outlink_topics = get_articletopics_with_scores(weighted_tags)
                     topics = [topic['topic'] for topic in outlink_topics]
 
@@ -107,18 +109,17 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
                     pbar.update(1)
             
                 count += 1
-            # stop if we have written 'max_pages' pages
+
             if max_pages and length_data == max_pages: break
 
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig) -> None:
 
-    input_file = cfg.step0.input_file #args.input_file
-    output_folder = cfg.step0.output_folder #args.step0_output_folder
+    input_file = cfg.step0.input_file
+    output_folder = cfg.step0.output_folder
     offset = cfg.step0.offset
     max_pages = cfg.step0.max_pages
     target_year = str(cfg.general.target_year)
-    print(input_file)
     assert os.path.exists(input_file)
 
     read_wiki_dump_and_write(

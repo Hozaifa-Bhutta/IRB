@@ -9,6 +9,7 @@ from datetime import datetime
 from omegaconf import DictConfig
 from tqdm import tqdm
 from typing import List
+
 from steps.utils.generic import read_json_or_jsonl, write_to_jsonl, write_to_json, maybe_create_folder, SIMPLE_TEXT_SPLITTER
 from steps.utils.token_counting import token_count_tiktoken
 
@@ -77,9 +78,13 @@ def get_qrels(fact_groundedness_files_full_path: List[str],
             if not check_label: continue
 
             query_id = f"{wiki_title}--{fact_id}--1"
+            query_id_false_premise_version = f"~{query_id}"
 
-            if query_id not in qrels: qrels[query_id] = {}
+            if query_id not in qrels: 
+                qrels[query_id] = {}
+                qrels[query_id_false_premise_version] = {}
             qrels[query_id][url] = 1
+            qrels[query_id_false_premise_version][url] = 1
 
         # qrels for multi-hop questions require information about aux_fact_id
         try:
@@ -99,6 +104,9 @@ def get_qrels(fact_groundedness_files_full_path: List[str],
 
                 if query_id not in qrels: qrels[query_id] = deepcopy(qrels[query_id_1hop])
                 qrels[query_id].update(deepcopy(qrels[aux_query_id]))
+
+                query_id_false_premise_version = f"~{query_id}"
+                qrels[query_id_false_premise_version] = deepcopy(qrels[query_id])
 
     return qrels
 

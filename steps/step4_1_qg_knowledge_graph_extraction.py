@@ -1,12 +1,36 @@
+# this script is used to generate knowledge graph from fact (the first sub-step of step 4)
+# the input include step2_2 and step3
+# the output should look like 
+# {
+#     "title": "",
+#     "wiki_url": "",
+#     "topics": ["...", "..."],
+#     "create_timestamp": "",
+#     "timestamp": "",
+#     "fact_kg_mapper": {
+#         "{fact_id}": {
+#             "head": "",
+#             "head_type": "",
+#             "relation": "",
+#             "tail": "",
+#             "tail_type": "",
+#             "head_coverage": [keypoint indexes where head is present],
+#             "tail_coverage": [keypoint indexes where tail is present]
+#         }
+#     }
+# }
+
+
 import json, os, hydra
 from collections import defaultdict
-from steps.utils.prompts import GRAPH_BUILDER_PROMPT
-from steps.utils.generic import read_json_or_jsonl, write_to_json, maybe_create_folder
-from steps.utils.kg_based_qg import KGBasedQGUtils, KGBasedQGChecker
 from llm_apis import init_llm, BaseLLMAPI
 from typing import List
 from omegaconf import DictConfig
 from tqdm import tqdm
+
+from steps.utils.prompts import GRAPH_BUILDER_PROMPT
+from steps.utils.generic import read_json_or_jsonl, write_to_json, maybe_create_folder
+from steps.utils.kg_based_qg import KGBasedQGUtils, KGBasedQGChecker
 
 
 

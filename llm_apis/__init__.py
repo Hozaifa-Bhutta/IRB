@@ -16,7 +16,9 @@ MODEL_NAME_2_MODEL_CLASS = {
     "gemini-2.5-pro": GeminiLLM,
     "llama-4-scout": BedRockLLM,
     "llama-3.3-70B": BedRockLLM,
-    "gpt-oss-120b": BedRockLLM
+    "gpt-oss-120b": BedRockLLM,
+    "qwen3-next-80B-A3B": BedRockLLM,
+    "deepseek-r1": BedRockLLM
 }
 
 MODEL_NAME_2_INIT_DICT = {
@@ -61,6 +63,13 @@ MODEL_NAME_2_INIT_DICT = {
     },
     "gpt-oss-120b": {
         "model_name": "openai.gpt-oss-120b-1:0",
+        "reasoning": "medium"
+    },
+    "qwen3-next-80B-A3B": {
+        "model_name": "qwen.qwen3-next-80b-a3b",
+    },
+    "deepseek-r1": {
+        "model_name": "us.deepseek.r1-v1:0",
         "reasoning": "medium"
     }
 }

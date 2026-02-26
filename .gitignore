@@ -170,3 +170,5 @@ outputs/
 intermediate_results/
 
 prediction_view*
+
+analysis/*.pdf

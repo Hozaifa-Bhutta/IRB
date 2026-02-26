@@ -36,7 +36,8 @@ class BedRockLLM(BaseLLMAPI):
             "high": 24576
         }
 
-    def generate(self, system_prompt: str, user_prompt: str, max_output_tokens: int, return_dict: bool = False) -> str:
+    def generate(self, system_prompt: str, user_prompt: str, max_output_tokens: int, return_dict: bool = False, *args, **kwargs) -> str:
+        temperature = kwargs.get("temperature", 1.0)
         system_prompts = [{"text": system_prompt}]
         messages = [
             {

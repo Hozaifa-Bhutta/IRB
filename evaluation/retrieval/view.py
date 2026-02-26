@@ -78,38 +78,41 @@ def main(cfg: DictConfig):
         "qrels",
         "test.tsv")
     
-    
-    retrieval_metadata = read_json_or_jsonl(os.path.join(retrieval_metadata_path, f"{dataset}__{retrieval_model}.json"))
     attributes = read_json_or_jsonl(attributes_path)
     qrels = read_qrels(qrels_path)
 
-    query_retrieval_results = convert_to_pytrec_eval_format(
-            [att["_id"] for att in attributes],
-            [retrieval_metadata["full"][att["_id"]][:] for att in attributes], 
-            type = "prediction")
-    print(evaluate(qrels, results = query_retrieval_results, k_values=[5, 10]))
+    for mode in ["", "__reranked"]:
+        try:
+            retrieval_metadata = read_json_or_jsonl(os.path.join(retrieval_metadata_path, f"{dataset}__{retrieval_model}{mode}.json"))
+        except Exception: continue
 
-
-    eval_results = []
-    for att in attributes:
-        query_id = att["_id"]
-
-        if query_id not in qrels:
-            eval_results.append(None)
-            continue
-        
         query_retrieval_results = convert_to_pytrec_eval_format(
-            [query_id],
-            [retrieval_metadata["full"][query_id][:]], 
-            type = "prediction")
+                [att["_id"] for att in attributes],
+                [retrieval_metadata["full"][att["_id"]][:] for att in attributes], 
+                type = "prediction")
+        # print(evaluate(qrels, results = query_retrieval_results, k_values=[5, 10]))
 
-        query_qrels = {query_id: qrels[query_id]}
 
-        evaluator =  pytrec_eval.RelevanceEvaluator(query_qrels, {f'ndcg_cut.{max_num_contexts}', f"recall.{max_num_contexts}"})
-        eval_results.append(evaluator.evaluate(query_retrieval_results))
+        eval_results = []
+        for att in attributes:
+            query_id = att["_id"]
 
-    eval_results_df = show_results(eval_results, configurations, attributes, max_num_contexts)
-    eval_results_df.to_csv(os.path.join(os.environ["RESULT_DIR"], "retriever.csv"), index=False)
+            if query_id not in qrels:
+                eval_results.append(None)
+                continue
+            
+            query_retrieval_results = convert_to_pytrec_eval_format(
+                [query_id],
+                [retrieval_metadata["full"][query_id][:]], 
+                type = "prediction")
+
+            query_qrels = {query_id: qrels[query_id]}
+
+            evaluator =  pytrec_eval.RelevanceEvaluator(query_qrels, {f'ndcg_cut.{max_num_contexts}', f"recall.{max_num_contexts}"})
+            eval_results.append(evaluator.evaluate(query_retrieval_results))
+
+        eval_results_df = show_results(eval_results, configurations, attributes, max_num_contexts)
+        eval_results_df.to_csv(os.path.join(os.environ["RESULT_DIR"], f"retriever{mode}.csv"), index=False)
 
 if __name__ == "__main__":
     main()

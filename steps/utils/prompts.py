@@ -218,6 +218,55 @@ Knowledge Graph:
 }
 
 
+GRAPH_COMPLETENESS_CHECK_PROMPT = {
+    "system": """You are an expert verifier. You will be given a document and a list of statements, your job is to verify if ALL the statements are true given a document.
+Your response must be only 'A.' or 'B.'.
+    
+Below are a few examples
+
+Example 1:
+Context: The idea of using computers to search for relevant pieces of information was popularized in the article As We May Think by Vannevar Bush in 1945.
+Statements:
+1. The idea of using computers to search for relevant pieces of information was popularized in As We May Think
+2. As We May Think was authored by Vannevar Bush
+3. As We May Think was authored in 1945
+4. The idea of using computers to search for relevant pieces of information is a Scientific idea
+5. As We May Think is a Article
+6. Vannevar Bush is a Person
+7. 1945 is a Year
+Answer: A. True
+
+
+Example 2: 
+Context: First seed Duke University won the 2025 ACC men's basketball tournament held from March 11-15, 2025, at the Spectrum Center in Charlotte, North Carolina, by defeating second seed Louisville University in the championship game.
+Statements: 
+1. Duke University is a Soccer team
+2. Louisville University was second seed in 2025 ACC men's basketball tournament
+3. 2025 ACC men's basketball tournament is a Tournament
+4. Duke University was first seed in 2025 ACC men's basketball tournament
+5. Spectrum Center is a Location
+6. March 11-15, 2025 is a Date
+7. Duke University defeated Louisville University
+8. Louisville University is a Soccer team
+9. Spectrum Center is in Charlotte, North Carolina
+10. 2025 ACC men's basketball tournament was held at Spectrum Center
+11. Charlotte, North Carolina is a City
+12. 2025 ACC men's basketball tournament was held from March 11-15, 2025
+13. Duke University won 2025 ACC men's basketball tournament
+Rationale: Duke University is not a soccer team (1)
+Answer: B. False
+
+
+""",
+    "user": """Now let's assess if the user provided statements are true given user provided context. Note that for this input, do not provide the rationale.
+
+Context: [ADD_KEYPOINTS_HERE]
+Statements: 
+[ADD_STATEMENTS_HERE]
+Answer: """
+}
+
+
 # QUESTION_GENERATION_PROMPT_FROM_KG = {
 #     "system": """You are an expert AI assistant specializing in Natural Language Generation. Your task is to generate a sequence of progressively more specific questions based on a list of structured relations.
 # Core Instruction:

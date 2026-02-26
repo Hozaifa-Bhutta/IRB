@@ -4,20 +4,25 @@
 # {
 #     "title": "...",
 #     "wiki_url": "...",
+#     "topics": ["...", ...],
+#     "create_timestamp": "...",
+#     "timestamp": "...",
 #     "keypoints_mapper": {
-#         "fact1 (sentence id)": ["keypoint1", "keypoint2"]
+#         "fact1 (sentence id)": ["keypoint1", ...]
 #     }
 # }
 
 import os, json, hydra, time
 from datetime import datetime
 from omegaconf import DictConfig
-from argparse import ArgumentParser
 from tqdm import tqdm
 from typing import List, Union
-from steps.utils.generic import read_json_or_jsonl, write_to_json
 from llm_apis import init_llm, BaseLLMAPI
+
 from steps.utils.prompts import KEYPOINT_EXTRACTION_PROMPT
+from steps.utils.generic import read_json_or_jsonl, write_to_json
+
+STEP_2_2_LLM_MAX_OUTPUT_TOKENS = 1024
 
 
 def get_first_paragraph(extracted_sentences: List[str]) -> str:
@@ -122,7 +127,7 @@ def create_keypoints(fact: int,
         result = LLM.generate(
             system_prompt = KEYPOINT_EXTRACTION_PROMPT["system"],
             user_prompt = user_prompt,
-            max_output_tokens = 1024
+            max_output_tokens = STEP_2_2_LLM_MAX_OUTPUT_TOKENS
         ).strip()
     except Exception as e:
         print(e) 

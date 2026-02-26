@@ -4,20 +4,24 @@
 # {
 #     "title": "...",
 #     "wiki_url": "...",
+#     "topics": ["...", ...],
+#     "create_timestamp": "...",
+#     "timestamp": "...",
 #     "groundedness_check": {
-#         "(factid, url)": "label (int, 0 or 1)"
+#         "{factid}--__--{url}--__--{keypoint_index}": "label (int, 0 or 1)"
 #     }
 # }
 
 import os, hydra, time
 from omegaconf import DictConfig
-from steps.utils.generic import read_json_or_jsonl, write_to_json
-from steps.utils.prompts import GROUNDEDNESS_CHECK_PROMPT
-from steps.utils.token_counting import init_enc as init_tiktoken_enc, TIKTOKEN_ENC
 from llm_apis import init_llm, BaseLLMAPI
 from tqdm import tqdm
 from typing import List, Dict, Union, Optional
 from langcodes import Language
+
+from steps.utils.generic import read_json_or_jsonl, write_to_json
+from steps.utils.prompts import GROUNDEDNESS_CHECK_PROMPT
+from steps.utils.token_counting import init_enc as init_tiktoken_enc, TIKTOKEN_ENC
 
 
 def lang_display_name_from_code(code: str) -> str:

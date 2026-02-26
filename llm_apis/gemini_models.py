@@ -19,7 +19,7 @@ class GeminiLLM(BaseLLMAPI):
         self.reasoning = reasoning
 
 
-    def generate(self, system_prompt: str, user_prompt: str, max_output_tokens: int = 2048, temperature: float = 1.0, return_dict: bool = False) -> str:
+    def generate(self, system_prompt: str, user_prompt: str, max_output_tokens: int = 2048, temperature: float = 1.0, return_dict: bool = False, *args, **kwargs) -> str:
         kwargs = {
             "model": self.model_name,
             "messages": [
