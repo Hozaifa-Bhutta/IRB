@@ -612,6 +612,51 @@ class KGBasedQGUtils:
 
         return {"masked_kg": masked_kg, "num_hops": 1, "masked_keypoints_str": masked_keypoints_str, "keypoints_str": keypoints_str}
 
+
+    def knowledge_graph_masking_single_hop_v2(self, 
+                                            knowledge_graph: List[Dict[str, str]], 
+                                            keypoints: List[str]):
+        
+        graph, heads = self._convert_kg_to_nx_graph(knowledge_graph)
+
+        bad_nodes = self._get_bad_nodes(list(graph.nodes()), keypoints, knowledge_graph)
+
+        if keypoints: keypoints_str = "\n".join(keypoints)
+        else: keypoints_str = ""
+
+        for start in range(len(knowledge_graph)):
+            # check if this traversal order is good or not
+            traversal_order_check = knowledge_graph[start].get("head") and knowledge_graph[start].get("head") not in bad_nodes
+            if not traversal_order_check: continue
+
+            traversal_order = list(range(start, len(knowledge_graph))) + list(range(0, start))
+            first_edge = knowledge_graph[traversal_order[0]]
+
+            masked_entities_info = [[first_edge["head"], first_edge["head_type"]]]
+            masked_entities_names = [first_edge["head"]]
+
+            masked_kg = []
+            for i in traversal_order:
+                relation = knowledge_graph[i]
+                masked_kg.append({
+                    "head": relation["head"] if relation["head"] not in masked_entities_names else f"<Unknown> #{masked_entities_names.index(relation['head']) + 1}",
+                    "head_unmasked": relation["head"],
+                    "head_type": relation["head_type"],
+                    "relation": relation["relation"],
+                    "tail": relation["tail"] if relation["tail"] not in masked_entities_names else f"<Unknown> #{masked_entities_names.index(relation['tail']) + 1}",
+                    "tail_unmasked": relation["tail"],
+                    "tail_type": relation["tail_type"]
+                })
+                masked_kg = self._mst_from_root(masked_kg)
+
+            masked_keypoints_str = keypoints_str[:]
+            for ent_name, ent_type in masked_entities_info:
+                masked_keypoints_str = masked_keypoints_str.replace(ent_name, f"<Unknown #{masked_entities_names.index(ent_name) + 1} ({ent_type})>")
+
+            yield {"masked_kg": masked_kg, "num_hops": 1, "masked_keypoints_str": masked_keypoints_str, "keypoints_str": keypoints_str}
+
+        
+
     def knowledge_graph_masking_multi_hop(self,
                                           masked_kg_1, masked_kg_2):
 
@@ -917,32 +962,28 @@ class KGBasedQGChecker:
 
         # relation statements and node type statements
         statements = list(set([f"{rel['head']} {rel['relation']} {rel['tail']}" for rel in knowledge_graph] \
-            + [f"{rel['head']} is a {rel['head_type']}" for rel in knowledge_graph] \
-            + [f"{rel['tail']} is a {rel['tail_type']}" for rel in knowledge_graph]))
+            + [f"'{rel['head']}' is a/an {rel['head_type'].lower()}" for rel in knowledge_graph] \
+            + [f"'{rel['tail']}' is a/an {rel['tail_type'].lower()}" for rel in knowledge_graph]))
         
-
-        statements_str = ""
         for i, stm in enumerate(statements):
-            statements_str += f"{i + 1}. {stm}\n"
-
-
-        # check if ALL statements are true given the keypoints
-        user_prompt = self.graph_completeness_check_prompt["user"][:]\
-            .replace("[ADD_STATEMENTS_HERE]", statements_str)\
-            .replace("[ADD_KEYPOINTS_HERE]", keypoints_str)
+            user_prompt = self.graph_completeness_check_prompt["user"][:]\
+                .replace("[ADD_STATEMENT_HERE]", stm)\
+                .replace("[ADD_KEYPOINTS_HERE]", keypoints_str)
         
 
-        res = self.LLM.generate(
-            system_prompt = self.graph_completeness_check_prompt["system"],
-            user_prompt = user_prompt,
-            max_output_tokens = 16
-        ).strip()
-
-        if verbose:
-            print(res)
-
-        return "A." in res
-
+            try:
+                res = self.LLM.generate(
+                    system_prompt = self.graph_completeness_check_prompt["system"],
+                    user_prompt = user_prompt,
+                    max_output_tokens = 128,
+                ).strip()
+            except Exception as e:
+                print(e)
+                return False
+            
+            if "A." in res: return False
+        
+        return True
 
 
 

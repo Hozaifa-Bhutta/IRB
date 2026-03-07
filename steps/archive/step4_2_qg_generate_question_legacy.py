@@ -126,14 +126,11 @@ def main(cfg: DictConfig)-> None:
             graph_data = fact_kg_mapper.get(fact_id)
             if not graph_data: continue
             try:
-                masked_knowledge_graph_for_single_hop = kg_based_qg_utils.knowledge_graph_masking_single_hop_v2(
+                masked_knowledge_graph_for_single_hop = kg_based_qg_utils.knowledge_graph_masking_single_hop(
                     knowledge_graph = graph_data,
                     keypoints = keypoints
                 )
-                masked_knowledge_graph_for_single_hop = list(masked_knowledge_graph_for_single_hop)
-            except Exception as e: 
-                print(e)
-                continue
+            except Exception: continue
             if masked_knowledge_graph_for_single_hop: single_hop_masked_kg_mapper[fact_id] = masked_knowledge_graph_for_single_hop
 
         # try to find pairs of single-hop masked kg to piece together to create two-hop questions
@@ -143,28 +140,23 @@ def main(cfg: DictConfig)-> None:
             if not graph_data or not single_hop_masked_kg_mapper.get(fact_id): continue
 
             this_fact_questions = []
-            all_masked_knowledge_graphs = []
+            all_masked_knowledge_graphs = [single_hop_masked_kg_mapper[fact_id]]
 
             for fact_id_2, keypoints_2 in keypoints_mapper.items():
                 if fact_id == fact_id_2 or not single_hop_masked_kg_mapper.get(fact_id_2): continue
 
-                for masked_kg_1 in single_hop_masked_kg_mapper[fact_id]:
-                    for masked_kg_2 in single_hop_masked_kg_mapper[fact_id_2]:
-                        try:
-                            masked_knowledge_graph_for_two_hop = kg_based_qg_utils.knowledge_graph_masking_multi_hop(
-                                masked_kg_1 = masked_kg_1,
-                                masked_kg_2 = masked_kg_2
-                            )
-                            if masked_knowledge_graph_for_two_hop: 
-                                masked_knowledge_graph_for_two_hop["aux_fact_id"] = fact_id_2
-                                all_masked_knowledge_graphs = [masked_kg_1, masked_knowledge_graph_for_two_hop]
-                                break
-                        except Exception as e: 
-                            print(e)
-                            continue
+                try:
+                    masked_knowledge_graph_for_two_hop = kg_based_qg_utils.knowledge_graph_masking_multi_hop(
+                        masked_kg_1 = single_hop_masked_kg_mapper[fact_id],
+                        masked_kg_2 = single_hop_masked_kg_mapper[fact_id_2]
+                    )
+                except Exception: continue
 
-                    if all_masked_knowledge_graphs: break
-                if all_masked_knowledge_graphs: break
+                if masked_knowledge_graph_for_two_hop: 
+                    masked_knowledge_graph_for_two_hop["aux_fact_id"] = fact_id_2
+                    all_masked_knowledge_graphs.append(masked_knowledge_graph_for_two_hop)
+
+            all_masked_knowledge_graphs = all_masked_knowledge_graphs[:2]
 
 
             all_masked_knowledge_graphs_paraphrased = [

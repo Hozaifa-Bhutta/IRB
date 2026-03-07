@@ -29,7 +29,7 @@ from tqdm import tqdm
 from typing import List, Dict
 
 
-from steps.utils.prompts import QUESTION_GENERATION_PROMPT_FROM_KG_SINGLE_STEP
+from steps.utils.prompts import GRAPH_COMPLETENESS_CHECK_PROMPT
 from steps.utils.kg_based_qg import KGBasedQGUtils, KGBasedQGChecker
 from steps.utils.generic import read_json_or_jsonl, write_to_json, maybe_create_folder
 
@@ -39,7 +39,7 @@ def main(cfg: DictConfig)-> None:
     decontextualized_facts_folder = cfg.step2_2.output_folder
     fact_groundedness_folder = cfg.step3.output_folder
     extracted_kg_folder = cfg.step4.output_folder + "_extracted_kg"
-    output_folder = cfg.step4.output_folder + "extracted_kg_checked"
+    output_folder = cfg.step4.output_folder + "_extracted_kg_checked"
     kg_completeness_word_check_threshold = cfg.step4.kg_completeness_word_check_threshold
 
     llm_model_name = cfg.general.llm_model_name
@@ -49,12 +49,6 @@ def main(cfg: DictConfig)-> None:
 
     LLM = init_llm(llm_model_name)
 
-    
-    kg_based_qg_utils = KGBasedQGUtils(
-        LLM = LLM,
-        question_generation_prompt = QUESTION_GENERATION_PROMPT_FROM_KG_SINGLE_STEP, 
-        graph_builder_prompt = None
-    )
     kg_based_qg_checker = KGBasedQGChecker(
         minicheck_model_name = None,
         minicheck_cache_dir = None,
@@ -126,7 +120,10 @@ def main(cfg: DictConfig)-> None:
                 continue
 
             if good_kg:
-                fact_kg_mapper_checked[fact_id]
+                fact_kg_mapper_checked[fact_id] = fact_kg_mapper[fact_id]
+            else: 
+                with open('bad_case_logging_gitig_.txt', "a") as logging_f:
+                    logging_f.write(f"""{dff_data.get("title")} - {fact_id}\n\n""")
 
         if fact_kg_mapper_checked:
             to_save = {

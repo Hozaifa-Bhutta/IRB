@@ -218,51 +218,91 @@ Knowledge Graph:
 }
 
 
+# GRAPH_COMPLETENESS_CHECK_PROMPT = {
+#     "system": """You are an expert verifier. You will be given a document and a list of statements, your job is to verify if the correctness of the provided statements.
+# Your response must be a json list, whose length is the same as the number of statements, with each element is the correctness of the corresponding statement.
+
+
+# Follow these rules:
+# 1. Evaluate every statement in the order provided.
+# 2. If a statement is true according to the context, evaluate it as `true`.
+# 3. If a statement is false, partially false, or cannot be verified using ONLY the provided context and some commonsense, evaluate it as `false`. Do not rely on outside knowledge.
+# 4. Your response must be ONLY a valid JSON array of boolean values (`true` or `false`).
+# 5. The length of your JSON array must exactly match the number of statements. Do not provide rationales or conversational text.
+
+
+# Below are a few examples
+
+# Example 1:
+# Context: The idea of using computers to search for relevant pieces of information was popularized in the article As We May Think by Vannevar Bush in 1945.
+# Statements:
+# 1. The idea of using computers to search for relevant pieces of information was popularized in As We May Think
+# 2. As We May Think was authored by Vannevar Bush
+# 3. As We May Think was authored in 1945
+# 4. 'The idea of using computers to search for relevant pieces of information' is a/an 'Scientific idea'
+# 5. 'As We May Think' is a/an 'Article'
+# 6. 'Vannevar Bush' is a/an 'Person'
+# 7. '1945' is a/an 'Year'
+# Answer: 
+# ```json
+# [true, true, true, true, true, true, true]
+# ```
+
+
+# Example 2: 
+# Context: First seed Duke University won the 2025 ACC men's basketball tournament held from March 11-15, 2025, at the Spectrum Center in Charlotte, North Carolina, by defeating second seed Louisville University in the championship game.
+# Statements: 
+# 1. 'Duke University' is a/an 'Soccer team'
+# 2. Duke University defeated Louisville University
+# 3. Duke University won 2025 ACC men's basketball tournament
+# 4. Duke University was first seed in 2025 ACC men's basketball tournament
+# 5. '2025 ACC men's basketball tournament' is a/an 'Tournament'
+# 6. 'Spectrum Center' is a/an 'Location'
+# 7. 'Louisville University' is a/an 'Soccer team'
+# 8. 'Charlotte, North Carolina' is a/an 'City'
+# 9. Spectrum Center is in Charlotte, North Carolina
+# 10. 2025 ACC men's basketball tournament was held at Spectrum Center
+# 11. 2025 ACC men's basketball tournament was held from March 11-15, 2025
+# 12. The entity 'March 11-15, 2025' is a/an 'Date'
+# 13. Louisville University was second seed in 2025 ACC men's basketball tournament
+# Answer:
+# ```json
+# [false, true, true, true, true, true, false, true, true, true, true, true, true]
+# ```
+
+
+# """,
+#     "user": """Now let's assess if the user provided statements are true given user provided context. Note that for this input, do not provide the rationale.
+
+# Context: [ADD_KEYPOINTS_HERE]
+# Statements: 
+# [ADD_STATEMENTS_HERE]
+# Answer: """
+# }
+
+
 GRAPH_COMPLETENESS_CHECK_PROMPT = {
-    "system": """You are an expert verifier. You will be given a document and a list of statements, your job is to verify if ALL the statements are true given a document.
-Your response must be only 'A.' or 'B.'.
-    
+    "system": """You are an expert verifier. You will be given a document and a statement, your job is to verify if the information within the statement contradict.
+Your response should be "A." or "B."
+
 Below are a few examples
 
 Example 1:
 Context: The idea of using computers to search for relevant pieces of information was popularized in the article As We May Think by Vannevar Bush in 1945.
-Statements:
-1. The idea of using computers to search for relevant pieces of information was popularized in As We May Think
-2. As We May Think was authored by Vannevar Bush
-3. As We May Think was authored in 1945
-4. The idea of using computers to search for relevant pieces of information is a Scientific idea
-5. As We May Think is a Article
-6. Vannevar Bush is a Person
-7. 1945 is a Year
-Answer: A. True
-
+Statement: 'As We May Think' is a/an 'Article'
+Answer: B. Supported
 
 Example 2: 
 Context: First seed Duke University won the 2025 ACC men's basketball tournament held from March 11-15, 2025, at the Spectrum Center in Charlotte, North Carolina, by defeating second seed Louisville University in the championship game.
-Statements: 
-1. Duke University is a Soccer team
-2. Louisville University was second seed in 2025 ACC men's basketball tournament
-3. 2025 ACC men's basketball tournament is a Tournament
-4. Duke University was first seed in 2025 ACC men's basketball tournament
-5. Spectrum Center is a Location
-6. March 11-15, 2025 is a Date
-7. Duke University defeated Louisville University
-8. Louisville University is a Soccer team
-9. Spectrum Center is in Charlotte, North Carolina
-10. 2025 ACC men's basketball tournament was held at Spectrum Center
-11. Charlotte, North Carolina is a City
-12. 2025 ACC men's basketball tournament was held from March 11-15, 2025
-13. Duke University won 2025 ACC men's basketball tournament
-Rationale: Duke University is not a soccer team (1)
-Answer: B. False
-
+Statement: 'Duke University' is a/an 'Soccer team'
+Rationale: the context said "basketball tournament"
+Answer: A. Not supported
 
 """,
-    "user": """Now let's assess if the user provided statements are true given user provided context. Note that for this input, do not provide the rationale.
+    "user": """Now let's assess if the user provided statement are true given user provided context. Note that for this input, do not provide the rationale.
 
 Context: [ADD_KEYPOINTS_HERE]
-Statements: 
-[ADD_STATEMENTS_HERE]
+Statement: [ADD_STATEMENT_HERE]
 Answer: """
 }
 
