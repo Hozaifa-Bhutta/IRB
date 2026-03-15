@@ -4,7 +4,7 @@ import pandas as pd
 from omegaconf import DictConfig
 from evaluation.retrieval.utils.allowed_datasets import ALLOWED_DATASETS
 from steps.utils.generic import read_json_or_jsonl
-from evaluation.question_answering.view import general_filter_func
+from evaluation.question_answering.view import general_filter_func, CACHE, filter_by_hardness
 from evaluation.retrieval.eval_dense import read_qrels, convert_to_pytrec_eval_format, evaluate
 
 
@@ -29,6 +29,8 @@ def get_average_performance(eval_results, max_num_contexts, split):
 
 def show_results(eval_results, configurations, attributes, max_num_contexts):
     general_performance = get_average_performance([item for item in eval_results if item], max_num_contexts, split = "general")
+    general_performance_hard = get_average_performance([item for item, att in zip(eval_results, attributes) if item and filter_by_hardness(att, True)], 
+                                                       max_num_contexts, split = "general_hard")
 
     all_performances = []
     for config_dict in configurations:
@@ -42,6 +44,7 @@ def show_results(eval_results, configurations, attributes, max_num_contexts):
         all_performances.append(config_performance)
 
     all_performances.append(general_performance)
+    all_performances.append(general_performance_hard)
 
     df = pd.DataFrame(columns=["split", "support", "ndcg", "recall"], data = all_performances)
 
@@ -60,6 +63,11 @@ def main(cfg: DictConfig):
     configurations = cfg.view.configurations
     
     max_num_contexts = cfg.qa.max_num_contexts
+    outfolder = cfg.qa.outfolder
+
+    adv_collect_llm_model_name = cfg.adv_collection.llm_model_name
+    with open(os.path.join(outfolder, f"adv_collected_query_id_{adv_collect_llm_model_name}.json")) as f:
+        CACHE["hard_query_ids"] = set(json.load(f))
 
 
     dataset_name_2_relative_path = {

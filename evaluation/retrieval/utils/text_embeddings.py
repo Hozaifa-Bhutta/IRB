@@ -1,5 +1,5 @@
 import torch, time
-from openai import OpenAI
+from openai import OpenAI, BadRequestError
 from transformers import AutoTokenizer, AutoModel
 
 model_name_2_model_path = {
@@ -46,14 +46,38 @@ def init_model(retrieval_model, device):
 def text_embedding_batch_api(batch, model, tokenizer, model_name, prefix, device = None, max_length = 512):
     client = OpenAI()
 
-    response = client.embeddings.create(
-        model=model_name,
-        input=batch  # Pass the entire list
-    )
+    OPENAI_EMBEDDING_HIDDEN_SIZE = {
+        "text-embedding-3-small": 1536,
+        "text-embedding-3-large": 3072,
+        "text-embedding-ada-002": 1536
+    }
 
-    embeddings = torch.tensor([item.embedding for item in response.data])
+    try:
+        response = client.embeddings.create(
+            model=model_name,
+            input=batch  
+        )
+        embeddings = torch.tensor([item.embedding for item in response.data])
+        return embeddings
 
-    return embeddings
+    except BadRequestError:
+        embeddings = []
+        for doc in batch:
+            try:
+                response = client.embeddings.create(
+                    input=doc,
+                    model=model_name
+                )
+                embedding = torch.tensor(response.data[0].embedding)
+            except BadRequestError:
+                hidden_size = OPENAI_EMBEDDING_HIDDEN_SIZE.get(model_name, 1536)
+                embedding = torch.zeros([hidden_size])
+            
+            embeddings.append(embedding)
+        
+        embeddings = torch.stack(embeddings)
+
+        return embeddings
 
 
 def text_embedding_batch_hf(batch, model, tokenizer, model_name, prefix = None, device = None, max_length = 512):
@@ -89,6 +113,6 @@ def text_embedding_batch(batch, model, tokenizer, model_name, prefix = None, dev
         res = text_embedding_batch_api(batch, model, tokenizer, model_name, prefix, device, max_length)
         print(res.shape)
 
-        time.sleep(1)
+        time.sleep(0.2)
 
         return res

@@ -514,39 +514,47 @@ def remove_bad_urls(reference_urls: list[str], pos: list[int]) -> tuple[list[str
 def main(cfg:DictConfig) -> None:
     input_files_full_path, output_files_full_path = get_file_paths(cfg)
 
-
+    error_counter = 0
     for input_file_path, output_file_path in tqdm(zip(input_files_full_path, output_files_full_path), total = len(input_files_full_path)):
-        # Read and process each wiki page
-        wiki_page_data = read_json_or_jsonl(input_file_path)
-        wiki_raw_text = slight_text_processing(wiki_page_data.get("source"))
-        wiki_raw_text, placeholder_mapper, tag_name_2_url = process_wikilinks_and_replace_ref(wiki_raw_text)
-        # placeholder_mapper is of the format {"[REF_I]": url_i}
+        if os.path.exists(output_file_path): continue
 
-        # Tokenizes the sentences
-        wiki_raw_text_sentences = sent_tokenize(wiki_raw_text)
-        # output is each sentence (with placeholder referenes)
+        try:
 
-        
-        # Clean sentences, strips code (keeps placeholders)
-        cleaned_sentences = [get_info_from_raw_text(raw) for raw in wiki_raw_text_sentences]
-        cleaned_sentences = [sent for sent in cleaned_sentences if sent]
-        # output is each sentence cleaned up with reference tags
+            # Read and process each wiki page
+            wiki_page_data = read_json_or_jsonl(input_file_path)
+            wiki_raw_text = slight_text_processing(wiki_page_data.get("source"))
+            wiki_raw_text, placeholder_mapper, tag_name_2_url = process_wikilinks_and_replace_ref(wiki_raw_text)
+            # placeholder_mapper is of the format {"[REF_I]": url_i}
 
-        # shift references back when needed
-        fixed_sentences = shift_tags(cleaned_sentences)
-        fixed_sentences = split_sentence_with_newlines(fixed_sentences)
+            # Tokenizes the sentences
+            wiki_raw_text_sentences = sent_tokenize(wiki_raw_text)
+            # output is each sentence (with placeholder referenes)
 
-        # get marked facts
-        marked_sentences = [fact_marking(sent) for sent in fixed_sentences]
+            
+            # Clean sentences, strips code (keeps placeholders)
+            cleaned_sentences = [get_info_from_raw_text(raw) for raw in wiki_raw_text_sentences]
+            cleaned_sentences = [sent for sent in cleaned_sentences if sent]
+            # output is each sentence cleaned up with reference tags
 
-        # gets relative positions of each reference
-        positions = [find_pos(sent) for sent in fixed_sentences]
+            # shift references back when needed
+            fixed_sentences = shift_tags(cleaned_sentences)
+            fixed_sentences = split_sentence_with_newlines(fixed_sentences)
 
-        # replaces the reg tags with original references
-        replaced_sentences =  [put_back_ref(sent, placeholder_mapper) for sent in fixed_sentences]
+            # get marked facts
+            marked_sentences = [fact_marking(sent) for sent in fixed_sentences]
 
-        # put the cleaned text, url, and positions together
-        wiki_info_sentences = [wikiinfo(sent, positions[i],tag_name_2_url) for i,sent in enumerate(replaced_sentences)]
+            # gets relative positions of each reference
+            positions = [find_pos(sent) for sent in fixed_sentences]
+
+            # replaces the reg tags with original references
+            replaced_sentences =  [put_back_ref(sent, placeholder_mapper) for sent in fixed_sentences]
+
+            # put the cleaned text, url, and positions together
+            wiki_info_sentences = [wikiinfo(sent, positions[i],tag_name_2_url) for i,sent in enumerate(replaced_sentences)]
+        except Exception as e:
+            error_counter += 1
+            print(f"Problematic file: {input_file_path}. # Errors: {error_counter}")
+            continue
 
 
         # Extracts the sentences into a list

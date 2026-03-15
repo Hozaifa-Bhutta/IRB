@@ -10,6 +10,9 @@ from typing import List, Dict
 from tqdm import tqdm
 
 
+CACHE = {}
+
+
 def read_qrels(qrel_path):
     _qrels = pd.read_csv(qrel_path, sep='\t').to_dict("records")
     
@@ -75,7 +78,7 @@ def filter_by_freshness(att: Dict, choice: int = 2024):
     create_timestamp = int(create_timestamp[:4])
     published_dates = [int(item[:4]) for item in list(published_dates) if item]
 
-    all_years = published_dates #+ [create_timestamp]
+    all_years = published_dates + [create_timestamp]
     if not all_years: return False
     min_year = min(all_years)
 
@@ -98,6 +101,13 @@ def filter_by_false_premise(att: Dict, choice: bool = False):
 
     return bool(fp) == bool(choice)
 
+def filter_by_hardness(att, choice: bool = False):
+    if choice:
+        _id = att.get("_id")
+
+        return _id in CACHE["hard_query_ids"]
+    return True
+
 
 def general_filter_func(att: Dict, choice_dict: Dict[str, str]):
     # the keys are 'language', 'freshness', 'topic', 'keypoints'
@@ -108,7 +118,8 @@ def general_filter_func(att: Dict, choice_dict: Dict[str, str]):
         "topic": filter_by_topic,
         "keypoints": filter_by_num_keypoints,
         "numhops": filter_by_numhop,
-        "false_premise": filter_by_false_premise
+        "false_premise": filter_by_false_premise,
+        "hardness": filter_by_hardness
     }
 
     return all([filter_mapper[k](att, v) for k, v in choice_dict.items()])
@@ -125,6 +136,7 @@ def check_retrieval_correctness(qrels_query, retrieval_metadata_query, num_retri
 
 def show_results(eval_results, configurations, attributes, eval_metadata):
     general_performance = get_average_performance([item for item in eval_results if item], split = "general")
+    general_performance_hard = get_average_performance([item for item, att in zip(eval_results, attributes) if item and filter_by_hardness(att, True)], split = "general_hard")
 
     all_performances = []
     all_reasoning_tokens = []
@@ -160,8 +172,11 @@ def show_results(eval_results, configurations, attributes, eval_metadata):
         all_performances.append(config_performance)
 
     general_performance["avg_reasoning_tokens"] = np.mean(all_reasoning_tokens)
+    general_performance_hard["avg_reasoning_tokens"] = 0
 
     all_performances.append(general_performance)
+    all_performances.append(general_performance_hard)
+
 
     df = pd.DataFrame(columns=["split", "support", "avg_reasoning_tokens", "correct", "incorrect", "not_attempted", "truthfulness"], data = all_performances)
 
@@ -184,6 +199,11 @@ def main(cfg: DictConfig):
     qa_llm_model_name = cfg.qa.qa_llm_model_name
 
     configurations = cfg.view.configurations
+
+    adv_collect_llm_model_name = cfg.adv_collection.llm_model_name
+
+    with open(os.path.join(outfolder, f"adv_collected_query_id_{adv_collect_llm_model_name}.json")) as f:
+        CACHE["hard_query_ids"] = set(json.load(f))
 
     # open attributes, queries, and eval_results file
 

@@ -229,7 +229,13 @@ class KGBasedQGUtilsHelper:
             except Exception: return None
 
             if not search_results: return None
-            return search_results[0].flag
+            flag = search_results[0].flag
+
+            if (hasattr(search_results[0], "official_name") and query == search_results[0].official_name) or \
+                (hasattr(search_results[0], "name") and query == search_results[0].name):
+                return flag
+            
+            return None
 
         nodes_to_paraphrase = []
         for triplet in masked_kg:

@@ -3,6 +3,7 @@
 import os, hydra, itertools, random, shutil
 from omegaconf import DictConfig
 from typing import List, Dict
+from collections import Counter
 
 from steps.utils.generic import read_json_or_jsonl, write_to_jsonl, write_to_json, maybe_create_folder
 
@@ -29,12 +30,14 @@ def attribute_binning(attributes: List[Dict]):
 
     return {k: list(v) for k, v in res.items()}
 
-def sample_based_on_attributes(attributes: List[Dict], num_samples: int, false_premise_limit: int):
+def sample_based_on_attributes(attributes: List[Dict], num_samples: int, false_premise_limit: int, max_sample_per_page: int = 3):
+    # max_sample_per_page: this constraint may not be exact
     if len(attributes) < num_samples:
         return set([line["_id"] for line in attributes])
     bins = attribute_binning(attributes)
 
     queries_ids = set([line["_id"] for line in attributes])
+    sample_per_page = Counter()
 
     print("Number of bins", len(bins))
     sampled_ids = set()
@@ -47,17 +50,26 @@ def sample_based_on_attributes(attributes: List[Dict], num_samples: int, false_p
             index = random.choice(range(len(bins[bin_name])))
             sampled_id = bins[bin_name][index]
 
+            title = sampled_id.split("--")[0].replace("~", "")
+
+            if sample_per_page[title] >= max_sample_per_page:
+                print(f"Skip. The page '{title}' already has {sample_per_page[title]} questions")
+                continue
+
             if sampled_id.startswith("~") and len([sid for sid in sampled_ids if sid.startswith("~")]) >= false_premise_limit:
                 continue
 
             if sampled_id.endswith("--2") and not sampled_id.startswith("~"):
+                # valid-premise, multi-hop
                 sampled_id_ = sampled_id[:-3] + "--1"
                 if sampled_id_ not in queries_ids: continue
                 sampled_ids.add(sampled_id_)
+                sample_per_page[title] += 1
 
             sampled_ids.add(sampled_id)
 
             bins[bin_name].pop(index)
+            sample_per_page[title] += 1
 
             if len(sampled_ids) >= num_samples: 
                 break

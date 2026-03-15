@@ -10,7 +10,7 @@
 # }
 
 
-import json, gzip, os, hydra, re, requests
+import json, bz2, os, hydra, re, requests
 from datetime import datetime
 from omegaconf import DictConfig
 from tqdm import tqdm
@@ -60,14 +60,14 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
             year string in the format "YYYY" to filter to only pages created in this year. Defaults to None (all pages are included).
     """
     
-    assert input_file.endswith(".gz")
+    assert input_file.endswith(".json.bz2")
     assert target_year is not None
     
 
     length_data = 0 # number of pages written
     count = 0 # number of pages iterated (including those not written due to offset or date filter)
     # unzip and read line by line
-    with gzip.open(input_file, 'rt', encoding='utf-8') as f:
+    with bz2.open(input_file, 'rt', encoding='utf-8') as f:
         pbar = tqdm(total = max_pages)
         for idx, line in enumerate(f):
             if (idx + 1) % 10000 == 0: print(f"{idx + 1} pages iterated")
@@ -115,20 +115,25 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
 def main(cfg: DictConfig) -> None:
 
-    input_file = cfg.step0.input_file
+    input_folder = cfg.step0.input_folder
     output_folder = cfg.step0.output_folder
     offset = cfg.step0.offset
     max_pages = cfg.step0.max_pages
     target_year = str(cfg.general.target_year)
-    assert os.path.exists(input_file)
+    assert os.path.exists(input_folder)
 
-    read_wiki_dump_and_write(
-        input_file = input_file,
-        output_folder=output_folder,
-        max_pages=max_pages,
-        offset=offset,
-        target_year=target_year
-    )
+    input_files = os.listdir(input_folder)
+    input_files = list(sorted([os.path.join(input_folder, input_file) for input_file in input_files if input_file.endswith(".json.bz2")]))
+
+    for input_file in input_files:
+        print(f"Processing file: {input_file}")
+        read_wiki_dump_and_write(
+            input_file = input_file,
+            output_folder=output_folder,
+            max_pages=int(max_pages / len(input_files)) + 1,
+            offset=offset,
+            target_year=target_year
+        )
 
 
 if __name__ == "__main__":

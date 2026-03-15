@@ -5,7 +5,7 @@ general:
   retrieval_model: null
   dataset_date: null
   index_folder: null
-  wikidump_date: 2025-09-29 # YYYY-MM-DD
+  wikidump_date: 2026-03-01 # YYYY-MM-DD
 
 retrieval:
   index:
@@ -14,14 +14,14 @@ retrieval:
     chunk_overlap: 32
     num_chunks: 1
     chunk_idx: 0
-    batch_size: 8 #32
+    batch_size: 4
   eval:
-    batch_size: 8 #32
+    batch_size: 4
     threads: 8
 
 
 qa:
-  max_num_contexts: 5
+  max_num_contexts: 15 # 5 is default
   outfolder: null
   use_retrieval_contexts: true
   minicheck_ckpt_path: "/scratch/lamdo/minicheck_ckpts"
@@ -32,12 +32,18 @@ qa:
   eval_llm2_model_name: qwen3-next-80B-A3B
 
 
+adv_collection:
+  llm_model_name: gpt-4.1-mini
+  retrieval_model: text-embedding-3-small
+
+
 view:
   configurations: 
     - {false_premise: false, language: english_only}
     - {false_premise: false, language: multilingual}
     - {false_premise: false, freshness: 2024}
     - {false_premise: false, freshness: 2025}
+    - {false_premise: false, freshness: 2026}
     - {false_premise: false, topic: Culture}
     - {false_premise: false, topic: Geography}
     - {false_premise: false, topic: History_and_Society}
@@ -45,6 +51,18 @@ view:
     - {false_premise: false, numhops: 1}
     - {false_premise: false, numhops: 2}
     - {false_premise: true}
+    - {hardness: True, false_premise: false, language: english_only}
+    - {hardness: True,false_premise: false, language: multilingual}
+    - {hardness: True,false_premise: false, freshness: 2024}
+    - {hardness: True,false_premise: false, freshness: 2025}
+    - {hardness: True,false_premise: false, freshness: 2026}
+    - {hardness: True,false_premise: false, topic: Culture}
+    - {hardness: True,false_premise: false, topic: Geography}
+    - {hardness: True,false_premise: false, topic: History_and_Society}
+    - {hardness: True,false_premise: false, topic: STEM}
+    - {hardness: True,false_premise: false, numhops: 1}
+    - {hardness: True,false_premise: false, numhops: 2}
+    - {hardness: True,false_premise: true}
     # - {false_premise: true, freshness: 2025}
     # - {false_premise: false, freshness: 2024, numhops: 1}
     # - {false_premise: false, freshness: 2024, numhops: 2}

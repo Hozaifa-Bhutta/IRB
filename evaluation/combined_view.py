@@ -1,4 +1,4 @@
-# python -m evaluation.combined_view --result_folder ./results_llmbased_gitig_2Dec2025
+# python -m evaluation.combined_view --result_folder ./"results_llmbased_gitig_7March2026 (main)"
 
 import json, os
 import pandas as pd
@@ -27,8 +27,10 @@ def rag_correctness(result_folder):
 
     return pd.DataFrame(data)
 
-def rag_correct_incorrect_noretrieval(result_folder):
+def rag_correct_incorrect_noretrieval(result_folder, hard = False):
     folders = [item for item in os.listdir(result_folder) if item.startswith("irb__")]
+
+    target_split_name = "general" if not hard else "general_hard"
 
     data = defaultdict()
     data["model"] = []
@@ -41,7 +43,7 @@ def rag_correct_incorrect_noretrieval(result_folder):
             df = pd.read_csv(file)
             for line in df.to_dict(orient='records'):
                 split_name = line["split"].replace(",", "")
-                if split_name !="general": continue
+                if split_name != target_split_name: continue
 
                 for answer_type in ["correct", "incorrect"]:
                     if f"{mode}__{answer_type}" not in data: data[f"{mode}__{answer_type}"] = []
@@ -59,6 +61,7 @@ def retriever_performance(result_folder, metric = "recall"):
     for folder in folders:
         for mode in ["", "__reranked"]:
             file = os.path.join(result_folder, folder, f"retriever{mode}.csv")
+            if not os.path.exists(file): continue
             df = pd.read_csv(file)
 
             data["model"].append(f"{folder}{mode}")
@@ -104,12 +107,14 @@ def main():
     output_retrieval_recall_file = os.path.join(output_folder, "retrieval_recall.csv")
     output_retrieval_ndcg_file = os.path.join(output_folder, "retrieval_ndcg.csv")
     output_correct_incorrect_rag_file = os.path.join(output_folder, "correct_incorrect.csv")
+    output_correct_incorrect_hard_rag_file = os.path.join(output_folder, "correct_incorrect_hard.csv")
     output_reasoning_file = os.path.join(output_folder, "reasoning_tokens.csv")
 
     rag_correctness(result_folder).to_csv(output_correctness_file, index = False)
     retriever_performance(result_folder, metric = "recall").to_csv(output_retrieval_recall_file, index = False)
     retriever_performance(result_folder, metric = "ndcg").to_csv(output_retrieval_ndcg_file, index = False)
     rag_correct_incorrect_noretrieval(result_folder).to_csv(output_correct_incorrect_rag_file, index = False)
+    rag_correct_incorrect_noretrieval(result_folder, hard = True).to_csv(output_correct_incorrect_hard_rag_file, index = False)
     reasoning_tokens(result_folder).to_csv(output_reasoning_file, index = False)
 
 if __name__ == "__main__":

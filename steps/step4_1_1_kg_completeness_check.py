@@ -43,7 +43,6 @@ def main(cfg: DictConfig)-> None:
     kg_completeness_word_check_threshold = cfg.step4.kg_completeness_word_check_threshold
 
     llm_model_name = cfg.general.llm_model_name
-    wikidump_date = cfg.general.wikidump_date
 
     maybe_create_folder(output_folder)
 

@@ -166,6 +166,9 @@ def main(cfg: DictConfig)-> None:
                     if all_masked_knowledge_graphs: break
                 if all_masked_knowledge_graphs: break
 
+            if not all_masked_knowledge_graphs and single_hop_masked_kg_mapper.get(fact_id):
+                all_masked_knowledge_graphs = [random.choice(single_hop_masked_kg_mapper.get(fact_id))]
+
 
             all_masked_knowledge_graphs_paraphrased = [
                 {**item, **kg_based_qg_utils.helper.knowledge_graph_paraphrase(item["masked_kg"], wikidump_date, create_false_premise = False)} 

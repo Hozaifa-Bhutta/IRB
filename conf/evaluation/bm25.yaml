@@ -29,6 +29,9 @@ qa:
   qa_llm_model_name: null
   eval_llm_model_name: gpt-4.1-mini
 
+adv_collection:
+  llm_model_name: gpt-4.1-mini
+  retrieval_model: text-embedding-3-small
 
 view:
   configurations: 
@@ -36,6 +39,7 @@ view:
     - {false_premise: false, language: multilingual}
     - {false_premise: false, freshness: 2024}
     - {false_premise: false, freshness: 2025}
+    - {false_premise: false, freshness: 2026}
     - {false_premise: false, topic: Culture}
     - {false_premise: false, topic: Geography}
     - {false_premise: false, topic: History_and_Society}
@@ -43,5 +47,15 @@ view:
     - {false_premise: false, numhops: 1}
     - {false_premise: false, numhops: 2}
     - {false_premise: true}
-    # - {false_premise: false, freshness: 2024, numhops: 2}
-    # - {false_premise: false, freshness: 2025, numhops: 2}
+    - {hardness: True, false_premise: false, language: english_only}
+    - {hardness: True,false_premise: false, language: multilingual}
+    - {hardness: True,false_premise: false, freshness: 2024}
+    - {hardness: True,false_premise: false, freshness: 2025}
+    - {hardness: True,false_premise: false, freshness: 2026}
+    - {hardness: True,false_premise: false, topic: Culture}
+    - {hardness: True,false_premise: false, topic: Geography}
+    - {hardness: True,false_premise: false, topic: History_and_Society}
+    - {hardness: True,false_premise: false, topic: STEM}
+    - {hardness: True,false_premise: false, numhops: 1}
+    - {hardness: True,false_premise: false, numhops: 2}
+    - {hardness: True,false_premise: true}
