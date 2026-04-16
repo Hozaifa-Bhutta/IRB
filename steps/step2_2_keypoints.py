@@ -19,6 +19,8 @@ from tqdm import tqdm
 from typing import List, Union
 from llm_apis import init_llm, BaseLLMAPI
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from steps.utils.prompts import KEYPOINT_EXTRACTION_PROMPT
 from steps.utils.generic import read_json_or_jsonl, write_to_json
 
@@ -63,11 +65,10 @@ def get_section_context(fact: int, extracted_sentences: List[str]) -> str:
 
     assert fact < len(extracted_sentences)
 
-    for i in reversed(range(fact + 1)):
+    for i in reversed(range(fact)):
         sent = extracted_sentences[i]
         if sent.startswith("SECTION:"):
             section_name = sent.replace("SECTION:", "").strip()
-
             break
         results.append(sent)
 
@@ -82,7 +83,7 @@ def create_keypoints(fact: int,
                      marked_sentences: List[str],
                      extracted_sentences: List[str], 
                      wiki_title: str = None,
-                     last_updated_date: str = None,
+                    #  last_updated_date: str = None,
                      LLM: BaseLLMAPI = None) -> Union[List[str], None]:
     """Create keypoints from a fact sentence using OpenAI's GPT model.
     Parameters
@@ -120,8 +121,7 @@ def create_keypoints(fact: int,
     user_prompt = KEYPOINT_EXTRACTION_PROMPT["user"][:]\
         .replace("[ADD_CLAIM_HERE]", fact_sentence)\
         .replace("[ADD_CONTEXT_HERE]", surrounding_context)\
-        .replace("[ADD_KEYPOINTS_COUNT_HERE]", str(keypoint_count))\
-        .replace("[ADD_LAST_UPDATED_DATE]", last_updated_date)
+        .replace("[ADD_KEYPOINTS_COUNT_HERE]", str(keypoint_count))
 
     try:
         result = LLM.generate(
@@ -147,75 +147,173 @@ def create_keypoints(fact: int,
 
 
 
+# @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
+# def main(cfg: DictConfig)-> None:
+#     extracted_facts_folder = cfg.step1.output_folder
+#     crawled_url_content_folder = cfg.step2_1.output_folder
+#     output_folder = cfg.step2_2.output_folder
+#     llm_model_name = cfg.general.llm_model_name
+
+#     LLM = init_llm(llm_model_name)
+
+#     files = os.listdir(extracted_facts_folder)
+#     files = [file for file in files if file.endswith('.json')]
+#     extracted_facts_files_full_path = [os.path.join(extracted_facts_folder, file) for file in files]
+#     crawled_url_content_files_full_path = [os.path.join(crawled_url_content_folder, file) for file in files]
+#     output_files_full_path = [os.path.join(output_folder, file) for file in files]
+
+#     for ef_file_path, cuc_file_path, output_file_path in tqdm(zip(extracted_facts_files_full_path, 
+#                                                                   crawled_url_content_files_full_path, 
+#                                                                   output_files_full_path), total = len(files)):
+#         if os.path.exists(output_file_path):
+#             continue
+#         try:
+#             ef_data = read_json_or_jsonl(ef_file_path)
+#             cuc_data = read_json_or_jsonl(cuc_file_path)
+#         except FileNotFoundError: continue
+
+#         assert ef_data.get("title") == cuc_data.get("title")
+
+#         raw_facts = ef_data.get("raw_facts")
+#         url_content_mapper = cuc_data.get("url_content_mapper")
+
+#         if not raw_facts or not url_content_mapper: continue
+
+#         url_content_mapper = {k: v for k,v in url_content_mapper.items() if v.get("accessible") is True and v.get("url_content")}
+
+#         raw_facts = list(sorted(raw_facts, key = lambda x: x["fact"])) # sort based on position
+
+#         extracted_sentences = ef_data.get("extracted_sentences")
+#         marked_sentences = ef_data.get("marked_sentences")
+
+#         keypoints_mapper = {}
+#         for fact in tqdm(raw_facts, desc = "Extracting and decontextualizing keypoints from facts"):
+#             citation_urls = fact.get("citation_urls")
+#             citation_urls = [url for url in citation_urls if url in url_content_mapper] if citation_urls else []
+#             if not citation_urls: continue
+
+#             keypoints_from_fact = create_keypoints(
+#                 fact["fact"], 
+#                 marked_sentences = marked_sentences,
+#                 extracted_sentences=extracted_sentences, 
+#                 wiki_title = ef_data.get("title"),
+#                 LLM = LLM
+#             )
+
+#             if not keypoints_from_fact: continue
+#             keypoints_mapper[int(fact["fact"])] = keypoints_from_fact
+
+#         to_save = {
+#             "title": ef_data.get("title"),
+#             "wiki_url": ef_data.get("wiki_url"),
+#             "topics": ef_data.get("topics"),
+#             "create_timestamp": ef_data.get("create_timestamp"),
+#             "timestamp": ef_data.get("timestamp"),
+#             "keypoints_mapper": keypoints_mapper,
+#         }
+
+#         write_to_json(data = to_save, filename = output_file_path)
+
+
+# if __name__ == "__main__":
+#     main()
+
+
+def process_single_file(ef_file_path: str, cuc_file_path: str, output_file_path: str, LLM) -> None:
+    """Helper function to process a single file pair."""
+    if os.path.exists(output_file_path):
+        return
+        
+    try:
+        ef_data = read_json_or_jsonl(ef_file_path)
+        cuc_data = read_json_or_jsonl(cuc_file_path)
+    except FileNotFoundError:
+        return
+
+    if ef_data.get("title") != cuc_data.get("title"):
+        return
+
+    raw_facts = ef_data.get("raw_facts")
+    url_content_mapper = cuc_data.get("url_content_mapper")
+
+    if not raw_facts or not url_content_mapper: 
+        return
+
+    url_content_mapper = {
+        k: v for k, v in url_content_mapper.items() 
+        if v.get("accessible") is True and v.get("url_content")
+    }
+
+    raw_facts = sorted(raw_facts, key=lambda x: x["fact"])
+
+    extracted_sentences = ef_data.get("extracted_sentences")
+    marked_sentences = ef_data.get("marked_sentences")
+
+    keypoints_mapper = {}
+    
+    for fact in raw_facts:
+        citation_urls = fact.get("citation_urls")
+        citation_urls = [url for url in citation_urls if url in url_content_mapper] if citation_urls else []
+        if not citation_urls: 
+            continue
+
+        keypoints_from_fact = create_keypoints(
+            fact["fact"], 
+            marked_sentences=marked_sentences,
+            extracted_sentences=extracted_sentences, 
+            wiki_title=ef_data.get("title"),
+            LLM=LLM
+        )
+
+        if not keypoints_from_fact: 
+            continue
+            
+        keypoints_mapper[int(fact["fact"])] = keypoints_from_fact
+
+    to_save = {
+        "title": ef_data.get("title"),
+        "wiki_url": ef_data.get("wiki_url"),
+        "topics": ef_data.get("topics"),
+        "create_timestamp": ef_data.get("create_timestamp"),
+        "timestamp": ef_data.get("timestamp"),
+        "keypoints_mapper": keypoints_mapper,
+    }
+
+    write_to_json(data=to_save, filename=output_file_path)
+
+
 @hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
-def main(cfg: DictConfig)-> None:
+def main(cfg) -> None:
     extracted_facts_folder = cfg.step1.output_folder
     crawled_url_content_folder = cfg.step2_1.output_folder
     output_folder = cfg.step2_2.output_folder
     llm_model_name = cfg.general.llm_model_name
-
+    
     LLM = init_llm(llm_model_name)
 
-    files = os.listdir(extracted_facts_folder)
-    files = [file for file in files if file.endswith('.json')]
-    extracted_facts_files_full_path = [os.path.join(extracted_facts_folder, file) for file in files]
-    crawled_url_content_files_full_path = [os.path.join(crawled_url_content_folder, file) for file in files]
-    output_files_full_path = [os.path.join(output_folder, file) for file in files]
+    files = [f for f in os.listdir(extracted_facts_folder) if f.endswith('.json')]
+    extracted_facts_files_full_path = [os.path.join(extracted_facts_folder, f) for f in files]
+    crawled_url_content_files_full_path = [os.path.join(crawled_url_content_folder, f) for f in files]
+    output_files_full_path = [os.path.join(output_folder, f) for f in files]
 
-    for ef_file_path, cuc_file_path, output_file_path in tqdm(zip(extracted_facts_files_full_path, 
-                                                                  crawled_url_content_files_full_path, 
-                                                                  output_files_full_path), total = len(files)):
-        if os.path.exists(output_file_path):
-            continue
-        try:
-            ef_data = read_json_or_jsonl(ef_file_path)
-            cuc_data = read_json_or_jsonl(cuc_file_path)
-        except FileNotFoundError: continue
+    MAX_WORKERS = 16
 
-        assert ef_data.get("title") == cuc_data.get("title")
-
-        raw_facts = ef_data.get("raw_facts")
-        url_content_mapper = cuc_data.get("url_content_mapper")
-        wiki_page_last_updated_date = ef_data.get("timestamp").split("T")[0]
-
-        if not raw_facts or not url_content_mapper: continue
-
-        url_content_mapper = {k: v for k,v in url_content_mapper.items() if v.get("accessible") is True and v.get("url_content")}
-
-        raw_facts = list(sorted(raw_facts, key = lambda x: x["fact"])) # sort based on position
-
-        extracted_sentences = ef_data.get("extracted_sentences")
-        marked_sentences = ef_data.get("marked_sentences")
-
-        keypoints_mapper = {}
-        for fact in tqdm(raw_facts, desc = "Extracting and decontextualizing keypoints from facts"):
-            citation_urls = fact.get("citation_urls")
-            citation_urls = [url for url in citation_urls if url in url_content_mapper] if citation_urls else []
-            if not citation_urls: continue
-
-            keypoints_from_fact = create_keypoints(
-                fact["fact"], 
-                marked_sentences = marked_sentences,
-                extracted_sentences=extracted_sentences, 
-                wiki_title = ef_data.get("title"),
-                last_updated_date = wiki_page_last_updated_date,
-                LLM = LLM
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = {
+            executor.submit(process_single_file, ef, cuc, out, LLM): out
+            for ef, cuc, out in zip(
+                extracted_facts_files_full_path, 
+                crawled_url_content_files_full_path, 
+                output_files_full_path
             )
-
-            if not keypoints_from_fact: continue
-            keypoints_mapper[int(fact["fact"])] = keypoints_from_fact
-
-        to_save = {
-            "title": ef_data.get("title"),
-            "wiki_url": ef_data.get("wiki_url"),
-            "topics": ef_data.get("topics"),
-            "create_timestamp": ef_data.get("create_timestamp"),
-            "timestamp": ef_data.get("timestamp"),
-            "keypoints_mapper": keypoints_mapper
         }
 
-        write_to_json(data = to_save, filename = output_file_path)
-
+        for future in tqdm(as_completed(futures), total=len(futures), desc="Processing Files"):
+            try:
+                future.result() 
+            except Exception as exc:
+                failed_file = futures[future]
+                print(f"File {failed_file} generated an exception: {exc}")
 
 if __name__ == "__main__":
     main()

@@ -59,7 +59,7 @@ def do_indexing(embeddings,
 
     # save raw data
     if texts is not None:
-        id2text = {line["_id"]: {"id": line["_id"], "contents": line["text"]} for line in texts}
+        id2text = {line["_id"]: {"id": line["_id"], "contents": line["text"], "published_date": line["published_date"]} for line in texts}
         with open(os.path.join(index_folder, "raw.json"), "w") as f:
             json.dump(id2text, f)
 
@@ -72,16 +72,9 @@ def main(cfg: DictConfig):
     dataset_date = cfg.general.dataset_date
     work_dir = cfg.general.work_dir
     index_folder = cfg.general.index_folder
-    num_chunks = cfg.retrieval.index.num_chunks
-    chunk_idx = cfg.retrieval.index.chunk_idx
     batch_size = cfg.retrieval.index.batch_size
     chunk_size = cfg.retrieval.index.chunk_size
     chunk_overlap = cfg.retrieval.index.chunk_overlap
-
-    init_chunker(
-        chunk_size = chunk_size,
-        chunk_overlap = chunk_overlap
-    )
 
     dataset_name_2_relative_path = {
         dn: os.path.join("benchmarks", dataset_date, dn) if dataset_date is not None else os.path.join("data", dn) \
@@ -89,6 +82,11 @@ def main(cfg: DictConfig):
     }
 
     model, tokenizer = init_model(retrieval_model, device = DEVICE)
+    init_chunker(
+        chunk_size = chunk_size,
+        chunk_overlap = chunk_overlap,
+        tokenizer = tokenizer
+    )
 
     prefix_ = model_name_2_prefix.get("model_name")
     if not prefix_:
@@ -113,19 +111,19 @@ def main(cfg: DictConfig):
     
     print("Corpus length", len(corpus))
 
-    chunk_indices = np.array_split(np.arange(len(corpus)), num_chunks)[chunk_idx]
-    processing_chunk = [corpus[index] for index in chunk_indices]
 
     # perform text chunking here
     texts = []
-    for line in processing_chunk:
+    for line in tqdm(corpus, desc = "splitting doc into chunks"):
         full_text = f"{line['title']}. {line['text']}"
         text_chunks = text_chunking(full_text)
         docid = line.get("_id", line.get("id", None))
+        published_date = line["published_date"]
 
         for tc_chunk_idx, tc in enumerate(text_chunks):
             texts.append({"_id": f"{docid}--__--{tc_chunk_idx}",
-                        "text": tc})
+                        "text": tc,
+                        "published_date": published_date})
             
     print("Number of text chunks length", len(texts))
 
@@ -135,7 +133,10 @@ def main(cfg: DictConfig):
         batch = texts[i:i+batch_size]
         text_batch = [line["text"] for line in batch]
 
-        batch_embeddings = text_embedding_batch(batch = text_batch, model = model, tokenizer = tokenizer, model_name = retrieval_model, prefix = prefix, device = DEVICE)
+        batch_embeddings = text_embedding_batch(batch = text_batch, model = model, 
+                                                tokenizer = tokenizer, model_name = retrieval_model, 
+                                                prefix = prefix, device = DEVICE,
+                                                max_length = chunk_size)
 
         for line, embedding in zip(batch, batch_embeddings):
             line_id = line.get("_id", line.get("id", None))

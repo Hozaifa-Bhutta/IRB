@@ -13,17 +13,19 @@
 #         {
 #             "fact": "the sentence id",
 #             "citation_urls": ["url1", "url2"],
-#             "pos": [0, 1]
+#             "pos": [0, 1],
+#             "published_dates": ["", None]         
 #         }
 #     ]
 # }
 
 from typing import Union, Any, Dict, List, Tuple
-import json, re, mwparserfromhell, os, hydra
+import json, re, mwparserfromhell, os, hydra, dateutil
 from omegaconf import DictConfig
 from tqdm import tqdm
 from cleantext import clean
 from nltk.tokenize import sent_tokenize
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from steps.utils.generic import read_json_or_jsonl, write_to_json, split_sentence_with_newlines, sentence_filtering
 from steps.utils.bad_domains import BAD_DOMAINS
@@ -175,7 +177,7 @@ def shift_tags(wiki_info_sentences: list[str]) -> list[str]:
     return wiki_info_sentences
     
 
-def process_wikilinks_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str], dict[str, str]]:
+def process_wikilinks_and_replace_ref(raw_text: str, prefer_webarchive: bool = True) -> tuple[str, dict[str, str], dict[str, str]]:
     """
     Performs a comprehensive cleaning of raw MediaWiki text by removing tables and comments, processing headings, handling templates, replacing reference tags with placeholders, and converting wikilinks to plain text.
     Parameters
@@ -207,6 +209,7 @@ def process_wikilinks_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str
 
     # STEP: replace ref
     tag_name_2_url = {}
+    tag_name_2_date = {}
     placeholder_mapper = {}
     for i, node in enumerate(wikicode.filter_tags(matches=lambda node: node.tag == 'ref')):
         ref_string = str(node)
@@ -216,9 +219,11 @@ def process_wikilinks_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str
 
         try:
             tag_name = node.get("name")
-            urls = _extract_urls_from_text(str(node.contents))
+            urls = _extract_urls_from_text(str(node.contents), prefer_webarchive)
+            published_date = _extract_dates_from_text(str(node.contents))
             if urls:
                 tag_name_2_url[str(tag_name)] = urls
+                tag_name_2_date[str(tag_name)] = published_date
         except ValueError:
             pass
 
@@ -256,19 +261,20 @@ def process_wikilinks_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str
         wikicode.replace(heading, to_replace)
 
 
-
-    # STEP: wiki internal link processing. Basically replace them with ordinary text
-    for node in wikicode.filter_wikilinks(recursive=True):
-        # node.text is the visible part; if not present, use the title
+    # STEP: wiki internal link processing. Replace them with placeholders
+    wikilink_mapper = {}
+    for i, node in enumerate(wikicode.filter_wikilinks(recursive=True)):
         try:
             visible = str(node.text) if node.text else str(node.title)
-            wikicode.replace(node, visible)
+            title = str(node.title).strip()
+            placeholder = f"[WIKI-{i}]"
+            wikilink_mapper[placeholder] = {"visible": visible, "title": title}
+            wikicode.replace(node, placeholder)
         except ValueError:
-            templates_to_replace[str(node)] = visible
-
+            templates_to_replace[str(node)] = str(node.text) if node.text else str(node.title)
 
     # STEP: remove references section:
-    sections = wikicode.get_sections(matches="References")  # returns list of sections with that heading
+    sections = wikicode.get_sections(matches="References") 
     for section in sections:
         wikicode.remove(section)
 
@@ -276,12 +282,12 @@ def process_wikilinks_and_replace_ref(raw_text: str) -> tuple[str, dict[str, str
     for k, v in templates_to_replace.items():
         str_wikicode = str_wikicode.replace(k, v)
 
-    return str_wikicode, placeholder_mapper, tag_name_2_url
+    return str_wikicode, placeholder_mapper, tag_name_2_url, tag_name_2_date, wikilink_mapper
 
 
-def _extract_urls_from_text(text: str) -> str | None:
+def _extract_urls_from_text(text: str, prefer_webarchive: bool = True) -> str | None:
     """
-    The first URL found, with preference given to a 'web.archive.org' URL if multiple are present
+    The first URL found
     Parameters
     ----------
     text : str
@@ -296,14 +302,44 @@ def _extract_urls_from_text(text: str) -> str | None:
     urls = re.findall(url_pattern, text)
     # If more than one URL and one is from web.archive.org, return that one
     if len(urls) > 1:
-        for url in urls:
-            if 'web.archive.org' in url:
+        if prefer_webarchive:
+            for url in urls:
+                if 'web.archive.org' in url:
+                    return url
+        else:
+            for url in urls:
+                if "web.archive.org" in url:
+                    continue
                 return url
-            
+                
     return urls[0] if urls else None
 
 
-def extract_urls(tag: mwparserfromhell.nodes.Tag, tag_name_2_url: dict[str, str]) -> str | None:
+def _extract_dates_from_text(text: str) -> str:
+    """Extract the date inside a paratheses. Input will look like so:
+    + <ref>{{Cite web|url=https://www.latimes.com/socal/burbank-leader/entertainment/tn-blr-me-community-20180604-story.html|title=Community: New exhibit piece at Burbank museum is a real knockout|last=Rudolph|first=Joyce|website=[[Los Angeles Times]]|date=June 4, 2018|access-date=2019-05-05}}</ref>
+    """
+
+    pattern = r'(?:\||\{\{)\s*date\s*=\s*([^|}]+)'
+    
+    match = re.search(pattern, text, re.IGNORECASE)
+    
+    if not match:
+        return None
+        
+    raw_date_str = match.group(1).strip()
+    
+    if not raw_date_str:
+        return None
+        
+    try:
+        parsed_date = dateutil.parser.parse(raw_date_str)
+        return parsed_date.strftime('%Y-%m-%d')
+    except (ValueError, TypeError, OverflowError):
+        return None
+
+
+def extract_urls(tag: mwparserfromhell.nodes.Tag, tag_name_2_url: dict[str, str], prefer_webarchive: bool = True) -> str | None:
     """
     Extracts URLs from a MediaWiki tag.
     Parameters
@@ -318,7 +354,7 @@ def extract_urls(tag: mwparserfromhell.nodes.Tag, tag_name_2_url: dict[str, str]
         The extracted URL, or None if no URL is found.
     """
     text = str(tag.contents)
-    res = _extract_urls_from_text(text)
+    res = _extract_urls_from_text(text, prefer_webarchive)
 
     if res: return res
 
@@ -329,8 +365,33 @@ def extract_urls(tag: mwparserfromhell.nodes.Tag, tag_name_2_url: dict[str, str]
         except ValueError: return None
     else: return None
 
+def extract_date(tag: mwparserfromhell.nodes.Tag, tag_name_2_date: dict[str, str]) -> str | None:
+    text = str(tag.contents)
+    res = _extract_dates_from_text(text)
 
-def wikiinfo(cleaned_text: str, pos: list[int], tag_name_2_url: dict[str, str]) -> dict[str, Any]:
+    if res: return res
+
+    if tag_name_2_date:
+        try:
+            tag_name = str(tag.get("name"))
+            return tag_name_2_date.get(tag_name)
+        except ValueError: return None
+
+    else: return None
+
+
+def restore_wikilinks(sentence: str, wikilink_mapper: dict[str, dict[str, str]]) -> tuple[str, list[str]]:
+    """
+    Restores visible text for wikilinks and extracts the mentioned Wikipedia articles.
+    """
+    mentioned = []
+    for placeholder, data in wikilink_mapper.items():
+        if placeholder in sentence:
+            sentence = sentence.replace(placeholder, data["visible"])
+            mentioned.append(data["title"])
+    return sentence, mentioned
+
+def wikiinfo(cleaned_text: str, pos: list[int], tag_name_2_url: dict[str, str], tag_name_2_date: dict[str, str], prefer_webarchive: bool = True) -> dict[str, Any]:
     """
     Extracts URLs and their grouped positions from a sentence containing MediaWiki reference tags.
     Parameters
@@ -340,11 +401,13 @@ def wikiinfo(cleaned_text: str, pos: list[int], tag_name_2_url: dict[str, str]) 
     pos : list[int]
         List of positions for each reference tag in the text.
     tag_name_2_url : dict[str, str]
-        A dictionary mapping tag names to their associated URLs.
+        A dictionary mapping tag names to their associated URL.
+    tag_name_2_dict: dict[str, str]
+        A dictionary mapping tag names to their published date
     Returns
     -------
     dict
-        A dictionary containing the cleaned text, list of extracted URLs, and their positions.
+        A dictionary containing the cleaned text, list of extracted URL, and their positions.
 
     """
     # gets all urls from text and strips code
@@ -358,16 +421,21 @@ def wikiinfo(cleaned_text: str, pos: list[int], tag_name_2_url: dict[str, str]) 
         except ValueError as e: continue
     processed_text = processed_text.strip_code()
     
-    external_urls = [extract_urls(tag, tag_name_2_url) for tag in ref_tags] 
+    external_urls = [extract_urls(tag, tag_name_2_url, prefer_webarchive) for tag in ref_tags] 
+    published_dates = [extract_date(tag, tag_name_2_date) for tag in ref_tags]
+
+    assert len(external_urls) == len(published_dates)
 
     # remove all of the non exisitent urls and adjusts positions accordingly
     res_urls = []
     res_pos = []
+    res_dates = []
     prev = None
     count = 0
-    for i, url in enumerate(external_urls):
+    for i, (url, date) in enumerate(zip(external_urls, published_dates)):
         if url:
             res_urls.append(url)
+            res_dates.append(date)
             if (prev is not None and pos[i] != prev):
                 count += 1
             res_pos.append(count)
@@ -378,7 +446,8 @@ def wikiinfo(cleaned_text: str, pos: list[int], tag_name_2_url: dict[str, str]) 
     return {
         "text": processed_text,
         "urls": res_urls,
-        "pos": res_pos
+        "pos": res_pos,
+        "dates": res_dates
     }
 
 def find_pos(raw_text: str) -> list[int]:
@@ -480,7 +549,7 @@ def get_file_paths(cfg:DictConfig) -> tuple[list[str], list[str]]:
     return input_files_full_path, output_files_full_path
 
 
-def remove_bad_urls(reference_urls: list[str], pos: list[int]) -> tuple[list[str], list[int]]:
+def remove_bad_urls(reference_urls: list[str], pos: list[int], dates: list[str]) -> tuple[list[str], list[int], list[str]]:
     """
     Removes URLs that are from bad domains or point to PDF files and adjusts positions accordingly.
     Parameters
@@ -489,6 +558,8 @@ def remove_bad_urls(reference_urls: list[str], pos: list[int]) -> tuple[list[str
         List of reference URLs.
     pos : list[int]
         List of positions for each reference URL.
+    dates: list[str]
+        List of dates for each reference
     Returns
     -------
     tuple[list[str], list[int]]
@@ -498,69 +569,58 @@ def remove_bad_urls(reference_urls: list[str], pos: list[int]) -> tuple[list[str
     """
     cleaned_urls = []
     cleaned_pos = []
+    cleaned_dates = []
     count = 0
     prev = None
-    for j, item in enumerate(reference_urls):
+    for j, (item, date) in enumerate(zip(reference_urls, dates)):
         if not any([bad_domain in item for bad_domain in BAD_DOMAINS]) and not is_pdf(item):
             cleaned_urls.append(item)
+            cleaned_dates.append(date)
             if (prev is not None and pos[j] != prev):
                 count += 1
             cleaned_pos.append(count)
             prev = pos[j]
 
-    return cleaned_urls, cleaned_pos
+    return cleaned_urls, cleaned_pos, cleaned_dates
 
-@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
-def main(cfg:DictConfig) -> None:
-    input_files_full_path, output_files_full_path = get_file_paths(cfg)
+def process_file(input_file_path: str, output_file_path: str, prefer_webarchive: bool):
+    """
+    Worker function to process a single Wikipedia file.
+    Must be defined at the module level (outside main) for multiprocessing to work.
+    """
+    if os.path.exists(output_file_path):
+        return True, None
 
-    error_counter = 0
-    for input_file_path, output_file_path in tqdm(zip(input_files_full_path, output_files_full_path), total = len(input_files_full_path)):
-        if os.path.exists(output_file_path): continue
+    try:
+        wiki_page_data = read_json_or_jsonl(input_file_path)
+        wiki_raw_text = slight_text_processing(wiki_page_data.get("source"))
+        wiki_raw_text, placeholder_mapper, tag_name_2_url, tag_name_2_date, wikilink_mapper = process_wikilinks_and_replace_ref(wiki_raw_text, prefer_webarchive)
+        
+        wiki_raw_text_sentences = sent_tokenize(wiki_raw_text)
+        
+        cleaned_sentences = [get_info_from_raw_text(raw) for raw in wiki_raw_text_sentences]
+        cleaned_sentences = [sent for sent in cleaned_sentences if sent]
 
-        try:
+        fixed_sentences = shift_tags(cleaned_sentences)
+        fixed_sentences = split_sentence_with_newlines(fixed_sentences)
 
-            # Read and process each wiki page
-            wiki_page_data = read_json_or_jsonl(input_file_path)
-            wiki_raw_text = slight_text_processing(wiki_page_data.get("source"))
-            wiki_raw_text, placeholder_mapper, tag_name_2_url = process_wikilinks_and_replace_ref(wiki_raw_text)
-            # placeholder_mapper is of the format {"[REF_I]": url_i}
+        restored_fixed_sentences = []
+        mentioned_articles_per_sent = []
+        for sent in fixed_sentences:
+            cleaned_sent, mentioned = restore_wikilinks(sent, wikilink_mapper)
+            restored_fixed_sentences.append(cleaned_sent)
+            mentioned_articles_per_sent.append(list(set(mentioned))) 
 
-            # Tokenizes the sentences
-            wiki_raw_text_sentences = sent_tokenize(wiki_raw_text)
-            # output is each sentence (with placeholder referenes)
+        marked_sentences = [fact_marking(sent) for sent in restored_fixed_sentences]
 
-            
-            # Clean sentences, strips code (keeps placeholders)
-            cleaned_sentences = [get_info_from_raw_text(raw) for raw in wiki_raw_text_sentences]
-            cleaned_sentences = [sent for sent in cleaned_sentences if sent]
-            # output is each sentence cleaned up with reference tags
+        positions = [find_pos(sent) for sent in restored_fixed_sentences]
 
-            # shift references back when needed
-            fixed_sentences = shift_tags(cleaned_sentences)
-            fixed_sentences = split_sentence_with_newlines(fixed_sentences)
+        replaced_sentences = [put_back_ref(sent, placeholder_mapper) for sent in restored_fixed_sentences]
 
-            # get marked facts
-            marked_sentences = [fact_marking(sent) for sent in fixed_sentences]
-
-            # gets relative positions of each reference
-            positions = [find_pos(sent) for sent in fixed_sentences]
-
-            # replaces the reg tags with original references
-            replaced_sentences =  [put_back_ref(sent, placeholder_mapper) for sent in fixed_sentences]
-
-            # put the cleaned text, url, and positions together
-            wiki_info_sentences = [wikiinfo(sent, positions[i],tag_name_2_url) for i,sent in enumerate(replaced_sentences)]
-        except Exception as e:
-            error_counter += 1
-            print(f"Problematic file: {input_file_path}. # Errors: {error_counter}")
-            continue
-
-
-        # Extracts the sentences into a list
+        wiki_info_sentences = [wikiinfo(sent, positions[i], tag_name_2_url, tag_name_2_date, prefer_webarchive) for i,sent in enumerate(replaced_sentences)]
+        
         extracted_sentences = [item["text"] for item in wiki_info_sentences]
 
-        # Sentence filtering based on length
         good_sentence_indices = set(sentence_filtering(extracted_sentences))
         for i in range(len(extracted_sentences)):
             if i not in good_sentence_indices:
@@ -568,23 +628,23 @@ def main(cfg:DictConfig) -> None:
 
         raw_facts = []
 
-        # For each sentence, clean up the reference urls and remove fact if no urls
-        # also adjust the positions accordingly
         for i in range(0, len(wiki_info_sentences)):
-            
             reference_urls = wiki_info_sentences[i]["urls"]
             pos = wiki_info_sentences[i]["pos"]
+            dates = wiki_info_sentences[i]["dates"]
 
+            cleaned_urls, cleaned_pos, cleaned_dates = remove_bad_urls(reference_urls, pos, dates)
 
-            # remove urls in bad domain, and adjust positons accordingly
-            cleaned_urls, cleaned_pos = remove_bad_urls(reference_urls, pos)
+            assert len(cleaned_urls) == len(cleaned_pos) == len(cleaned_dates)
 
             if not cleaned_urls: continue
 
             raw_facts.append({
                 "fact": i,
                 "citation_urls": cleaned_urls,
-                "pos": cleaned_pos
+                "pos": cleaned_pos,
+                "dates": cleaned_dates,
+                "mentioned_articles": mentioned_articles_per_sent[i]
             })
 
         if raw_facts:
@@ -594,12 +654,45 @@ def main(cfg:DictConfig) -> None:
                 "topics": wiki_page_data.get("topics"),
                 "create_timestamp": wiki_page_data.get("create_timestamp"),
                 "timestamp": wiki_page_data.get("timestamp"),
+                "popularity_score": wiki_page_data.get("popularity_score"),
                 "marked_sentences": marked_sentences,
                 "extracted_sentences": extracted_sentences,
                 "raw_facts": raw_facts
             }
-        else: to_save = {}
-        write_to_json(data = to_save, filename = output_file_path)
+        else: 
+            to_save = {}
+            
+        write_to_json(data=to_save, filename=output_file_path)
+        
+        return True, None
+
+    except Exception as e:
+        return False, input_file_path
+
+
+@hydra.main(version_base=None, config_path="../conf/steps", config_name=os.getenv("CONFIG_NAME"))
+def main(cfg: DictConfig) -> None:
+    input_files_full_path, output_files_full_path = get_file_paths(cfg)
+    prefer_webarchive = cfg.step1.prefer_webarchive
+
+    max_workers = 16
+    
+    error_counter = 0
+
+    print(f"Starting parallel processing with {max_workers or os.cpu_count()} workers...")
+    
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(process_file, inp, out, prefer_webarchive)
+            for inp, out in zip(input_files_full_path, output_files_full_path)
+        ]
+
+        for future in tqdm(as_completed(futures), total=len(futures)):
+            success, problematic_file = future.result()
+            
+            if not success:
+                error_counter += 1
+                print(f"Problematic file: {problematic_file}. # Errors: {error_counter}")
 
 
 if __name__ == "__main__":

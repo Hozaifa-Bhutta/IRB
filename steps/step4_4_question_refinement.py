@@ -17,7 +17,7 @@ from steps.utils.prompts import QUESTION_REFINEMENT_PROMPT
 def main(cfg: DictConfig)-> None:
     decontextualized_facts_folder = cfg.step2_2.output_folder
     fact_groundedness_folder = cfg.step3.output_folder
-    question_answerability_folder = cfg.step4.output_folder + "_question_answerability"
+    question_answerability_folder = cfg.step4.output_folder + "_generated_question_paraphrased"
     output_folder = cfg.step4.output_folder
     wikidump_date = cfg.general.wikidump_date
 
@@ -92,14 +92,17 @@ def main(cfg: DictConfig)-> None:
                 masked_kg = line["masked_kg"]
                 paraphrase_map = line["paraphrase"]
 
+                # if not line["paraphrase"] and not line["num_hops"] > 1: continue
+
                 try:
-                    refined_question = kg_based_qg_utils.question_refinement(
-                        generated_question = question, 
-                        masked_keypoints_str = masked_keypoints_str, 
-                        masked_kg = masked_kg, 
-                        wikidump_date = wikidump_date,
-                        paraphrase_map = paraphrase_map
-                    )
+                    # refined_question = kg_based_qg_utils.question_refinement(
+                    #     generated_question = question, 
+                    #     masked_keypoints_str = masked_keypoints_str, 
+                    #     masked_kg = masked_kg, 
+                    #     wikidump_date = wikidump_date
+                    # )
+
+                    refined_question = question
                     assert "<Unknown" not in refined_question
                 except Exception as e:
                     print(e)

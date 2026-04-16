@@ -43,15 +43,17 @@ def extract_text_from_html(html_text: str):
     return extract_trafilatura(
         html_text,
         include_comments=False,
+        # output_format="markdown",
+        # with_metadata = False
     )
 
 
 
-def get_publication_date(response):
-    try:
-        res = find_date(response)
-        return res
+# def get_publication_date(response):
+#     try:
+#         res = find_date(response)
+#         return res
 
-    except Exception:
-        return None
+#     except Exception:
+#         return None
     

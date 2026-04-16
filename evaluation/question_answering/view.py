@@ -202,8 +202,11 @@ def main(cfg: DictConfig):
 
     adv_collect_llm_model_name = cfg.adv_collection.llm_model_name
 
-    with open(os.path.join(outfolder, f"adv_collected_query_id_{adv_collect_llm_model_name}.json")) as f:
-        CACHE["hard_query_ids"] = set(json.load(f))
+    try:
+        with open(os.path.join(outfolder, f"adv_collected_query_id_{adv_collect_llm_model_name}.json")) as f:
+            CACHE["hard_query_ids"] = set(json.load(f))
+    except Exception:
+        CACHE["hard_query_ids"] = set([])
 
     # open attributes, queries, and eval_results file
 
@@ -217,6 +220,10 @@ def main(cfg: DictConfig):
         dataset = dataset, llm_model_name = qa_llm_model_name, retrieval_model = retrieval_model,
         use_retrieval_contexts = use_retrieval_contexts, use_chunk = use_chunk
     )
+
+    if os.getenv("DEEP_RESEARCH"):
+        _metadata_folder = f"deepres_{_metadata_folder}"
+        
     eval_result_outfile = os.path.join(outfolder, _metadata_folder, "eval_result.json")
     eval_metadata_outfile = os.path.join(outfolder, _metadata_folder, "eval_metadata.json")
     

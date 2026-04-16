@@ -66,8 +66,10 @@ def main(cfg: DictConfig):
     outfolder = cfg.qa.outfolder
 
     adv_collect_llm_model_name = cfg.adv_collection.llm_model_name
-    with open(os.path.join(outfolder, f"adv_collected_query_id_{adv_collect_llm_model_name}.json")) as f:
-        CACHE["hard_query_ids"] = set(json.load(f))
+    try:
+        with open(os.path.join(outfolder, f"adv_collected_query_id_{adv_collect_llm_model_name}.json")) as f:
+            CACHE["hard_query_ids"] = set(json.load(f))
+    except Exception: CACHE["hard_query_ids"] = set([])
 
 
     dataset_name_2_relative_path = {

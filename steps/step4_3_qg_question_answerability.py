@@ -95,7 +95,7 @@ def main(cfg: DictConfig)-> None:
             for line in all_questions:
                 question = line["question"]
 
-                try: answerability = kg_based_qg_checker.check_question_answerability(question)
+                try: answerability = True #kg_based_qg_checker.check_question_answerability(question)
                 except Exception: answerability = False
 
                 if not answerability: break    

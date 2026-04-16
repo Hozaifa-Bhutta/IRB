@@ -116,3 +116,26 @@ def text_embedding_batch(batch, model, tokenizer, model_name, prefix = None, dev
         time.sleep(0.2)
 
         return res
+
+
+
+def create_query_encoder(model, tokenizer, model_name, prefix=None, device=None, max_length=512):
+    def encoder(query: str):
+        # 1. Wrap the single query in a list to make it a batch of 1
+        batch = [query]
+        
+        # 2. Call your existing batch function
+        batch_embeddings = text_embedding_batch(
+            batch=batch, 
+            model=model, 
+            tokenizer=tokenizer, 
+            model_name=model_name, 
+            prefix=prefix, 
+            device=device, 
+            max_length=max_length
+        )
+        
+        # 3. Extract the first (and only) embedding from the batch to return a 1D array
+        return batch_embeddings[0] 
+        
+    return encoder

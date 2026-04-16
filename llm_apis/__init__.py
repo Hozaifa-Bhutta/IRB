@@ -10,6 +10,7 @@ MODEL_NAME_2_MODEL_CLASS = {
     "gpt-5_low": OpenAILLM,
     "gpt-4.1": OpenAILLM,
     "gpt-4.1-mini": OpenAILLM,
+    "gpt-4.1-nano": OpenAILLM,
     "gpt-4o-mini": OpenAILLM,
     "gemini-2.5-flash": GeminiLLM,
     "gemini-2.5-flash-for-eval": GeminiLLM,
@@ -39,6 +40,9 @@ MODEL_NAME_2_INIT_DICT = {
     },
     "gpt-4.1-mini": {
         "model_name": "gpt-4.1-mini"
+    },
+    "gpt-4.1-nano": {
+        "model_name": "gpt-4.1-nano"
     },
     "gpt-4o-mini": {
         "model_name": "gpt-4o-mini"

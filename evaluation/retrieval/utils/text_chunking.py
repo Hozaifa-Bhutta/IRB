@@ -6,10 +6,12 @@ CHUNKER = {
     "chunker": None
 }
 
-def init_chunker(chunk_size = 200, chunk_overlap = 20):
+def init_chunker(chunk_size = 200, chunk_overlap = 20, tokenizer = None):
     if not CHUNKER["chunker"]:
         print("Initializing Chunker. Currently only allow TokenChunker")
-        tokenizer = tiktoken.get_encoding("cl100k_base")
+        if not tokenizer:
+            print("No tokenizer provided. Default to: 'cl100k_base'")
+            tokenizer = tiktoken.get_encoding("cl100k_base")
 
         chunker = TokenChunker(
             tokenizer = tokenizer,

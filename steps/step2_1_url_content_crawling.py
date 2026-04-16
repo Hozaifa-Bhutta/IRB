@@ -36,17 +36,18 @@ from cleantext import clean
 from fast_langdetect import LangDetectConfig, LangDetector
 from typing import Callable, Any
 from collections import defaultdict
+from fake_useragent import UserAgent
 
 from steps.utils.generic import read_json_or_jsonl, write_to_json
 from steps.utils.archive_downloader import getArchiveContent
-from steps.utils.html_extraction import extract_text_from_html, get_publication_date
+from steps.utils.html_extraction import extract_text_from_html
 from steps.utils.bad_domains import BAD_DOMAINS
 
 request_counters = {}
 MAX_REQUESTS_PER_MINUTE = 10  # Maximum requests per minute per domain
-MAX_URLS_PER_WIKI_ARTICLE = 100 # this is a hard cap on the number of URLs we will be collecting for each wikipedia page
+# MAX_URLS_PER_WIKI_ARTICLE = 100 # this is a hard cap on the number of URLs we will be collecting for each wikipedia page
 LANG_DETECTOR = LangDetector(LangDetectConfig(max_input_length=256))
-
+UA = UserAgent()
 
 class DomainRateLimiter:
     def __init__(self, requests_per_minute):
@@ -92,112 +93,106 @@ def is_valid_date(published_time_str: str, start_from: str) -> bool:
     except ValueError:
         return False
 
-def is_url_accessible(url: str, start_from: str) -> tuple[bool, dict]:
-    """Check if a URL is accessible and retrieve its content.
-    Parameters
-    ----------
-        url : str
-            The URL to check.
-        start_from : str
-            The start_from date string in "YYYY-MM-DD" format to filter published dates.
-    Returns
-    -------
-        tuple[bool, dict]
-            A tuple where the first element is a boolean indicating if the URL is accessible,
-            and the second element is a dictionary containing the content or error message.
+def passes_pre_flight_checks(url: str, published_date: str, start_from: str) -> tuple[bool, str]:
     """
-    time.sleep(0.2)
-    # print(f"Processing URL: {url}....")
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.82 Safari/537.36',
-    }
+    Checks if a URL should be fetched. 
+    Returns a tuple: (should_fetch: bool, reason_if_skipped: str)
+    """
+    parsed_url = urlparse(url)
+    if not parsed_url.scheme or not parsed_url.netloc:
+        return False, f"Invalid URL format: {url}"
     
+    domain = parsed_url.netloc.lower()
+
+    if "archive.org" in domain:
+        return False, "Archive domains not supported"
+
+    social_domains = ["facebook.com", "twitter.com", "x.com", "github.com", "google.com", "amazon.com", "youtube.com"]
+    if domain in BAD_DOMAINS or any(s in domain for s in social_domains):
+        return False, "Bad or social media domain"
+    
+    if "music" in domain:
+        return False, "Music-related domain, not useful for fact extraction" 
+    
+    if "pdf" in url.lower():
+        return False, "PDF file in URL not supported"
+
+    if not is_valid_date(published_date, start_from):
+        return False, f"Publication not detected or is before start_from: {start_from}"
+
+    return True, ""
+
+
+def fetch_url_content(url: str, published_date: str) -> tuple[bool, dict]:
+    headers = {'User-Agent': UA.random}
     is_accessible = False
     content_dict = {
         "content": None,
-        "published_date": None,
+        "published_date": published_date,
         "lang": None
     }
 
     try:
-        parsed_url = urlparse(url)
-        if not parsed_url.scheme or not parsed_url.netloc:
-            raise ValueError(f"Invalid URL format: {url}")
-        domain = parsed_url.netloc.lower()
-
-        if domain == "archive.org" or "internetarchive.org" in domain:
-            content_dict["content"] = "archive.org or internetarchive.org not supported"
-            return is_accessible, content_dict
-
-        
-        domain_lowered = domain.lower()
-        if domain_lowered in BAD_DOMAINS or \
-            domain in BAD_DOMAINS or \
-                any([social_media_domain in domain for social_media_domain in ["facebook.com", "twitter.com", "x.com", "github.com", "google.com", "amazon.com", "youtube.com"]]):
-            content_dict["content"] = "Bad domain"
-            return is_accessible, content_dict
-        
-        if "music" in domain_lowered:
-            content_dict["content"] = "Music-related domain, not useful for fact extraction"
-            return is_accessible, content_dict 
-        
-        if "pdf" in url.lower():
-            content_dict["content"] = "PDF file not supported"
-            return is_accessible, content_dict
-
         response = requests.get(url, timeout=20, headers=headers)
         response.raise_for_status()
-        content_type = response.headers.get('Content-Type', '')
+        content_type = response.headers.get('Content-Type', '').lower()
         print(f"Response code for {url}: {response.status_code}")
 
         if "application/pdf" in content_type:
-            raise NotImplementedError("Pdf files not supported")
+            content_dict["content"] = "PDF files not supported via Content-Type"
+            return is_accessible, content_dict
         
-
         if "text/html" in content_type:
-            text = extract_text_from_html(response.content)
-            published_date = get_publication_date(response.content)
-            lang = None
-            print(f"Published date for {url}: {published_date}. Start from: {start_from}. Valid: {is_valid_date(published_date, start_from)}")
-            if not is_valid_date(published_date, start_from):
-                content_dict["content"] = text
-                content_dict["published_date"] = published_date
-                content_dict["lang"] = LANG_DETECTOR.detect(text)[0]["lang"]
-                return is_accessible, content_dict
-            elif not text:
+            text = extract_text_from_html(response.content) 
+            
+            if not text:
                 content_dict["content"] = "Empty HTML content"
-                content_dict["published_date"] = published_date
-                content_dict["lang"] = lang
                 return is_accessible, content_dict
-            else:
-                is_accessible = True
-                content_dict["content"] = text
-                content_dict["published_date"] = published_date
-                content_dict["lang"] = LANG_DETECTOR.detect(text)[0]["lang"]
-                return is_accessible, content_dict
+            
+            is_accessible = True
+            content_dict["content"] = text
+            content_dict["lang"] = LANG_DETECTOR.detect(text)[0]["lang"]
+            return is_accessible, content_dict
 
-        content_dict["content"] = f"Content type is {content_type}"
+        content_dict["content"] = f"Unhandled Content-Type: {content_type}"
+        return is_accessible, content_dict
+
+    except requests.exceptions.RequestException as e:
+        print(f"Network error accessing URL {url}: {e}")
+        content_dict["content"] = f"Network error: {str(e)}"
         return is_accessible, content_dict
     except Exception as e:
-        print(f"Error accessing URL {url}: {e}")
-        content_dict["content"] = str(e)
+        print(f"Unexpected error accessing URL {url}: {e}")
+        content_dict["content"] = f"Unexpected error: {str(e)}"
         return is_accessible, content_dict
-
-
-
-async def is_url_accessible_async(url: str, start_from: str, limiter: DomainRateLimiter, semaphore: asyncio.Semaphore):
-    await limiter.wait_for_slot(url)
-    loop = asyncio.get_event_loop()
     
-    async with semaphore:
-        return await loop.run_in_executor(None, is_url_accessible, url, start_from)
 
-async def check_urls_in_parallel(url_list: list[str], start_from: str, max_concurrents: int = 5):
+
+async def is_url_accessible_async(url: str, published_date: str, start_from: str, limiter: DomainRateLimiter, semaphore: asyncio.Semaphore):
+    should_fetch, skip_reason = passes_pre_flight_checks(url, published_date, start_from)
+    
+    if not should_fetch:
+        content_dict = {
+            "content": skip_reason,
+            "published_date": published_date,
+            "lang": None
+        }
+        return False, content_dict
+
+    await limiter.wait_for_slot(url)
+    
+    loop = asyncio.get_event_loop()
+    async with semaphore:
+        return await loop.run_in_executor(None, fetch_url_content, url, published_date)
+    
+
+
+async def check_urls_in_parallel(url_list: list[str], url2date: dict[str, str], start_from: str, max_concurrents: int = 5):
     limiter = DomainRateLimiter(requests_per_minute=MAX_REQUESTS_PER_MINUTE)
     semaphore = asyncio.Semaphore(max_concurrents) 
 
     tasks = [
-        is_url_accessible_async(url, start_from, limiter, semaphore) 
+        is_url_accessible_async(url, url2date[url], start_from, limiter, semaphore) 
         for url in url_list
     ]
     return await asyncio.gather(*tasks)
@@ -255,18 +250,26 @@ def main(cfg: DictConfig)-> None:
         # read input
         input_data = read_json_or_jsonl(input_file_path)
         raw_facts = input_data.get("raw_facts")
+
         if not raw_facts: continue
         raw_facts = list(sorted(raw_facts, key = lambda x: x["fact"])) # sort based on position
 
         all_urls = set()
+        url2date = {}
         for fact in raw_facts[:max_facts_per_page]:
             citation_urls = fact.get("citation_urls", [])
+            published_dates = fact.get("dates", [])
+
+            assert len(citation_urls) == len(published_dates)
+
             all_urls.update(citation_urls)
+            url2date.update({url:date for url, date in zip(citation_urls, published_dates)})
 
-            if len(all_urls) >= MAX_URLS_PER_WIKI_ARTICLE: break
+            # if len(all_urls) >= MAX_URLS_PER_WIKI_ARTICLE: break
 
-        all_urls = list(all_urls)
-        responses = asyncio.run(check_urls_in_parallel(all_urls, start_from, max_concurrents=max_concurrents))
+        all_urls = [url for url in all_urls if url2date.get(url) is not None]
+        _start_date = start_from
+        responses = asyncio.run(check_urls_in_parallel(all_urls, url2date, _start_date, max_concurrents=max_concurrents))
 
         assert len(all_urls) == len(responses)
 
@@ -281,6 +284,7 @@ def main(cfg: DictConfig)-> None:
             "topics": input_data.get("topics"),
             "create_timestamp": input_data.get("create_timestamp"),
             "timestamp": input_data.get("timestamp"),
+            "popularity_score": input_data.get("popularity_score"),
             "url_content_mapper": url_content_mapper
         }
 

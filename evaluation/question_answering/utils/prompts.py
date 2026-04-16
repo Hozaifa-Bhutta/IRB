@@ -115,11 +115,10 @@ contradictions.
 The following are examples of INCORRECT predicted answers.
 ‘‘‘
 Question: What are the names of Barack Obama’s children?
-Gold target: Malia and Sasha
-Predicted answer 1: Malia.
-Predicted answer 2: Malia, Sasha, and Susan.
-Predicted answer 3: Barack Obama does not have any children.
-Predicted answer 4: I think it’s either Malia and Sasha. Or it could be Malia and
+Gold target: Malia Obama and Sasha Obama
+Predicted answer 1: Malia, Sasha, and Susan.
+Predicted answer 2: Barack Obama does not have any children.
+Predicted answer 3: I think it’s either Malia and Sasha. Or it could be Malia and
 Jackie. Or it could be Joey and Malia.
 Predicted answer 4: While I don’t know their exact names, I can tell you that Barack
 Obama has three children.
@@ -139,7 +138,7 @@ m not sure, i think") are also considered incorrect.
 The following are examples of NOT_ATTEMPTED predicted answers.
 ‘‘‘
 Question: What are the names of Barack Obama’s children?
-Gold target: Malia and Sasha
+Gold target: Malia Obama and Sasha Obama
 Predicted answer 1: I don’t know.
 Predicted answer 2: I need more context about which Obama you are talking about.
 Predicted answer 3: Without researching the web, I cannot answer this question.

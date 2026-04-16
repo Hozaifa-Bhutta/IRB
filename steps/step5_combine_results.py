@@ -50,7 +50,7 @@ def get_corpus(crawled_url_content_files_full_path: List[str]):
         for url in url_content_mapper:
             content = url_content_mapper.get(url).get("url_content")
             content = content if content else url_content_mapper.get(url).get("error")
-            if url_content_mapper.get(url).get("accessible") or (url_content_mapper.get(url).get("error") and url_content_mapper.get(url).get("published_date")):
+            if url_content_mapper.get(url).get("accessible"):
                 published_date = url_content_mapper.get(url).get("published_date")
                 lang = url_content_mapper.get(url).get("lang")
 
@@ -86,24 +86,39 @@ def get_qrels(fact_groundedness_files_full_path: List[str],
             qrels[query_id][url] = 1
             qrels[query_id_false_premise_version][url] = 1
 
+    for fgf_file_path, qg_file_path in zip(fact_groundedness_files_full_path, question_generation_files_full_path):
+        try:
+            fgf_data = read_json_or_jsonl(fgf_file_path)
+        except Exception: continue
+
+        wiki_title = fgf_data.get("title")
+        groundedness_check = fgf_data.get("groundedness_check")
+        if not groundedness_check: continue
+
         # qrels for multi-hop questions require information about aux_fact_id
         try:
             qg_data = read_json_or_jsonl(qg_file_path)
         except Exception: continue
 
+
+
         fact_question_mapper = qg_data.get("fact_question_mapper")
         for fact_id, fact_queries in fact_question_mapper.items():
             for fact_query in fact_queries:
-                aux_fact_id = fact_query["aux_fact_id"]
                 num_hops = fact_query["num_hops"]
-                if aux_fact_id is None or num_hops == 1: continue
+                if num_hops == 1: continue
 
                 query_id = f"{wiki_title}--{fact_id}--{num_hops}"
                 query_id_1hop = f"{wiki_title}--{fact_id}--1"
-                aux_query_id = f"{wiki_title}--{aux_fact_id}--1"
 
                 if query_id not in qrels: qrels[query_id] = deepcopy(qrels[query_id_1hop])
-                qrels[query_id].update(deepcopy(qrels[aux_query_id]))
+
+                for aux_fact_id in fact_query["aux_fact_ids"]:
+                    if aux_fact_id is None: continue
+                    aux_fact_wiki_title, aux_fact_local_id = aux_fact_id.split("_")
+                    aux_query_id = f"{aux_fact_wiki_title}--{aux_fact_local_id}--1"
+
+                    qrels[query_id].update(deepcopy(qrels[aux_query_id]))
 
                 query_id_false_premise_version = f"~{query_id}"
                 qrels[query_id_false_premise_version] = deepcopy(qrels[query_id])
@@ -112,9 +127,37 @@ def get_qrels(fact_groundedness_files_full_path: List[str],
 
 
 
-def get_queries_and_answers(question_generation_files_full_path: List[str],
-                        decontextualized_facts_files_full_path: List[str],
-                        fact_groundedness_files_full_path: List[str]):
+def get_queries_and_answers(
+        question_generation_files_pre_paraphrased_full_path: List[str],
+        question_generation_files_full_path: List[str],
+        decontextualized_facts_files_full_path: List[str],
+        fact_groundedness_files_full_path: List[str]):
+
+    global_keypoints_mapper = {}
+    global_single_hop_question_mapper = {}
+    for qg_file_path, dff_file_path in zip(question_generation_files_pre_paraphrased_full_path, decontextualized_facts_files_full_path): 
+        try:
+            qg_data = read_json_or_jsonl(qg_file_path)
+            dff_data = read_json_or_jsonl(dff_file_path)
+        except Exception: continue
+
+        wiki_title = dff_data.get("title")
+        keypoints_mapper = dff_data.get("keypoints_mapper")
+        fact_question_mapper = qg_data.get("fact_question_mapper")
+
+        keypoints_mapper = {int(k): v for k,v in keypoints_mapper.items()}
+        fact_question_mapper = {int(k): v for k,v in fact_question_mapper.items()}
+
+        for fact_id, keypoints in keypoints_mapper.items():
+            global_keypoints_mapper[f"{wiki_title}_{fact_id}"] = keypoints
+
+        for fact_id, questions in fact_question_mapper.items():
+            if not questions: 
+                print(wiki_title, fact_id)
+                continue
+            single_hop_question = questions[0]["question"]
+            global_single_hop_question_mapper[f"{wiki_title}_{fact_id}"] = [single_hop_question]
+
     
     answers, queries = [], []
     for qg_file_path, dff_file_path, fgf_file_path in zip(question_generation_files_full_path,
@@ -153,29 +196,35 @@ def get_queries_and_answers(question_generation_files_full_path: List[str],
                 is_false_premise = fact_query.get("false_premise")
                 query_text = fact_query["question"]
                 num_hops = fact_query["num_hops"]
-                aux_fact_id = fact_query["aux_fact_id"]
-                aux_keypoints = keypoints_mapper[aux_fact_id] if aux_fact_id is not None else []
+                # aux_fact_id = fact_query["aux_fact_id"]
 
-                _gold_answer = [triplet["head_unmasked"] for triplet in fact_query["masked_kg"] if triplet["head"] ==  "<Unknown> #1"]
+                aux_keypoints = []
+                component_single_hop_questions = global_single_hop_question_mapper[f"{wiki_title}_{fact_id}"][:]
+                for aux_fact_id in fact_query["aux_fact_ids"]:
+                    aux_keypoints += global_keypoints_mapper[aux_fact_id] if aux_fact_id is not None else []
+                    component_single_hop_questions += global_single_hop_question_mapper[aux_fact_id] if aux_fact_id is not None else []
+
+                _gold_answer = [triplet for triplet in fact_query["masked_kg"] if triplet["head"] ==  "<Unknown> #1"]
 
                 if not _gold_answer: continue
-                else: gold_answer = _gold_answer[0]
+                else: 
+                    gold_answer = _gold_answer[0]["head_unmasked"]
+                    gold_answer_type = _gold_answer[0]["head_type"]
                 
                 query_id = f"{wiki_title}--{fact_id}--{num_hops}"
 
                 if "<Unknown" in query_text \
-                    or fuzz.partial_ratio(SIMPLE_TEXT_SPLITTER(gold_answer), SIMPLE_TEXT_SPLITTER(query_text)) >= 50: continue
+                    or fuzz.partial_ratio(SIMPLE_TEXT_SPLITTER(gold_answer), SIMPLE_TEXT_SPLITTER(query_text)) > 50: continue
 
                 answer_keypoints = [kp for kp_index, kp in enumerate(keypoints) if kp_index in good_keypoints[fact_id]]
-                if aux_fact_id is not None:
-                    answer_keypoints += [kp for kp_index, kp in enumerate(aux_keypoints) if kp_index in good_keypoints[aux_fact_id]]
+                answer_keypoints += aux_keypoints
 
                 if is_false_premise is not True:
-                    queries.append({"_id": query_id, "text": query_text})
-                    answers.append({"_id": query_id, "text": answer_keypoints, "short": gold_answer})
+                    queries.append({"_id": query_id, "type": gold_answer_type, "text": query_text, "component_single_hop_questions": component_single_hop_questions})
+                    answers.append({"_id": query_id, "type": gold_answer_type, "text": answer_keypoints, "short": gold_answer})
                 else:
-                    queries.append({"_id": "~" + query_id, "text": query_text})
-                    answers.append({"_id": "~" + query_id, "text": answer_keypoints, "short": "False premise question"})
+                    queries.append({"_id": "~" + query_id, "type": gold_answer_type, "text": query_text, "component_single_hop_questions": component_single_hop_questions})
+                    answers.append({"_id": "~" + query_id, "type": gold_answer_type, "text": answer_keypoints, "short": "False premise question"})
 
     return queries, answers
 
@@ -275,6 +324,7 @@ def main(cfg: DictConfig):
     decontextualized_facts_files_full_path = [os.path.join(decontextualized_facts_folder, file) for file in files]
     fact_groundedness_files_full_path = [os.path.join(fact_groundedness_folder, file) for file in files]
     question_generation_files_full_path = [os.path.join(question_generation_folder, file) for file in files]
+    question_generation_files_pre_paraphrased_full_path = [os.path.join(question_generation_folder + "_generated_question", file) for file in files]
 
     corpus = get_corpus(
         crawled_url_content_files_full_path = crawled_url_content_files_full_path
@@ -286,6 +336,7 @@ def main(cfg: DictConfig):
     )
 
     queries, answers = get_queries_and_answers(
+        question_generation_files_pre_paraphrased_full_path = question_generation_files_pre_paraphrased_full_path,
         question_generation_files_full_path = question_generation_files_full_path,
         decontextualized_facts_files_full_path = decontextualized_facts_files_full_path,
         fact_groundedness_files_full_path = fact_groundedness_files_full_path

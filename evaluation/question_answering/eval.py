@@ -228,7 +228,7 @@ def main(cfg: DictConfig):
 
     # re-init client
     LLM = init_llm(eval_llm_model_name)
-    LLM2 = init_llm(eval_llm2_model_name)
+    LLM2 = init_llm(eval_llm2_model_name) if eval_llm2_model_name else None
     run_llm_based_evaluation_keypoints(
         eval_metadata_outfile = eval_metadata_outfile,
         groundtruth_answers = groundtruth_answers,

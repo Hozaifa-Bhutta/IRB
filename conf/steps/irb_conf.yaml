@@ -14,11 +14,12 @@ step0:
 
 step1:
   output_folder: null
+  prefer_webarchive: false
 
 step2_1:
   output_folder: null
   max_facts_per_page: 100000000 # basically get everything
-  max_concurrents: 10
+  max_concurrents: 16
 
 
 step2_2:
@@ -32,6 +33,7 @@ step4:
   output_folder: null
   kg_completeness_word_check_threshold: 0.85 # 0.5 was the main value
   question_progression_word_check_threshold: 0.75
+  max_hops: 3
 
 step5:
   output_folder: null
@@ -40,3 +42,7 @@ step6:
   output_folder: null
   num_samples: 1000
   false_premise_limit: 200
+
+step7:
+  output_folder: null
+  num_hard_negs: 20

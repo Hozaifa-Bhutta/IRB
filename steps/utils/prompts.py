@@ -30,11 +30,12 @@ and "Gravity". He was born on July 26, 1961, in London. His family has a backgro
 """,
 
     "user": """User input:
-##ADDITIONAL INFORMATION##: ##CLAIM## and ##CONTEXT## were last updated in [ADD_LAST_UPDATED_DATE] (YYYY-mm-dd). Use this information to improve temporal clarity when needed.
 ##CLAIM##: [ADD_CLAIM_HERE]
 ##CONTEXT##: [ADD_CONTEXT_HERE]
 ##KEYPOINTS_COUNT##: [ADD_KEYPOINTS_COUNT_HERE]"""
 }
+
+##ADDITIONAL INFORMATION##: ##CLAIM## and ##CONTEXT## were last updated in [ADD_LAST_UPDATED_DATE] (YYYY-mm-dd). Use this information to improve temporal clarity when needed.
 
 QUESTION_GENERATION_PROMPT = {
     "system": """You are an AI responsible for generating a well formed question given answer keypoints. A well-formed question needs to satisfy the following requirements
@@ -216,7 +217,6 @@ Knowledge Graph:
 """,
     "user": "Text: ```[ADD_KEYPOINTS_HERE]```"
 }
-
 
 # GRAPH_COMPLETENESS_CHECK_PROMPT = {
 #     "system": """You are an expert verifier. You will be given a document and a list of statements, your job is to verify if the correctness of the provided statements.
@@ -436,8 +436,10 @@ Generated question: Who was ruled by the United States Court of International Tr
 Relation: United States Court of International Trade [Court] | ruled on | May 28 [Date]
 Generated question: Who was ruled by the United States Court of International Trade on May 28 that he exceeded his authority by imposing fentanyl tariffs?""",
 
-    "user": """User input:
+    "user": """For this input, you will be provided context for additional information.
+User input:
 The generated question must ask about an a/an '[ADD_QUESTION_TARGET_TYPE]'
+Context: [ADD_CONTEXT_HERE]
 Question generation steps:
 [ADD_STEPS_HERE]"""
 }
@@ -485,15 +487,11 @@ Context: <Unknown #1 (Date)> is the founding date of the institute located at 18
 Original Question: When was the institute established that is located at 1855 Broadway Street in New York City?
 Good Refinement: What is the founding date of the organization located at 1855 Broadway Street in New York City?
 """,
-    "user": """Additional rule: If you are provided with a `Paraphrase Map`. If a term in the question appears in this map as a value, you MUST preserve that specific wording in your output. 
-- **DO NOT** "correct" the paraphrase back to the original value found in the Context. 
-- *Example:* If Context says "24 May 2024" but Paraphrase Map says "roughly a year ago", your output MUST use "roughly a year ago".
-    
+    "user": """ 
 The date the question is being asked is [ADD_QUESTION_DATE] UTC (use this to determine correct verb tenses).
 The generated improved question must ask about an a/an '[ADD_QUESTION_TARGET_TYPE]'
 Context: [ADD_KEYPOINTS_HERE]
 Original Question: [ADD_QUESTION_HERE]
-Paraphrase Map: [ADD_PARAPHRASE_MAP]
 Good refinement:"""
 }
 

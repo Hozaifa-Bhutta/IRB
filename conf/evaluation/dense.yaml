@@ -10,26 +10,28 @@ general:
 retrieval:
   index:
     outfolder: null
-    chunk_size: 512
-    chunk_overlap: 32
-    num_chunks: 1
-    chunk_idx: 0
-    batch_size: 4
+    chunk_size: 256
+    chunk_overlap: 0
+    batch_size: 8
   eval:
-    batch_size: 4
+    batch_size: 8
     threads: 8
 
 
 qa:
-  max_num_contexts: 15 # 5 is default
+  max_num_contexts: 5 # 5 is default
   outfolder: null
   use_retrieval_contexts: true
   minicheck_ckpt_path: "/scratch/lamdo/minicheck_ckpts"
   eval_only: false # if true, only do evaluation without generating answer again
   use_chunk: true # if this is true, use top k retrieved chunks. If this is false, use the whole content from top k URL. Note: k is 'max_num_contexts'
   qa_llm_model_name: null
-  eval_llm_model_name: gpt-4.1-mini
-  eval_llm2_model_name: qwen3-next-80B-A3B
+  eval_llm_model_name: gpt-4.1
+  eval_llm2_model_name: null #qwen3-next-80B-A3B
+
+  deep_research:
+    max_search_calls: 10
+    max_iterations: 10
 
 
 adv_collection:
@@ -50,19 +52,8 @@ view:
     - {false_premise: false, topic: STEM}
     - {false_premise: false, numhops: 1}
     - {false_premise: false, numhops: 2}
+    - {false_premise: false, numhops: 3}
     - {false_premise: true}
-    - {hardness: True, false_premise: false, language: english_only}
-    - {hardness: True,false_premise: false, language: multilingual}
-    - {hardness: True,false_premise: false, freshness: 2024}
-    - {hardness: True,false_premise: false, freshness: 2025}
-    - {hardness: True,false_premise: false, freshness: 2026}
-    - {hardness: True,false_premise: false, topic: Culture}
-    - {hardness: True,false_premise: false, topic: Geography}
-    - {hardness: True,false_premise: false, topic: History_and_Society}
-    - {hardness: True,false_premise: false, topic: STEM}
-    - {hardness: True,false_premise: false, numhops: 1}
-    - {hardness: True,false_premise: false, numhops: 2}
-    - {hardness: True,false_premise: true}
     # - {false_premise: true, freshness: 2025}
     # - {false_premise: false, freshness: 2024, numhops: 1}
     # - {false_premise: false, freshness: 2024, numhops: 2}

@@ -11,12 +11,16 @@
 
 
 import json, bz2, os, hydra, re, requests
+import concurrent.futures
 from datetime import datetime
 from omegaconf import DictConfig
 from tqdm import tqdm
 from typing import Optional, List, Dict, Any
 
 from steps.utils.generic import maybe_create_folder, write_to_json
+
+
+MIN_NUM_EXTERNAL_LINKS = 10 # keep only articles with at least this number of external links (references)
 
 def get_articletopics_with_scores(weighted_tags: List[str]) -> List[Dict[str, Any]]:
     topic_list = []
@@ -43,7 +47,7 @@ def get_articletopics_with_scores(weighted_tags: List[str]) -> List[Dict[str, An
     return topic_list
 
 
-def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int, offset: int = 0, target_year: str = "2025") -> None:
+def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int, offset: int = 0, target_year: str = "2025", target_articles: set = None) -> None:
     """Reads a gzipped Wikipedia dump file and writes each page to a separate JSON file in the specified output folder.
 
     Parameters
@@ -83,8 +87,13 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
                     timestamp = obj.get("timestamp") # format: "%Y-%m-%dT%H:%M:%SZ"
                     weighted_tags = obj.get("weighted_tags")
 
+                    external_link = obj.get("external_link", [])
+                    if len(external_link) < MIN_NUM_EXTERNAL_LINKS: continue
+
+                    popularity_score = obj.get("popularity_score", 0)
+
                     create_year = create_timestamp[:4]
-                    if create_year != target_year:
+                    if (target_articles and title not in target_articles) or create_year != target_year:
                         continue
 
                     url = f"https://en.wikipedia.org/?curid={obj.get('page_id')}"
@@ -98,7 +107,8 @@ def read_wiki_dump_and_write(input_file: str, output_folder: str, max_pages: int
                         "source": source, # raw text of the wiki page
                         "create_timestamp": create_timestamp, # creation timestamp of the wiki page
                         "timestamp": timestamp, # last updated timestamp
-                        "topics": topics # predicted outlink topics for the wiki page
+                        "topics": topics, # predicted outlink topics for the wiki page
+                        "popularity_score": popularity_score,
                     }
                     try:
                         write_to_json(to_write, os.path.join(output_folder, f"{title}.json")) # write each page to a separate json file
@@ -122,18 +132,34 @@ def main(cfg: DictConfig) -> None:
     target_year = str(cfg.general.target_year)
     assert os.path.exists(input_folder)
 
+
     input_files = os.listdir(input_folder)
     input_files = list(sorted([os.path.join(input_folder, input_file) for input_file in input_files if input_file.endswith(".json.bz2")]))
 
-    for input_file in input_files:
-        print(f"Processing file: {input_file}")
-        read_wiki_dump_and_write(
-            input_file = input_file,
-            output_folder=output_folder,
-            max_pages=int(max_pages / len(input_files)) + 1,
-            offset=offset,
-            target_year=target_year
-        )
+
+     # Set up the Process Pool 
+    max_workers = 16
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+        futures = []
+        
+        for input_file in input_files:
+            file_max_pages = int(max_pages / len(input_files)) + 1
+            
+            future = executor.submit(
+                read_wiki_dump_and_write,
+                input_file=input_file,
+                output_folder=output_folder,
+                max_pages=file_max_pages,
+                offset=offset,
+                target_year=target_year
+            )
+            futures.append(future)
+
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures), desc="Total Files Processed"):
+            try:
+                future.result() 
+            except Exception as exc:
+                print(f"A process generated an exception: {exc}")
 
 
 if __name__ == "__main__":
